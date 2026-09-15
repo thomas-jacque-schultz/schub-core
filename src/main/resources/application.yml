@@ -5,7 +5,7 @@ spring:
     name: schub.core
   data:
     mongodb:
-      uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST:bot-mongo}:27017/${MONGO_DB}?authSource=${MONGO_DB}
+      uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST:schub-mongo}:27017/${MONGO_DB}?authSource=${MONGO_DB}
 
 server:
   port: 8080
