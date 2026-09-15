@@ -23,3 +23,32 @@ management:
     health:
       probes:
         enabled: true
+
+# Boucle de réconciliation : observe chaque serveur, enregistre, notifie, réaligne les ports.
+core:
+  refresh-interval: ${CORE_REFRESH_INTERVAL:60s}
+
+# Les connecteurs que le cœur pilote. Il ne connaît que leurs adresses — ni Portainer, ni la box.
+connector:
+  portainer:
+    base-url: ${CONNECTOR_PORTAINER_URL:http://connector-portainer:8080}
+    # Doit rester supérieur à la période de sonde du connecteur.
+    stale-after: ${CONNECTOR_PORTAINER_STALE_AFTER:5m}
+    connect-timeout: 3s
+    read-timeout: 10s
+  freebox:
+    base-url: ${CONNECTOR_FREEBOX_URL:http://connector-freebox:8080}
+    connect-timeout: 3s
+    read-timeout: 8s
+  discord:
+    base-url: ${CONNECTOR_DISCORD_URL:http://connector-discord:8080}
+    connect-timeout: 3s
+    read-timeout: 5s
+
+# Politique d'ouverture des ports. Rien ici ne dépend de la marque du routeur.
+port-forwarding:
+  enabled: ${PORT_FORWARDING_ENABLED:false}
+  dry-run: ${PORT_FORWARDING_DRY_RUN:true}
+  default-lan-ip: ${PORT_FORWARDING_DEFAULT_LAN_IP:192.168.1.202}
+  prune-orphans: ${PORT_FORWARDING_PRUNE_ORPHANS:false}
+  forbidden-wan-ports: [22, 23, 139, 445, 3389, 5432, 27017, 9443]
