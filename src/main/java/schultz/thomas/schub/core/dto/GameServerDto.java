@@ -18,6 +18,9 @@ public record GameServerDto(
         String name,
         String urlConnection,
         String game,
+        /** libellé et icône, dérivés du jeu : évite aux consommateurs de dupliquer le catalogue */
+        String gameLabel,
+        String gameIconUrl,
         Integer playersMax,
         String installation,
         String version,

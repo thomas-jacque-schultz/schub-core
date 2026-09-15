@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import schultz.thomas.schub.core.service.GameServerStateRefresh;
@@ -20,6 +21,7 @@ import java.time.Duration;
  */
 @Slf4j
 @EnableAsync
+@EnableScheduling
 @Configuration
 @RequiredArgsConstructor
 @ConfigurationProperties(prefix = "core")

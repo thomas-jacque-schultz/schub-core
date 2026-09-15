@@ -44,6 +44,8 @@ public interface GameServerMapper {
     GameServer toEntity(GameServerDto dto);
 
     @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
+    @Mapping(target = "gameLabel", source = "game", qualifiedByName = "gameToLabel")
+    @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
     @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
     GameServerDto toDto(GameServer entity);
@@ -63,6 +65,16 @@ public interface GameServerMapper {
     @Named("gameToString")
     default String gameToString(Game value) {
         return value != null ? value.name() : null;
+    }
+
+    @Named("gameToLabel")
+    default String gameToLabel(Game value) {
+        return value != null ? value.getLabel() : null;
+    }
+
+    @Named("gameToIcon")
+    default String gameToIcon(Game value) {
+        return value != null ? value.getIconUrl() : null;
     }
 
     @Named("statusToString")
