@@ -1,5 +1,7 @@
 package schultz.thomas.schub.core;
 
+import schultz.thomas.schub.core.data.model.GameServer;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
