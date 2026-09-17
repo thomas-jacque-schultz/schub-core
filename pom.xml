@@ -20,7 +20,25 @@
              80 % de couverture sur le code neuf. Exclure de la mesure rend la condition
              non applicable. Même choix que les trois repos historiques. -->
         <sonar.coverage.exclusions>**/*</sonar.coverage.exclusions>
+        <mongock.version>5.5.1</mongock.version>
     </properties>
+
+    <!--
+      Mongock possède le schéma de la base `servers`. Toute évolution y est une classe
+       versionnée, appliquée une seule fois au démarrage, dans l'ordre, et tracée
+      en base. Le BOM aligne le module Spring Boot et le pilote.
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.mongock</groupId>
+                <artifactId>mongock-bom</artifactId>
+                <version>${mongock.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -42,6 +60,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+        <!-- Module Spring Boot 3 de Mongock : déclenche les migrations au démarrage. -->
+        <dependency>
+            <groupId>io.mongock</groupId>
+            <artifactId>mongock-springboot-v3</artifactId>
+        </dependency>
+        <!-- Pilote Spring Data Mongo 4 (celui de Boot 3) : Mongock réutilise le MongoTemplate. -->
+        <dependency>
+            <groupId>io.mongock</groupId>
+            <artifactId>mongodb-springdata-v4-driver</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mapstruct</groupId>
