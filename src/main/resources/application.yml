@@ -7,6 +7,22 @@ spring:
     mongodb:
       uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST:schub-mongo}:27017/${MONGO_DB}?authSource=${MONGO_DB}
 
+# Migrations de schéma. Le cœur possède la base `servers` et elle seule : aucune ChangeUnit
+# ne doit jamais toucher une base d'un autre service (cf. plan §3, cloisonnement Mongo).
+# Le déplacement historique `discordbot` -> `servers` n'est PAS ici : il traverse cette
+# frontière et reste une opération d'exploitation lancée en root, une fois.
+mongock:
+  migration-scan-package:
+    - schultz.thomas.schub.core.migration
+  # Le démarrage échoue plutôt que de continuer sans le verrou : mieux vaut un service mort
+  # qu'un service qui sert des données à un schéma qu'il ne comprend pas.
+  throw-exception-if-cannot-obtain-lock: true
+  # Les transactions MongoDB EXIGENT un replica set. Le Mongo de Schub est autonome (un seul
+  # conteneur `mongo:7`), donc elles sont indisponibles — l'activer ferait échouer le
+  # démarrage. Conséquence à connaître : une ChangeUnit qui échoue à mi-chemin laisse son
+  # travail partiel. Les écrire idempotentes, pour qu'un redémarrage les rattrape.
+  transaction-enabled: false
+
 server:
   port: 8080
 
