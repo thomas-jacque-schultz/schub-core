@@ -13,7 +13,7 @@ spring:
 # frontière et reste une opération d'exploitation lancée en root, une fois.
 mongock:
   migration-scan-package:
-    - schultz.thomas.schub.core.migration
+    - schultz.thomas.schub.core.data.migration
   # Le démarrage échoue plutôt que de continuer sans le verrou : mieux vaut un service mort
   # qu'un service qui sert des données à un schéma qu'il ne comprend pas.
   throw-exception-if-cannot-obtain-lock: true
@@ -21,7 +21,7 @@ mongock:
   # conteneur `mongo:7`), donc elles sont indisponibles — l'activer ferait échouer le
   # démarrage. Conséquence à connaître : une ChangeUnit qui échoue à mi-chemin laisse son
   # travail partiel. Les écrire idempotentes, pour qu'un redémarrage les rattrape.
-  transaction-enabled: false
+  transactional: false
 
 server:
   port: 8080
