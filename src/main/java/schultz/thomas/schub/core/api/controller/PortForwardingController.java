@@ -2,6 +2,9 @@ package schultz.thomas.schub.core.api.controller;
 
 import schultz.thomas.schub.core.api.dto.PortForwardingReport;
 import schultz.thomas.schub.core.api.dto.PortRule;
+import schultz.thomas.schub.core.api.dto.StaticPortRuleDto;
+import schultz.thomas.schub.core.api.dto.StaticPortRuleRequest;
+import schultz.thomas.schub.core.business.mapper.StaticPortRuleMapper;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.PortForwardingService;
@@ -54,6 +57,7 @@ public class PortForwardingController {
     private final PortForwardingProperties portForwardingProperties;
 
     private final StaticPortRuleService staticPortRuleService;
+    private final StaticPortRuleMapper staticPortRuleMapper;
 
     private final PermissionEvaluator permissionEvaluator;
 
@@ -72,10 +76,10 @@ public class PortForwardingController {
 
     /** Les règles permanentes détenues par l'application — celles qui portent un bouton supprimer. */
     @GetMapping("/static-rules")
-    public List<StaticPortRuleEntity> listStaticRules(
+    public List<StaticPortRuleDto> listStaticRules(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
         require(actorDiscordId, Permission.PORT_VIEW);
-        return staticPortRuleService.findAll();
+        return staticPortRuleMapper.toDtos(staticPortRuleService.findAll());
     }
 
     /**
@@ -83,13 +87,13 @@ public class PortForwardingController {
      * un ajout qui ne se voit qu'à la minute suivante passerait pour un échec.
      */
     @PostMapping("/static-rules")
-    public ResponseEntity<StaticPortRuleEntity> createStaticRule(
+    public ResponseEntity<StaticPortRuleDto> createStaticRule(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
-            @RequestBody StaticPortRuleEntity rule) {
+            @RequestBody StaticPortRuleRequest request) {
         require(actorDiscordId, Permission.PORT_RULE_EDIT);
-        StaticPortRuleEntity created = staticPortRuleService.create(rule);
+        StaticPortRuleEntity created = staticPortRuleService.create(staticPortRuleMapper.toEntity(request));
         reconcileQuietly("ajout de " + created.getName());
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(staticPortRuleMapper.toDto(created));
     }
 
     @DeleteMapping("/static-rules/{id}")
