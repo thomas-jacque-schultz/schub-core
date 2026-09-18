@@ -51,22 +51,30 @@ public interface GameServerMapper {
     @Mapping(target = "admins", source = "admins", qualifiedByName = "adminsToIds")
     GameServer toEntity(GameServerDto dto);
 
-    /** Projection infra : tout, y compris déploiement, ports et administrateurs. */
+    /**
+     * Projection infra : tout, y compris déploiement, ports et administrateurs.
+     *
+     * <p>{@code viewerIsAdmin} est un second paramètre plutôt qu'une propriété de l'entité :
+     * la réponse dépend de <em>qui lit</em>, pas du serveur. La calculer dans le mapper
+     * supposerait qu'il connaisse l'acteur, ce qui n'est pas son rôle.</p>
+     */
     @Mapping(target = "admins", ignore = true)
-    @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
-    @Mapping(target = "gameLabel", source = "game", qualifiedByName = "gameToLabel")
-    @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
-    @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
-    @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
-    GameServerDto toDto(GameServer entity);
+    @Mapping(target = "viewerIsAdmin", source = "viewerIsAdmin")
+    @Mapping(target = "game", source = "entity.game", qualifiedByName = "gameToString")
+    @Mapping(target = "gameLabel", source = "entity.game", qualifiedByName = "gameToLabel")
+    @Mapping(target = "gameIconUrl", source = "entity.game", qualifiedByName = "gameToIcon")
+    @Mapping(target = "status", source = "entity.status", qualifiedByName = "statusToString")
+    @Mapping(target = "statusHistory", source = "entity.statusHistory", qualifiedByName = "historyToDto")
+    GameServerDto toDto(GameServer entity, boolean viewerIsAdmin);
 
     /** Projection membre : de quoi rejoindre et suivre, rien qui décrive l'infrastructure. */
-    @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
-    @Mapping(target = "gameLabel", source = "game", qualifiedByName = "gameToLabel")
-    @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
-    @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
-    @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
-    GameServerMemberDto toMemberDto(GameServer entity);
+    @Mapping(target = "viewerIsAdmin", source = "viewerIsAdmin")
+    @Mapping(target = "game", source = "entity.game", qualifiedByName = "gameToString")
+    @Mapping(target = "gameLabel", source = "entity.game", qualifiedByName = "gameToLabel")
+    @Mapping(target = "gameIconUrl", source = "entity.game", qualifiedByName = "gameToIcon")
+    @Mapping(target = "status", source = "entity.status", qualifiedByName = "statusToString")
+    @Mapping(target = "statusHistory", source = "entity.statusHistory", qualifiedByName = "historyToDto")
+    GameServerMemberDto toMemberDto(GameServer entity, boolean viewerIsAdmin);
 
     /** Tolère le nom technique comme le libellé : « MINECRAFT » et « Minecraft » désignent le même jeu. */
     @Named("stringToGame")
