@@ -68,3 +68,15 @@ port-forwarding:
   default-lan-ip: ${PORT_FORWARDING_DEFAULT_LAN_IP:192.168.1.202}
   prune-orphans: ${PORT_FORWARDING_PRUNE_ORPHANS:false}
   forbidden-wan-ports: [22, 23, 139, 445, 3389, 5432, 27017, 9443]
+
+# Le compte super-administrateur, désigné par son identifiant Discord et rien d'autre.
+# Semé à CHAQUE démarrage par OwnerSeeder : c'est le garde-fou qui rend impossible de se
+# verrouiller dehors par une erreur de rôle (plan §1).
+#
+# Ces deux variables vivaient dans schub-connector-discord jusqu'au 18-09, avec l'identité.
+# Valeur vide par défaut, volontairement : un cœur qui refuse de démarrer emporterait les
+# serveurs de jeu avec lui. L'absence est signalée par un log ERROR au démarrage.
+discord:
+  admin:
+    id: ${DISCORD_ADMIN_ID:}
+    username: ${DISCORD_ADMIN_USERNAME:}
