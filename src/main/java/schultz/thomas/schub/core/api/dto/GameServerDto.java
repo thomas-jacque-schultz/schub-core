@@ -42,6 +42,18 @@ public record GameServerDto(
         String status,
         Instant lastStatusCheckAt,
         Instant lastStatusChangeAt,
-        List<GameServerStatusHistoryEntryDto> statusHistory
+        List<GameServerStatusHistoryEntryDto> statusHistory,
+        /**
+         * L'acteur de la requête figure-t-il dans les {@code admins} de <em>ce</em> serveur ?
+         *
+         * <p>C'est un fait sur le <strong>lecteur</strong>, pas sur le serveur : il ne nomme
+         * personne d'autre, il ne fuite donc rien. Le front en a besoin pour ne proposer
+         * démarrer/arrêter qu'à qui en a réellement le droit — sans lui, la décision n°11 est
+         * appliquée par le cœur mais invisible côté client, et un visiteur reçoit un 403 après
+         * avoir cliqué.</p>
+         *
+         * <p>En entrée d'un {@code POST}/{@code PUT}, ce champ est ignoré : il est calculé.</p>
+         */
+        boolean viewerIsAdmin
 ) {
 }
