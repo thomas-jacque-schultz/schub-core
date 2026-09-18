@@ -2,9 +2,12 @@ package schultz.thomas.schub.core.api.controller;
 
 import schultz.thomas.schub.core.api.dto.PortForwardingReport;
 import schultz.thomas.schub.core.api.dto.PortRule;
+import schultz.thomas.schub.core.business.model.Permission;
+import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.PortForwardingService;
 import schultz.thomas.schub.core.business.service.RedirectionRequestService;
 import schultz.thomas.schub.core.business.service.StaticPortRuleService;
+import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.config.PortForwardingProperties;
 import schultz.thomas.schub.core.data.model.StaticPortRuleEntity;
 
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
@@ -51,9 +55,15 @@ public class PortForwardingController {
 
     private final StaticPortRuleService staticPortRuleService;
 
+    private final PermissionEvaluator permissionEvaluator;
+
+    private final UserService userService;
+
     /** État courant tel que le routeur le rapporte, redirections manuelles comprises. */
     @GetMapping("/rules")
-    public ResponseEntity<List<PortRule>> listRules() {
+    public ResponseEntity<List<PortRule>> listRules(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
+        require(actorDiscordId, Permission.PORT_VIEW);
         if (!portForwardingProperties.isEnabled()) {
             return ResponseEntity.status(503).build();
         }
@@ -62,7 +72,9 @@ public class PortForwardingController {
 
     /** Les règles permanentes détenues par l'application — celles qui portent un bouton supprimer. */
     @GetMapping("/static-rules")
-    public List<StaticPortRuleEntity> listStaticRules() {
+    public List<StaticPortRuleEntity> listStaticRules(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
+        require(actorDiscordId, Permission.PORT_VIEW);
         return staticPortRuleService.findAll();
     }
 
@@ -71,14 +83,20 @@ public class PortForwardingController {
      * un ajout qui ne se voit qu'à la minute suivante passerait pour un échec.
      */
     @PostMapping("/static-rules")
-    public ResponseEntity<StaticPortRuleEntity> createStaticRule(@RequestBody StaticPortRuleEntity rule) {
+    public ResponseEntity<StaticPortRuleEntity> createStaticRule(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestBody StaticPortRuleEntity rule) {
+        require(actorDiscordId, Permission.PORT_RULE_EDIT);
         StaticPortRuleEntity created = staticPortRuleService.create(rule);
         reconcileQuietly("ajout de " + created.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @DeleteMapping("/static-rules/{id}")
-    public ResponseEntity<Void> deleteStaticRule(@PathVariable String id) {
+    public ResponseEntity<Void> deleteStaticRule(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @PathVariable String id) {
+        require(actorDiscordId, Permission.PORT_RULE_EDIT);
         if (!staticPortRuleService.delete(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -88,13 +106,17 @@ public class PortForwardingController {
 
     /** Force une réconciliation immédiate et renvoie le détail de ce qui a été fait. */
     @PostMapping("/reconcile")
-    public PortForwardingReport reconcile() {
+    public PortForwardingReport reconcile(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
+        require(actorDiscordId, Permission.PORT_RULE_EDIT);
         return portForwardingService.reconcile();
     }
 
     /** État de l'intégration, pour diagnostiquer sans lire les logs. */
     @GetMapping("/status")
-    public Map<String, Object> status() {
+    public Map<String, Object> status(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
+        require(actorDiscordId, Permission.PORT_VIEW);
         return Map.of(
                 "enabled", portForwardingProperties.isEnabled(),
                 "dryRun", portForwardingProperties.isDryRun(),
@@ -103,6 +125,19 @@ public class PortForwardingController {
                 "pruneOrphans", portForwardingProperties.isPruneOrphans(),
                 "staticRules", staticPortRuleService.findAll().size()
         );
+    }
+
+    /**
+     * Ces routes exigent toujours un acteur : aucune n'est appelée par un service pour son
+     * propre compte, et la table de redirections du routeur est ce que le système a de plus
+     * exposé — une ouverture de port est visible depuis Internet.
+     *
+     * <p>{@code PORT_RULE_EDIT} reste une permission de <em>rôle</em> : être administrateur d'un
+     * serveur n'y donne pas accès. Une règle de port n'est pas locale à un serveur, elle est
+     * globale à la maison (décision n°11 du 18-09).</p>
+     */
+    private void require(String actorDiscordId, Permission permission) {
+        permissionEvaluator.require(userService.requireActor(actorDiscordId), permission, null);
     }
 
     /**
