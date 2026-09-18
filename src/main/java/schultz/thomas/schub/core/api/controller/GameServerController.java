@@ -82,9 +82,10 @@ public class GameServerController {
     public ResponseEntity<GameServerDto> create(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @RequestBody GameServerDto dto) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.SERVER_CREATE, null);
+        User actor = userService.requireActor(actorDiscordId);
+        permissionEvaluator.require(actor, Permission.SERVER_CREATE, null);
         GameServer created = gameServerService.create(mapper.toEntity(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created, actor));
     }
 
     @PutMapping("/{id}")
@@ -92,9 +93,10 @@ public class GameServerController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @PathVariable String id,
             @RequestBody GameServerDto dto) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.SERVER_EDIT, null);
+        User actor = userService.requireActor(actorDiscordId);
+        permissionEvaluator.require(actor, Permission.SERVER_EDIT, null);
         GameServer updated = gameServerService.update(id, mapper.toEntity(dto));
-        return ResponseEntity.ok(projectionService.toInfraDto(updated));
+        return ResponseEntity.ok(projectionService.toInfraDto(updated, actor));
     }
 
     /**

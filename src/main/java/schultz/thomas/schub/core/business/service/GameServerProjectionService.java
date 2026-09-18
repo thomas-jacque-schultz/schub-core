@@ -15,13 +15,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Choisit laquelle des trois projections d'un serveur l'acteur a le droit de voir, et résout les
- * administrateurs en pseudos.
+ * Choisit laquelle des trois projections d'un serveur l'acteur a le droit de voir, résout les
+ * administrateurs en pseudos, et lui dit s'il est lui-même administrateur de ce serveur.
  *
  * <p>Le choix est fait <em>ici</em> et pas dans le contrôleur pour une raison simple : c'est une
  * règle de domaine — « qui voit quoi » — et elle doit être la même pour les trois routes qui
  * renvoient un serveur. Répétée trois fois dans les contrôleurs, elle finirait par diverger sur
  * l'une d'elles, et la divergence ne se verrait pas.</p>
+ *
+ * <p><strong>Pourquoi {@code viewerIsAdmin} et pas la liste des admins pour tous</strong> : la
+ * projection membre ne nomme aucun administrateur, et c'est délibéré (décision n°10). Mais un
+ * compte sans {@code SERVER_INFRA_VIEW} peut parfaitement figurer dans les {@code admins} d'un
+ * serveur — c'est le cas nominal de la décision n°11. Sans ce booléen, le front ne peut pas le
+ * savoir : il propose démarrer/arrêter à tout le monde, et le cœur refuse après le clic.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -44,10 +50,12 @@ public class GameServerProjectionService {
      */
     public List<?> project(List<GameServer> servers, User actor) {
         if (!seesInfrastructure(actor)) {
-            return servers.stream().map(mapper::toMemberDto).toList();
+            return servers.stream()
+                    .map(server -> mapper.toMemberDto(server, isAdminOf(server, actor)))
+                    .toList();
         }
         Map<String, User> admins = resolveAdmins(servers);
-        return servers.stream().map(server -> withAdmins(server, admins)).toList();
+        return servers.stream().map(server -> withAdmins(server, admins, actor)).toList();
     }
 
     public Object project(GameServer server, User actor) {
@@ -55,8 +63,22 @@ public class GameServerProjectionService {
     }
 
     /** La forme infra d'un serveur, admins résolus — pour les réponses d'écriture. */
-    public GameServerDto toInfraDto(GameServer server) {
-        return withAdmins(server, resolveAdmins(List.of(server)));
+    public GameServerDto toInfraDto(GameServer server, User actor) {
+        return withAdmins(server, resolveAdmins(List.of(server)), actor);
+    }
+
+    /**
+     * L'acteur figure-t-il dans les {@code admins} de ce serveur ?
+     *
+     * <p>La comparaison porte sur l'<strong>id interne</strong> du compte, jamais sur son
+     * identifiant Discord : {@code GameServer.admins} contient des ids internes depuis le 18-09
+     * (plan §A.4), et confondre les deux donne un booléen toujours faux — c'est exactement le
+     * défaut que ce champ corrige.</p>
+     */
+    private boolean isAdminOf(GameServer server, User actor) {
+        return actor != null
+                && server.getAdmins() != null
+                && server.getAdmins().contains(actor.getId());
     }
 
     /**
@@ -77,8 +99,8 @@ public class GameServerProjectionService {
      * ferait disparaître un administrateur de la liste sans que personne ne s'en aperçoive,
      * alors qu'une ligne sans nom se voit et se corrige.
      */
-    private GameServerDto withAdmins(GameServer server, Map<String, User> resolved) {
-        GameServerDto dto = mapper.toDto(server);
+    private GameServerDto withAdmins(GameServer server, Map<String, User> resolved, User actor) {
+        GameServerDto dto = mapper.toDto(server, isAdminOf(server, actor));
         List<ServerAdminDto> admins = server.getAdmins() == null ? List.of()
                 : server.getAdmins().stream()
                 .map(id -> {
@@ -94,6 +116,6 @@ public class GameServerProjectionService {
                 dto.installation(), dto.version(), dto.description(),
                 admins,
                 dto.ports(), dto.status(), dto.lastStatusCheckAt(), dto.lastStatusChangeAt(),
-                dto.statusHistory());
+                dto.statusHistory(), dto.viewerIsAdmin());
     }
 }
