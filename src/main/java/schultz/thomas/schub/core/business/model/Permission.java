@@ -43,6 +43,35 @@ public enum Permission {
     USER_VIEW,
     USER_ROLE_ASSIGN,
 
+    // --- domaine d'équipe (chantier D, lot D.4) ---
+    //
+    // Les trois dernières s'évaluent SUR une équipe : en être membre y donne des droits,
+    // exactement comme figurer dans les `admins` d'un serveur en donne sur celui-là. La
+    // première est globale — créer n'a pas de ressource sur laquelle porter.
+
+    /**
+     * Créer une équipe. <strong>Globale, et donnée au rôle {@code VISITEUR}</strong> : sans
+     * elle, personne ne peut rien faire de l'outil, ce qui viderait le chantier de son sens
+     * (plan §D.2 bis).
+     */
+    TEAM_CREATE,
+
+    /** Voir une équipe, son effectif et ses compositions. En être membre suffit. */
+    TEAM_VIEW,
+
+    /** Renommer une équipe, ajouter, modifier ou retirer un membre. Son créateur, et {@code OWNER}. */
+    TEAM_EDIT,
+
+    /**
+     * Écrire les compositions d'une équipe.
+     *
+     * <p>Séparée de {@link #TEAM_EDIT} bien qu'elles aillent aujourd'hui aux mêmes personnes :
+     * préparer une composition et modifier l'effectif ne sont pas le même geste. Le jour où un
+     * membre devra pouvoir proposer une composition sans toucher au roster, la séparation
+     * existe déjà — l'ajouter après coup obligerait à relire chaque appelant.</p>
+     */
+    COMPOSITION_EDIT,
+
     /**
      * L'écran des rôles — la fenêtre réservée.
      *

@@ -17,9 +17,20 @@ import java.util.Set;
  */
 public enum SystemRole {
 
-    VISITEUR(EnumSet.of(Permission.SERVER_VIEW)),
+    /**
+     * {@code TEAM_CREATE} est ici et pas ailleurs (plan §D.2 bis) : un visiteur est n'importe
+     * qui muni d'un compte Discord, et c'est exactement le public de l'outil d'équipe. Le lui
+     * refuser reviendrait à livrer un outil que personne ne peut ouvrir.
+     */
+    VISITEUR(EnumSet.of(Permission.SERVER_VIEW, Permission.TEAM_CREATE)),
 
-    MODERATOR(EnumSet.of(Permission.SERVER_VIEW, Permission.SERVER_START, Permission.SERVER_STOP)),
+    /**
+     * {@code TEAM_CREATE} aussi : sans elle, promouvoir quelqu'un en modérateur lui
+     * <em>retirerait</em> le droit de créer une équipe. Une promotion qui ampute est un bug
+     * qu'on ne découvre qu'à l'usage.
+     */
+    MODERATOR(EnumSet.of(Permission.SERVER_VIEW, Permission.SERVER_START, Permission.SERVER_STOP,
+            Permission.TEAM_CREATE)),
 
     ADMINISTRATOR(EnumSet.complementOf(EnumSet.of(Permission.ROLE_MANAGE))),
 

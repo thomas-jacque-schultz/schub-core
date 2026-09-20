@@ -1,0 +1,35 @@
+package schultz.thomas.schub.core.config;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.client.ClientHttpRequestFactories;
+import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestClient;
+
+/** Client HTTP vers le connecteur Riot, portant le secret interne du maillage. */
+@RequiredArgsConstructor
+@Configuration
+@EnableConfigurationProperties(ConnectorRiotProperties.class)
+public class ConnectorRiotConfiguration {
+
+    private final ConnectorRiotProperties properties;
+
+    @Value("${schub.internal-secret}")
+    private String internalSecret;
+
+    @Bean("connectorRiotRestClient")
+    public RestClient connectorRiotRestClient() {
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+                .withConnectTimeout(properties.getConnectTimeout())
+                .withReadTimeout(properties.getReadTimeout());
+
+        return RestClient.builder()
+                .requestFactory(ClientHttpRequestFactories.get(settings))
+                .baseUrl(properties.getBaseUrl())
+                .defaultHeader("X-Internal-Secret", internalSecret)
+                .build();
+    }
+}

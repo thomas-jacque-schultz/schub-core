@@ -38,6 +38,13 @@ public class UserService {
                 : userRepository.findByDiscordId(discordId);
     }
 
+    /** Le compte qui a revendiqué ce {@code puuid}, s'il y en a un. */
+    public Optional<User> findByRiotPuuid(String riotPuuid) {
+        return riotPuuid == null || riotPuuid.isBlank()
+                ? Optional.empty()
+                : userRepository.findByRiotPuuid(riotPuuid);
+    }
+
     /**
      * L'acteur d'une requête, ou un refus.
      *

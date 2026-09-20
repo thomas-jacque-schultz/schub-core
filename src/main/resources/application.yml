@@ -60,6 +60,13 @@ connector:
     base-url: ${CONNECTOR_DISCORD_URL:http://connector-discord:8080}
     connect-timeout: 3s
     read-timeout: 5s
+  # Le seul usage du connecteur Riot par le cœur au lot D.4 : `Pseudo#TAG` -> puuid, à l'ajout
+  # d'un membre d'équipe. Appel au mieux — s'il échoue, le membre est ajouté sans puuid, donc
+  # une indisponibilité du connecteur n'empêche jamais de constituer une équipe.
+  riot:
+    base-url: ${CONNECTOR_RIOT_URL:http://connector-riot:8080}
+    connect-timeout: 2s
+    read-timeout: 5s
 
 # Politique d'ouverture des ports. Rien ici ne dépend de la marque du routeur.
 port-forwarding:
