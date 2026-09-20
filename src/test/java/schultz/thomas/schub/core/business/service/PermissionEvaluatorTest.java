@@ -47,7 +47,7 @@ class PermissionEvaluatorTest {
         userRepository = mock(UserRepository.class);
         roleRepository = mock(RoleRepository.class);
         gameServerService = mock(GameServerService.class);
-        evaluator = new PermissionEvaluator(userRepository, roleRepository, gameServerService);
+        evaluator = new PermissionEvaluator(userRepository, roleRepository, gameServerService, List.of());
 
         acteur = new User();
         acteur.setId(ACTEUR_ID);

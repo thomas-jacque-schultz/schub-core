@@ -11,5 +11,12 @@ package schultz.thomas.schub.core.business.model;
 public enum ResourceType {
 
     /** L'identifiant porté par la référence est le <strong>slug</strong>, pas l'id Mongo. */
-    GAME_SERVER
+    GAME_SERVER,
+
+    /**
+     * Une équipe. L'identifiant porté par la référence est son <strong>id</strong> : une équipe
+     * n'a pas de slug, elle n'est jamais désignée par son nom — deux équipes peuvent s'appeler
+     * pareil, et un nom se renomme.
+     */
+    TEAM
 }

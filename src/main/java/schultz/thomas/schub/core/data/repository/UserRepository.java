@@ -14,6 +14,14 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     Optional<User> findByDiscordUsername(String discordUsername);
 
+    /**
+     * Le compte qui a revendiqué ce {@code puuid}.
+     *
+     * <p>Le {@code puuid} est la seule clé stable côté Riot ; un Riot ID se change. Chercher par
+     * pseudo donnerait un jour le compte de quelqu'un d'autre.</p>
+     */
+    Optional<User> findByRiotPuuid(String riotPuuid);
+
     List<User> findAllByRoleId(String roleId);
 
     long countByRoleId(String roleId);

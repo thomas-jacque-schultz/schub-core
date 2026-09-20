@@ -14,6 +14,7 @@ import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -48,6 +49,16 @@ public class PermissionEvaluator {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final GameServerService gameServerService;
+
+    /**
+     * Les domaines qui savent ce que <em>leur</em> ressource donne à qui lui appartient.
+     *
+     * <p>Le cas {@code GAME_SERVER} reste écrit en dur juste en dessous : le déplacer serait une
+     * réécriture d'une classe déjà couverte par des tests, sans rien acheter aujourd'hui. Ce qui
+     * comptait était d'ouvrir la porte pour le chantier D sans donner à l'évaluateur la
+     * connaissance d'un dépôt d'équipe (plan §D.2, interdit n°1).</p>
+     */
+    private final List<ScopedAuthorityProvider> scopedAuthorityProviders;
 
     /** La question du plan §A.1, telle quelle. L'acteur est désigné par son <em>id interne</em>. */
     public boolean can(String actorId, Permission permission, ResourceRef resource) {
@@ -100,6 +111,11 @@ public class PermissionEvaluator {
         }
         if (resource.type() == ResourceType.GAME_SERVER && isServerAdmin(actor, resource.id())) {
             effective.addAll(SERVER_ADMIN_SCOPED);
+        }
+        for (ScopedAuthorityProvider provider : scopedAuthorityProviders) {
+            if (provider.resourceType() == resource.type()) {
+                effective.addAll(provider.grantedTo(actor, resource.id()));
+            }
         }
         return effective;
     }
