@@ -137,6 +137,38 @@ class UserServiceAssignRoleTest {
                 .hasMessageContaining("dernier");
     }
 
+    @Test
+    @DisplayName("la règle du sous-ensemble couvre les permissions d'équipe sans avoir été rouverte")
+    void refuseUneElevationParLesPermissionsDEquipe() {
+        // Un compte au rôle VISITEUR : il peut créer une équipe, rien de plus. Qu'il puisse
+        // distribuer TEAM_EDIT — le droit d'écrire dans l'équipe des autres — serait exactement
+        // l'élévation que la règle ferme. Le test est ici parce que la règle est générique : si
+        // quelqu'un la remplace un jour par une liste blanche, c'est ce test qui tombera.
+        when(permissionEvaluator.rolePermissions(acteur))
+                .thenReturn(EnumSet.copyOf(SystemRole.VISITEUR.permissions()));
+        Role capitaine = role("role-capitaine", "CAPITAINE",
+                EnumSet.of(Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_EDIT));
+        when(roleRepository.findById("role-capitaine")).thenReturn(Optional.of(capitaine));
+
+        assertThatThrownBy(() -> userService.assignRole(acteur, "cible", "role-capitaine"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("plus puissant que le sien");
+        verify(userRepository, never()).save(cible);
+    }
+
+    @Test
+    @DisplayName("un rôle limité à TEAM_CREATE reste attribuable par qui la détient")
+    void attribueUnRoleDEquipeQuOnDetientDeja() {
+        when(permissionEvaluator.rolePermissions(acteur))
+                .thenReturn(EnumSet.copyOf(SystemRole.MODERATOR.permissions()));
+        Role joueur = role("role-joueur", "JOUEUR",
+                EnumSet.of(Permission.SERVER_VIEW, Permission.TEAM_CREATE));
+        when(roleRepository.findById("role-joueur")).thenReturn(Optional.of(joueur));
+
+        assertThat(userService.assignRole(acteur, "cible", "role-joueur").getRoleId())
+                .isEqualTo("role-joueur");
+    }
+
     private User utilisateur(String id, String roleId) {
         User user = new User();
         user.setId(id);
