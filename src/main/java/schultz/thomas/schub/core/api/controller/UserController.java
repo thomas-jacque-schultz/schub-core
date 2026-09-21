@@ -1,7 +1,6 @@
 package schultz.thomas.schub.core.api.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -13,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.dto.AssignRoleRequest;
 import schultz.thomas.schub.core.api.dto.RiotAccountDto;
 import schultz.thomas.schub.core.api.dto.RiotAccountRequest;
+import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
 import schultz.thomas.schub.core.api.dto.UserDto;
 import schultz.thomas.schub.core.api.dto.UserIdentityDto;
 import schultz.thomas.schub.core.business.model.Permission;
@@ -85,7 +85,11 @@ public class UserController {
         return permissionEvaluator.effectivePermissions(user, ResourceRef.gameServer(gameServer));
     }
 
-    // --- le lien vers le compte Riot (lot D.3) ---
+    // --- le lien vers le compte Riot ---
+    //
+    // Pas de DELETE : on change de compte, on ne délie pas. Délier laisserait des places
+    // d'effectif rattachées à quelqu'un qui n'a plus de compte de jeu, donc des équipes dans un
+    // état qu'aucun écran ne sait expliquer.
     //
     // Toutes sous `/users/me` : l'acteur de l'en-tête X-Actor-Id est le sujet de la route, et
     // il n'existe aucun chemin vers le lien de quelqu'un d'autre. Ce n'est pas une permission
@@ -95,7 +99,10 @@ public class UserController {
     // Rappel écrit en toutes lettres dans RiotAccountService : la propriété du compte Riot
     // n'est PAS vérifiée. RSO demande une approbation Riot séparée, hors périmètre.
 
-    /** Ce que l'appelant a déclaré comme compte Riot, et où en est la résolution du {@code puuid}. */
+    /**
+     * Ce que l'appelant a déclaré, où en est la résolution du {@code puuid}, et où en est la
+     * collecte de ses parties — {@code ingest} reste nul si le connecteur ne répond pas.
+     */
     @GetMapping("/me/riot-account")
     public RiotAccountDto myRiotAccount(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
@@ -103,36 +110,56 @@ public class UserController {
     }
 
     /**
-     * Déclare le Riot ID de l'appelant, sous la forme {@code Pseudo#TAG}.
+     * Déclare, relance ou remplace le Riot ID de l'appelant, sous la forme {@code Pseudo#TAG}.
      *
      * <p>{@code PUT} et non {@code POST} : c'est le remplacement d'une sous-ressource qui existe
      * en un seul exemplaire, et l'opération est idempotente — rejouer le même Riot ID relance la
      * résolution du {@code puuid}, ce qui est exactement le « réessayer » dont un écran a besoin
      * quand le connecteur Riot était éteint.</p>
      *
-     * <p>409 si ce compte Riot est déjà revendiqué ailleurs, 400 si le Riot ID est malformé.
-     * <strong>Pas d'erreur si le connecteur est injoignable</strong> : la déclaration est
+     * <p>400 si le Riot ID est malformé, 409 si ce compte Riot est déjà revendiqué ailleurs.
+     * <strong>409 également quand il s'agit d'en remplacer un autre sans
+     * {@code confirmChange}</strong> : le corps porte alors un objet {@code change} qui dit ce
+     * que le remplacement emporte — statistiques personnelles remises à zéro, nouvelle collecte,
+     * places d'effectif à revendiquer — et c'est de quoi poser la question à l'écran. Rejouer
+     * avec {@code confirmChange: true} applique le changement, et la réponse reporte le même
+     * objet {@code change}.</p>
+     *
+     * <p><strong>Pas d'erreur si le connecteur est injoignable</strong> : la déclaration est
      * conservée en {@code EN_ATTENTE_DE_RESOLUTION}, et c'est {@code state} qui le dit.</p>
      *
      * <p>Le front enchaîne sur {@code POST /teams/claim} après un succès : c'est lui qui rattache
-     * l'appelant aux places d'effectif qui l'attendaient, et il existe depuis le lot D.4.</p>
+     * l'appelant aux places d'effectif qui l'attendaient, et qui les resynchronise après un
+     * changement de compte.</p>
      */
     @PutMapping("/me/riot-account")
     public RiotAccountDto linkMyRiotAccount(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @RequestBody RiotAccountRequest request) {
-        return riotAccountService.link(userService.requireActor(actorDiscordId), request.riotId());
+        return riotAccountService.link(userService.requireActor(actorDiscordId),
+                request.riotId(), request.confirmChange());
     }
 
     /**
-     * Retire le lien. Rend l'état résultant plutôt qu'un 204 : le front remplace ce qu'il a en
-     * main sans avoir à deviner, exactement comme les routes d'équipe rendent l'équipe modifiée.
+     * Les comptes Riot connus de nos parties qui ressemblent à cette saisie.
+     *
+     * <p>Elle existe parce que l'API Riot <strong>ne sait pas chercher par pseudo partiel</strong> :
+     * {@code account-v1} ne résout qu'un {@code gameName#tagLine} exact. Les propositions viennent
+     * donc des participants de nos propres parties collectées, et chacune porte de quoi
+     * reconnaître son compte — parties vues, postes tenus, dernière partie.</p>
+     *
+     * <p>Liste vide si rien ne ressemble, ou si le connecteur ne répond pas. Ce n'est pas une
+     * erreur : saisir son Riot ID exact reste le chemin toujours disponible, et c'est d'ailleurs
+     * ce que fait un clic sur une proposition.</p>
      */
-    @DeleteMapping("/me/riot-account")
-    public RiotAccountDto unlinkMyRiotAccount(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        return riotAccountService.unlink(userService.requireActor(actorDiscordId));
+    @GetMapping("/me/riot-account/suggestions")
+    public List<RiotAccountSuggestionDto> suggestRiotAccounts(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestParam String q,
+            @RequestParam(defaultValue = "10") int limit) {
+        return riotAccountService.suggestions(userService.requireActor(actorDiscordId), q, limit);
     }
+
 
     /** Attribution d'un rôle. Les règles anti-élévation sont dans le service, pas ici. */
     @PutMapping("/{id}/role")

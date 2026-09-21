@@ -3,17 +3,22 @@ package schultz.thomas.schub.core.business.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import schultz.thomas.schub.core.api.dto.RiotAccountChangeDto;
 import schultz.thomas.schub.core.api.dto.RiotAccountDto;
+import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
+import schultz.thomas.schub.core.api.dto.RiotIngestDto;
 import schultz.thomas.schub.core.business.model.RiotAccountState;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -22,12 +27,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * La liaison de compte Riot, et surtout ses trois façons de mal tourner.
+ * La liaison de compte Riot, son remplacement, et surtout leurs façons de mal tourner.
  *
  * <p>Ce qui est testé ici est ce qui échoue <em>en silence</em> : un {@code puuid} pris par
- * quelqu'un d'autre, un connecteur éteint, une saisie qui n'est pas un Riot ID. Aucun des trois
- * ne lève tout seul, et les trois produisent une donnée fausse ou une fonctionnalité morte si on
- * ne les traite pas.</p>
+ * quelqu'un d'autre, un connecteur éteint, un compte remplacé sans que personne ne le dise,
+ * une saisie qui n'est pas un Riot ID. Aucun ne lève tout seul, et tous produisent une donnée
+ * fausse ou une fonctionnalité morte si on ne les traite pas.</p>
  */
 class RiotAccountServiceTest {
 
@@ -35,6 +40,7 @@ class RiotAccountServiceTest {
 
     private UserRepository userRepository;
     private RiotIdResolver riotIdResolver;
+    private RiotConnectorService riotConnectorService;
     private RiotAccountService service;
 
     private User acteur;
@@ -43,7 +49,8 @@ class RiotAccountServiceTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         riotIdResolver = mock(RiotIdResolver.class);
-        service = new RiotAccountService(userRepository, riotIdResolver);
+        riotConnectorService = mock(RiotConnectorService.class);
+        service = new RiotAccountService(userRepository, riotIdResolver, riotConnectorService);
 
         acteur = compte("user-1", "discord-1");
 
@@ -58,7 +65,7 @@ class RiotAccountServiceTest {
     void lieUnRiotIdResolu() {
         when(riotIdResolver.resolvePuuid("J1HUIV", "000")).thenReturn(Optional.of(PUUID));
 
-        RiotAccountDto dto = service.link(acteur, "J1HUIV#000");
+        RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
         assertThat(dto.state()).isEqualTo(RiotAccountState.RESOLU);
         assertThat(dto.riotId()).isEqualTo("J1HUIV#000");
@@ -73,7 +80,7 @@ class RiotAccountServiceTest {
     void neSertJamaisLePuuid() {
         when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
 
-        RiotAccountDto dto = service.link(acteur, "J1HUIV#000");
+        RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
         assertThat(dto.toString()).doesNotContain(PUUID);
     }
@@ -88,7 +95,7 @@ class RiotAccountServiceTest {
         when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
         when(userRepository.findByRiotPuuid(PUUID)).thenReturn(Optional.of(autre));
 
-        assertThatThrownBy(() -> service.link(acteur, "J1HUIV#000"))
+        assertThatThrownBy(() -> service.link(acteur, "J1HUIV#000", false))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("déjà lié");
 
@@ -106,7 +113,7 @@ class RiotAccountServiceTest {
         when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
         when(userRepository.findByRiotPuuid(PUUID)).thenReturn(Optional.of(acteur));
 
-        RiotAccountDto dto = service.link(acteur, "J1HUIV#000");
+        RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
         assertThat(dto.state()).isEqualTo(RiotAccountState.RESOLU);
         assertThat(dto.linkedAt())
@@ -126,7 +133,7 @@ class RiotAccountServiceTest {
         when(userRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(anyString(), anyString()))
                 .thenReturn(List.of(autre));
 
-        assertThatThrownBy(() -> service.link(acteur, "j1huiv#000"))
+        assertThatThrownBy(() -> service.link(acteur, "j1huiv#000", false))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("déjà déclaré");
     }
@@ -142,7 +149,7 @@ class RiotAccountServiceTest {
         when(userRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(anyString(), anyString()))
                 .thenReturn(List.of(ancienProprietaire));
 
-        RiotAccountDto dto = service.link(acteur, "J1HUIV#000");
+        RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
         assertThat(dto.state())
                 .as("le puuid est la clé stable : un Riot ID recopié ailleurs ne décide de rien")
@@ -156,7 +163,7 @@ class RiotAccountServiceTest {
     void accepteSansPuuidQuandLeConnecteurNeRepondPas() {
         when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
 
-        RiotAccountDto dto = service.link(acteur, "J1HUIV#000");
+        RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
         assertThat(dto.state()).isEqualTo(RiotAccountState.EN_ATTENTE_DE_RESOLUTION);
         assertThat(dto.riotId()).isEqualTo("J1HUIV#000");
@@ -169,12 +176,12 @@ class RiotAccountServiceTest {
     @DisplayName("Rejouer la déclaration relance la résolution — c'est le « réessayer » de l'écran")
     void relanceLaResolutionAuSecondAppel() {
         when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
-        assertThat(service.link(acteur, "J1HUIV#000").state())
+        assertThat(service.link(acteur, "J1HUIV#000", false).state())
                 .isEqualTo(RiotAccountState.EN_ATTENTE_DE_RESOLUTION);
 
         when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
 
-        assertThat(service.link(acteur, "J1HUIV#000").state()).isEqualTo(RiotAccountState.RESOLU);
+        assertThat(service.link(acteur, "J1HUIV#000", false).state()).isEqualTo(RiotAccountState.RESOLU);
         assertThat(acteur.getRiotPuuid()).isEqualTo(PUUID);
     }
 
@@ -186,11 +193,11 @@ class RiotAccountServiceTest {
         List<String> saisies = List.of("J1HUIV", "#000", "J1HUIV#", "   ", "A#B#C", "");
 
         for (String saisie : saisies) {
-            assertThatThrownBy(() -> service.link(acteur, saisie))
+            assertThatThrownBy(() -> service.link(acteur, saisie, false))
                     .as("saisie refusée : « %s »", saisie)
                     .isInstanceOf(IllegalArgumentException.class);
         }
-        assertThatThrownBy(() -> service.link(acteur, null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.link(acteur, null, false)).isInstanceOf(IllegalArgumentException.class);
         verify(riotIdResolver, never()).resolvePuuid(anyString(), anyString());
         verify(userRepository, never()).save(any(User.class));
     }
@@ -200,12 +207,12 @@ class RiotAccountServiceTest {
     void nettoieLaSaisie() {
         when(riotIdResolver.resolvePuuid("Le Joueur", "EUW")).thenReturn(Optional.of(PUUID));
 
-        RiotAccountDto dto = service.link(acteur, "  Le Joueur # EUW  ");
+        RiotAccountDto dto = service.link(acteur, "  Le Joueur # EUW  ", false);
 
         assertThat(dto.riotId()).isEqualTo("Le Joueur#EUW");
     }
 
-    // --- lecture et retrait ---
+    // --- lecture ---
 
     @Test
     @DisplayName("Un compte sans Riot ID est ABSENT, et ne prétend rien d'autre")
@@ -217,28 +224,185 @@ class RiotAccountServiceTest {
         assertThat(dto.linkedAt()).isNull();
     }
 
+    // --- le changement de compte ---
+
     @Test
-    @DisplayName("Délier efface les trois champs ensemble")
-    void delie() {
-        acteur.setRiotPuuid(PUUID);
-        acteur.setRiotGameName("J1HUIV");
-        acteur.setRiotTagLine("000");
-        acteur.setRiotLinkedAt(Instant.now());
+    @DisplayName("Remplacer un compte résolu par un autre est refusé tant que ce n'est pas confirmé")
+    void refuseUnChangementNonConfirme() {
+        acteurDejaLie();
+        when(riotIdResolver.resolvePuuid("Nouveau", "EUW")).thenReturn(Optional.of("puuid-nouveau"));
 
-        RiotAccountDto dto = service.unlink(acteur);
+        assertThatThrownBy(() -> service.link(acteur, "Nouveau#EUW", false))
+                .isInstanceOf(RiotAccountChangeNotConfirmedException.class);
 
-        assertThat(dto.state()).isEqualTo(RiotAccountState.ABSENT);
-        assertThat(acteur.getRiotPuuid()).isNull();
-        assertThat(acteur.getRiotGameName()).isNull();
-        assertThat(acteur.getRiotTagLine()).isNull();
-        assertThat(acteur.getRiotLinkedAt()).isNull();
+        verify(userRepository, never()).save(any(User.class));
+        assertThat(acteur.getRiotPuuid())
+                .as("un refus ne change rien : le compte reste celui d'avant")
+                .isEqualTo(PUUID);
     }
 
     @Test
-    @DisplayName("Délier un compte qui ne l'était pas n'écrit rien")
-    void delierSansLienNEcritRien() {
-        assertThat(service.unlink(acteur).state()).isEqualTo(RiotAccountState.ABSENT);
-        verify(userRepository, never()).save(any(User.class));
+    @DisplayName("Le refus porte les conséquences, sinon l'écran devrait les réécrire en dur")
+    void leRefusPorteLesConsequences() {
+        acteurDejaLie();
+        when(riotIdResolver.resolvePuuid("Nouveau", "EUW")).thenReturn(Optional.of("puuid-nouveau"));
+
+        RiotAccountChangeDto change = catchThrowableOfType(
+                () -> service.link(acteur, "Nouveau#EUW", false),
+                RiotAccountChangeNotConfirmedException.class).getChange();
+
+        assertThat(change.previousRiotId()).isEqualTo("J1HUIV#000");
+        assertThat(change.riotId()).isEqualTo("Nouveau#EUW");
+        assertThat(change.statsReset()).isTrue();
+        assertThat(change.rosterSlotsToClaim()).isTrue();
+        assertThat(change.estimatedMatches()).isEqualTo(1_000);
+        assertThat(change.estimatedDuration()).isEqualTo(Duration.ofMinutes(20));
+    }
+
+    @Test
+    @DisplayName("Confirmé, le changement s'applique et demande la collecte du nouveau compte")
+    void appliqueUnChangementConfirme() {
+        acteurDejaLie();
+        when(riotIdResolver.resolvePuuid("Nouveau", "EUW")).thenReturn(Optional.of("puuid-nouveau"));
+        when(riotConnectorService.requestIngest("puuid-nouveau")).thenReturn(true);
+
+        RiotAccountDto dto = service.link(acteur, "Nouveau#EUW", true);
+
+        assertThat(acteur.getRiotPuuid()).isEqualTo("puuid-nouveau");
+        assertThat(dto.change()).isNotNull();
+        assertThat(dto.change().ingestRestarted()).isTrue();
+        assertThat(dto.linkedAt()).isNotEqualTo(Instant.parse("2026-09-01T10:00:00Z"));
+        verify(riotConnectorService).requestIngest("puuid-nouveau");
+    }
+
+    @Test
+    @DisplayName("Changer de Riot ID sans changer de compte n'est pas un changement : même puuid")
+    void unRenommageChezRiotNEstPasUnChangementDeCompte() {
+        acteurDejaLie();
+        when(riotIdResolver.resolvePuuid("NouveauPseudo", "EUW")).thenReturn(Optional.of(PUUID));
+        when(userRepository.findByRiotPuuid(PUUID)).thenReturn(Optional.of(acteur));
+
+        RiotAccountDto dto = service.link(acteur, "NouveauPseudo#EUW", false);
+
+        assertThat(dto.change())
+                .as("aucun avertissement sur une simple mise à jour de pseudo")
+                .isNull();
+        assertThat(dto.riotId()).isEqualTo("NouveauPseudo#EUW");
+        verify(riotConnectorService, never()).requestIngest(anyString());
+    }
+
+    @Test
+    @DisplayName("Relancer le même Riot ID avec un connecteur muet ne perd pas le puuid connu")
+    void nePerdPasLePuuidQuandLeConnecteurSeTait() {
+        acteurDejaLie();
+        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
+
+        RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
+
+        assertThat(acteur.getRiotPuuid()).isEqualTo(PUUID);
+        assertThat(dto.state()).isEqualTo(RiotAccountState.RESOLU);
+    }
+
+    @Test
+    @DisplayName("Une première liaison demande la collecte : sans elle, aucune partie n'arriverait jamais")
+    void demandeLaCollecteALaPremiereLiaison() {
+        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
+
+        service.link(acteur, "J1HUIV#000", false);
+
+        verify(riotConnectorService).requestIngest(PUUID);
+    }
+
+    // --- le connecteur d'ingestion éteint ---
+
+    @Test
+    @DisplayName("Connecteur muet : l'avancement est nul et le compte se lit quand même")
+    void litLeCompteSansLAvancement() {
+        acteurDejaLie();
+        when(riotConnectorService.ingestOf(PUUID)).thenReturn(Optional.empty());
+
+        RiotAccountDto dto = service.of(acteur);
+
+        assertThat(dto.state()).isEqualTo(RiotAccountState.RESOLU);
+        assertThat(dto.ingest()).isNull();
+    }
+
+    @Test
+    @DisplayName("L'avancement de la collecte est reporté tel quel quand le connecteur répond")
+    void reporteLAvancementDeLaCollecte() {
+        acteurDejaLie();
+        Instant pret = Instant.parse("2026-09-21T12:00:00Z");
+        when(riotConnectorService.ingestOf(PUUID))
+                .thenReturn(Optional.of(new RiotConnectorService.PlayerIngest(980, 1, pret)));
+
+        RiotIngestDto ingest = service.of(acteur).ingest();
+
+        assertThat(ingest.pending()).isEqualTo(980);
+        assertThat(ingest.running()).isEqualTo(1);
+        assertThat(ingest.estimatedReadyAt()).isEqualTo(pret);
+    }
+
+    // --- les suggestions ---
+
+    @Test
+    @DisplayName("Une recherche sans résultat rend une liste vide et n'interroge pas les comptes")
+    void suggereRienQuandRienNeRessemble() {
+        when(riotConnectorService.search("zzz", 10)).thenReturn(List.of());
+
+        assertThat(service.suggestions(acteur, "zzz", 10)).isEmpty();
+        verify(userRepository, never()).findByRiotPuuidIn(any());
+    }
+
+    @Test
+    @DisplayName("Un compte déjà revendiqué ailleurs est marqué, pas retiré de la liste")
+    void marqueLesComptesDejaRevendiques() {
+        User autre = compte("user-2", "discord-2");
+        autre.setRiotPuuid("puuid-pris");
+        when(riotConnectorService.search("thom", 10)).thenReturn(List.of(
+                joueur("puuid-pris", "Thomas", "EUW"),
+                joueur("puuid-libre", "ThomasBis", "EUW")));
+        when(userRepository.findByRiotPuuidIn(any())).thenReturn(List.of(autre));
+
+        List<RiotAccountSuggestionDto> propositions = service.suggestions(acteur, "thom", 10);
+
+        assertThat(propositions).hasSize(2);
+        assertThat(propositions.get(0).alreadyLinked()).isTrue();
+        assertThat(propositions.get(0).riotId()).isEqualTo("Thomas#EUW");
+        assertThat(propositions.get(1).alreadyLinked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Son propre compte est reconnu comme sien, pas comme pris par un autre")
+    void reconnaitSonProprePompte() {
+        acteurDejaLie();
+        when(riotConnectorService.search("j1h", 10)).thenReturn(List.of(joueur(PUUID, "J1HUIV", "000")));
+        when(userRepository.findByRiotPuuidIn(any())).thenReturn(List.of(acteur));
+
+        RiotAccountSuggestionDto proposition = service.suggestions(acteur, "j1h", 10).getFirst();
+
+        assertThat(proposition.mine()).isTrue();
+        assertThat(proposition.alreadyLinked()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Le puuid ne sort pas du cœur, même dans une proposition")
+    void neFuitPasLePuuidDansLesPropositions() {
+        when(riotConnectorService.search("thom", 10)).thenReturn(List.of(joueur("puuid-secret", "Thomas", "EUW")));
+        when(userRepository.findByRiotPuuidIn(any())).thenReturn(List.of());
+
+        assertThat(service.suggestions(acteur, "thom", 10).toString()).doesNotContain("puuid-secret");
+    }
+
+    private void acteurDejaLie() {
+        acteur.setRiotPuuid(PUUID);
+        acteur.setRiotGameName("J1HUIV");
+        acteur.setRiotTagLine("000");
+        acteur.setRiotLinkedAt(Instant.parse("2026-09-01T10:00:00Z"));
+    }
+
+    private static RiotConnectorService.KnownPlayer joueur(String puuid, String gameName, String tagLine) {
+        return new RiotConnectorService.KnownPlayer(puuid, gameName, tagLine, gameName + "#" + tagLine,
+                42, List.of(new RiotConnectorService.PositionPlayed("MIDDLE", 30)), Instant.now());
     }
 
     private static User compte(String id, String discordId) {

@@ -3,20 +3,25 @@ package schultz.thomas.schub.core.business.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.api.dto.RiotAccountChangeDto;
 import schultz.thomas.schub.core.api.dto.RiotAccountDto;
+import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
+import schultz.thomas.schub.core.api.dto.RiotIngestDto;
 import schultz.thomas.schub.core.business.model.RiotAccountState;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
- * Le lien entre un compte Schub et un compte Riot — <strong>le chaînon qui manquait</strong>.
- *
- * <p>{@code User} portait {@code riotPuuid} et {@code riotGameName} depuis le lot A, mais rien ne
- * permettait de les renseigner : aucun membre d'équipe lié ne pouvait donc avoir la moindre
- * statistique. C'est ce lot qui ouvre la porte, et tout le reste du chantier D en dépend.</p>
+ * Le lien entre un compte Schub et un compte Riot.
  *
  * <h2>La propriété du compte n'est pas vérifiée — et c'est assumé</h2>
  *
@@ -26,89 +31,154 @@ import java.util.Optional;
  * second parcours OAuth et une approbation Riot distincte de la clé d'API, donc hors périmètre de
  * cette version (plan §D, « à anticiper »).</p>
  *
- * <p>Dans une équipe de cinq personnes qui se connaissent, usurper le Riot ID d'un coéquipier ne
- * rapporte rien et se voit immédiatement. Ce qui ne serait pas acceptable, c'est de <em>laisser
- * croire</em> à une vérification : d'où ce paragraphe, et le fait que le refus ci-dessous parle
- * de « déjà lié » et jamais de « ce compte ne vous appartient pas ». Le jour où RSO arrive, c'est
- * cette classe qu'il remplace, et le modèle ne bouge pas — le {@code puuid} est déjà la clé.</p>
+ * <h2>On change de compte, on ne délie pas</h2>
+ *
+ * <p>La route de déliaison a été retirée : un compte délié laisse les équipes dans un état
+ * incohérent — des places d'effectif rattachées à quelqu'un qui n'a plus de compte de jeu, des
+ * panneaux qui se vident sans raison lisible. Le geste utile est le <em>remplacement</em>, et il
+ * est explicite : voir {@link #link}.</p>
  *
  * <h2>Ce qu'il ne fait pas : toucher aux équipes</h2>
  *
- * <p>Lier son compte ne rattache personne à une place d'effectif. C'est
- * {@code POST /teams/claim} qui le fait, il existe depuis le lot D.4, et c'est au front de
- * l'appeler juste après une liaison réussie. Écrire dans les équipes depuis ici inverserait la
- * seule dépendance permise entre les deux domaines — {@code team} lit l'identité, jamais
- * l'inverse (plan §D.2) — et dupliquerait une revendication déjà écrite et testée.</p>
+ * <p>Lier ou changer son compte ne rattache personne à une place d'effectif. C'est
+ * {@code POST /teams/claim} qui le fait, et c'est au front de l'appeler juste après. Écrire dans
+ * les équipes depuis ici inverserait la seule dépendance permise entre les deux domaines —
+ * {@code team} lit l'identité, jamais l'inverse (plan §D.2).</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RiotAccountService {
 
+    /** Mesuré : Riot ne garde qu'environ mille parties par joueur. */
+    private static final int PARTIES_ESTIMEES = 1_000;
+
+    /** Un appel par partie, au débit d'une clé aux limites de développement (50/min). */
+    private static final Duration DUREE_ESTIMEE = Duration.ofMinutes(20);
+
     private final UserRepository userRepository;
     private final RiotIdResolver riotIdResolver;
+    private final RiotConnectorService riotConnectorService;
 
-    /** Ce que l'appelant a déclaré, et où en est la résolution. Aucune écriture, aucun appel. */
+    /** Ce que l'appelant a déclaré, où en est la résolution, et où en est la collecte. */
     public RiotAccountDto of(User actor) {
-        return toDto(actor);
+        return toDto(actor).withIngest(ingestOf(actor));
     }
 
     /**
-     * Déclare — ou re-déclare — le Riot ID de l'appelant.
+     * Déclare, relance, ou <strong>remplace</strong> le compte Riot de l'appelant.
      *
-     * <p><strong>Idempotente, et c'est ce qui sert de « réessayer ».</strong> Renvoyer le même
-     * Riot ID relance la résolution du {@code puuid} : c'est exactement ce dont on a besoin quand
-     * le connecteur était éteint à la première tentative, et ça évite une quatrième route dont le
-     * seul objet aurait été de rejouer un appel.</p>
+     * <p>Trois gestes derrière une seule route, parce qu'ils ne se distinguent que par l'état
+     * d'arrivée et qu'une route par geste obligerait le front à savoir lequel il fait :</p>
      *
-     * <p>L'ordre compte : on résout <em>avant</em> de refuser les doublons, parce que le
-     * {@code puuid} est ce sur quoi porte le vrai contrôle. Refuser d'abord sur le pseudo
-     * reviendrait à juger sur la donnée faible alors que la forte est à un appel.</p>
+     * <ul>
+     *   <li><em>déclarer</em> — rien n'était lié. Direct.</li>
+     *   <li><em>relancer</em> — même Riot ID resoumis. C'est le « réessayer » d'un écran dont la
+     *       première tentative est tombée sur un connecteur éteint, et c'est aussi ce qui
+     *       rattrape un {@code puuid} jamais résolu. Direct — et un connecteur muet ne fait rien
+     *       perdre, le {@code puuid} déjà connu est conservé.</li>
+     *   <li><em>remplacer</em> — un autre compte. <strong>Refusé en 409 tant que
+     *       {@code confirmChange} n'est pas posé</strong>, avec les conséquences dans le corps.</li>
+     * </ul>
+     *
+     * <p><strong>Changer de Riot ID n'est pas changer de compte.</strong> Un joueur renomme son
+     * Riot ID quand il veut ; si le {@code puuid} résolu est le même qu'avant, c'est le même
+     * compte et rien n'est perdu — aucune confirmation n'est demandée. Confondre les deux ferait
+     * apparaître un avertissement effrayant sur une simple mise à jour de pseudo.</p>
+     *
+     * <p>La confirmation n'est exigée que si l'ancien lien était <em>résolu</em> : sans
+     * {@code puuid}, rien n'a jamais été collecté et il n'y a rien à perdre — corriger une faute
+     * de frappe avant résolution n'a pas à être confirmé.</p>
      */
-    public RiotAccountDto link(User actor, String riotIdSaisi) {
+    public RiotAccountDto link(User actor, String riotIdSaisi, boolean confirmChange) {
         RiotId riotId = RiotId.parse(riotIdSaisi);
         String puuid = riotIdResolver.resolvePuuid(riotId.gameName(), riotId.tagLine()).orElse(null);
 
         refuseSiRevendiqueAilleurs(actor, riotId, puuid);
 
+        String ancienPuuid = trimOrNull(actor.getRiotPuuid());
+        RiotId ancienRiotId = RiotId.deOuNull(actor.getRiotGameName(), actor.getRiotTagLine());
         boolean memeDeclaration = riotId.equalsIgnoreCase(actor.getRiotGameName(), actor.getRiotTagLine());
+        boolean memeCompte = ancienPuuid != null && ancienPuuid.equals(puuid);
+        boolean remplacement = ancienPuuid != null && !memeDeclaration && !memeCompte;
+
+        if (remplacement && !confirmChange) {
+            throw new RiotAccountChangeNotConfirmedException(
+                    changement(ancienRiotId, riotId, false));
+        }
+
         actor.setRiotGameName(riotId.gameName());
         actor.setRiotTagLine(riotId.tagLine());
-        actor.setRiotPuuid(puuid);
+        actor.setRiotPuuid(puuid != null ? puuid : (memeDeclaration ? ancienPuuid : null));
         if (!memeDeclaration || actor.getRiotLinkedAt() == null) {
             actor.setRiotLinkedAt(Instant.now());
         }
 
         User enregistre = userRepository.save(actor);
+        boolean collecteDemandee = demandeLaCollecte(enregistre, ancienPuuid, puuid);
+
         if (puuid == null) {
             log.warn("Riot ID {} déclaré par {} sans puuid — le connecteur Riot n'a pas répondu, "
                             + "la déclaration est conservée et sera résolue à la prochaine tentative",
                     riotId.riotId(), actor.getDiscordId());
+        } else if (remplacement) {
+            log.info("Compte Riot de {} remplacé : {} devient {}",
+                    actor.getDiscordId(), ancienRiotId == null ? "(inconnu)" : ancienRiotId.riotId(),
+                    riotId.riotId());
         } else {
             log.info("Riot ID {} lié au compte {}", riotId.riotId(), actor.getDiscordId());
         }
-        return toDto(enregistre);
+
+        RiotAccountDto dto = toDto(enregistre).withIngest(ingestOf(enregistre));
+        return remplacement ? dto.withChange(changement(ancienRiotId, riotId, collecteDemandee)) : dto;
     }
 
     /**
-     * Retire le lien. Les trois champs partent ensemble : garder le pseudo sans le {@code puuid}
-     * laisserait un compte à demi lié, dans un état qu'aucune route ne sait plus produire.
+     * Les comptes connus de nos parties qui ressemblent à cette saisie.
      *
-     * <p><strong>Personne n'est retiré d'aucune équipe.</strong> Une place d'effectif revendiquée
-     * l'est par {@code userId}, pas par {@code puuid} : elle survit et c'est voulu — on ne quitte
-     * pas son équipe parce qu'on a délié son compte de jeu, on la quitte quand le capitaine vous
-     * en retire. Écrire dans les équipes depuis ici serait de toute façon interdit.</p>
+     * <h2>Pourquoi la recherche est dans le connecteur et le « pourquoi » ici</h2>
+     *
+     * <p>Le §4 de la migration tranche : <em>un connecteur ne sait pas pourquoi on l'appelle</em>.
+     * Trouver un pseudo dans les participations est une question sur <strong>ses</strong> données
+     * — il détient les parties, leurs index, et il est seul à pouvoir le faire sans les recopier
+     * ailleurs. Savoir qu'un de ces comptes est <em>déjà revendiqué par un autre compte Schub</em>
+     * est une question sur l'identité, qui vit ici et dont le connecteur n'a jamais entendu
+     * parler. Chacun finit son propre travail : il cherche, le cœur qualifie.</p>
+     *
+     * <p>Marquer plutôt qu'écarter les comptes déjà liés : les retirer ferait croire à une faute
+     * de saisie, alors que le vrai message est « ce compte est pris ».</p>
      */
-    public RiotAccountDto unlink(User actor) {
-        if (actor.getRiotPuuid() == null && actor.getRiotGameName() == null) {
-            return toDto(actor);
+    public List<RiotAccountSuggestionDto> suggestions(User actor, String query, int limit) {
+        List<RiotConnectorService.KnownPlayer> trouves = riotConnectorService.search(query, limit);
+        if (trouves.isEmpty()) {
+            return List.of();
         }
-        log.info("Compte Riot délié de {}", actor.getDiscordId());
-        actor.setRiotPuuid(null);
-        actor.setRiotGameName(null);
-        actor.setRiotTagLine(null);
-        actor.setRiotLinkedAt(null);
-        return toDto(userRepository.save(actor));
+
+        Set<String> puuids = trouves.stream()
+                .map(RiotConnectorService.KnownPlayer::puuid)
+                .filter(puuid -> puuid != null && !puuid.isBlank())
+                .collect(Collectors.toSet());
+        Map<String, User> revendiques = puuids.isEmpty() ? Map.of()
+                : userRepository.findByRiotPuuidIn(puuids).stream()
+                        .collect(Collectors.toMap(User::getRiotPuuid, Function.identity(),
+                                (premier, second) -> premier));
+
+        return trouves.stream().map(joueur -> {
+            User proprietaire = revendiques.get(joueur.puuid());
+            boolean mien = proprietaire != null && proprietaire.getId().equals(actor.getId());
+            return new RiotAccountSuggestionDto(
+                    joueur.riotId(),
+                    joueur.gameName(),
+                    joueur.tagLine(),
+                    joueur.matchCount(),
+                    joueur.positions().stream()
+                            .map(poste -> new RiotAccountSuggestionDto.PositionPlayedDto(
+                                    poste.position(), poste.matches()))
+                            .toList(),
+                    joueur.lastPlayedAt(),
+                    proprietaire != null && !mien,
+                    mien);
+        }).toList();
     }
 
     // --- règles ---
@@ -161,16 +231,58 @@ public class RiotAccountService {
                 });
     }
 
+    /**
+     * Demande la collecte au connecteur dès qu'un {@code puuid} nouveau est connu.
+     *
+     * <p>Sans elle, un compte lié resterait sans la moindre partie jusqu'à ce que quelqu'un
+     * déclenche la collecte à la main — et personne ne le ferait, puisque rien ne le dit.</p>
+     */
+    private boolean demandeLaCollecte(User acteur, String ancienPuuid, String puuid) {
+        if (puuid == null || puuid.equals(ancienPuuid)) {
+            return false;
+        }
+        boolean demandee = riotConnectorService.requestIngest(puuid);
+        if (demandee) {
+            log.info("Collecte des parties demandée pour le compte {}", acteur.getDiscordId());
+        }
+        return demandee;
+    }
+
+    private RiotAccountChangeDto changement(RiotId ancien, RiotId nouveau, boolean collecteDemandee) {
+        return new RiotAccountChangeDto(
+                ancien == null ? null : ancien.riotId(),
+                nouveau.riotId(),
+                true,
+                collecteDemandee,
+                PARTIES_ESTIMEES,
+                DUREE_ESTIMEE,
+                true);
+    }
+
+    private RiotIngestDto ingestOf(User user) {
+        String puuid = trimOrNull(user.getRiotPuuid());
+        if (puuid == null) {
+            return null;
+        }
+        return riotConnectorService.ingestOf(puuid)
+                .map(ingest -> new RiotIngestDto(ingest.pending(), ingest.running(), ingest.estimatedReadyAt()))
+                .orElse(null);
+    }
+
     private RiotAccountDto toDto(User user) {
         RiotId riotId = RiotId.deOuNull(user.getRiotGameName(), user.getRiotTagLine());
         if (riotId == null) {
-            return new RiotAccountDto(RiotAccountState.ABSENT, null, null, null, null);
+            return new RiotAccountDto(RiotAccountState.ABSENT, null, null, null, null, null, null);
         }
-        RiotAccountState state = user.getRiotPuuid() == null || user.getRiotPuuid().isBlank()
+        RiotAccountState state = trimOrNull(user.getRiotPuuid()) == null
                 ? RiotAccountState.EN_ATTENTE_DE_RESOLUTION
                 : RiotAccountState.RESOLU;
-        return new RiotAccountDto(
-                state, riotId.riotId(), riotId.gameName(), riotId.tagLine(), user.getRiotLinkedAt());
+        return new RiotAccountDto(state, riotId.riotId(), riotId.gameName(), riotId.tagLine(),
+                user.getRiotLinkedAt(), null, null);
+    }
+
+    private static String trimOrNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     /**

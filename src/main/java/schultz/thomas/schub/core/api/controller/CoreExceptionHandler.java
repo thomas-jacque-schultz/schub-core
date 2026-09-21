@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import schultz.thomas.schub.core.business.service.RiotAccountChangeNotConfirmedException;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -37,6 +38,20 @@ public class CoreExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleInvalid(IllegalArgumentException e) {
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+
+    /**
+     * 409 avec les conséquences dans le corps, et pas seulement un message.
+     *
+     * <p>Un refus qui dit « confirmez » sans dire ce qu'on confirme oblige l'écran à
+     * réécrire les conséquences en dur, donc à diverger du serveur au premier changement de
+     * règle. {@code change} les porte, et l'écran n'a qu'à les afficher.</p>
+     */
+    @ExceptionHandler(RiotAccountChangeNotConfirmedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnconfirmedChange(
+            RiotAccountChangeNotConfirmedException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", e.getMessage(), "change", e.getChange()));
     }
 
     @ExceptionHandler(IllegalStateException.class)
