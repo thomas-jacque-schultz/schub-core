@@ -19,6 +19,7 @@ import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
+import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.util.EnumSet;
@@ -47,6 +48,7 @@ class TeamServiceTest {
     private TeamRepository teamRepository;
     private RoleRepository roleRepository;
     private CompositionRepository compositionRepository;
+    private GameReviewRepository reviewRepository;
     private MemberDirectory memberDirectory;
     private RiotIdResolver riotIdResolver;
     private TeamService teamService;
@@ -59,6 +61,7 @@ class TeamServiceTest {
     void setUp() {
         teamRepository = mock(TeamRepository.class);
         compositionRepository = mock(CompositionRepository.class);
+        reviewRepository = mock(GameReviewRepository.class);
         memberDirectory = mock(MemberDirectory.class);
         riotIdResolver = mock(RiotIdResolver.class);
 
@@ -82,7 +85,7 @@ class TeamServiceTest {
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
                 gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
 
-        teamService = new TeamService(teamRepository, compositionRepository, evaluator,
+        teamService = new TeamService(teamRepository, compositionRepository, reviewRepository, evaluator,
                 memberDirectory, riotIdResolver);
 
         capitaine = compte("capitaine", "role-visiteur");
