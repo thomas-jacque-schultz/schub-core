@@ -63,7 +63,7 @@ class RiotAccountServiceTest {
     @Test
     @DisplayName("Un Riot ID résolu donne un compte lié, et c'est le puuid qui est stocké")
     void lieUnRiotIdResolu() {
-        when(riotIdResolver.resolvePuuid("J1HUIV", "000")).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve("J1HUIV", "000")).thenReturn(RiotIdResolution.resolved(PUUID));
 
         RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
@@ -78,7 +78,7 @@ class RiotAccountServiceTest {
     @Test
     @DisplayName("Le puuid ne figure jamais dans la réponse — aucun écran n'en a l'usage")
     void neSertJamaisLePuuid() {
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));
 
         RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
@@ -92,7 +92,7 @@ class RiotAccountServiceTest {
     void refuseUnPuuidDejaLie() {
         User autre = compte("user-2", "discord-2");
         autre.setRiotPuuid(PUUID);
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));
         when(userRepository.findByRiotPuuid(PUUID)).thenReturn(Optional.of(autre));
 
         assertThatThrownBy(() -> service.link(acteur, "J1HUIV#000", false))
@@ -110,7 +110,7 @@ class RiotAccountServiceTest {
         acteur.setRiotGameName("J1HUIV");
         acteur.setRiotTagLine("000");
         acteur.setRiotLinkedAt(Instant.parse("2026-09-01T10:00:00Z"));
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));
         when(userRepository.findByRiotPuuid(PUUID)).thenReturn(Optional.of(acteur));
 
         RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
@@ -127,7 +127,7 @@ class RiotAccountServiceTest {
         User autre = compte("user-2", "discord-2");
         autre.setRiotGameName("J1HUIV");
         autre.setRiotTagLine("000");
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
         // La casse est celle de la requête Mongo (`IgnoreCase`), pas du service : le bouchon
         // répond donc quelle que soit la casse saisie, comme le dépôt réel le ferait.
         when(userRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(anyString(), anyString()))
@@ -145,7 +145,7 @@ class RiotAccountServiceTest {
         ancienProprietaire.setRiotGameName("J1HUIV");
         ancienProprietaire.setRiotTagLine("000");
         ancienProprietaire.setRiotPuuid("puuid-de-quelqu-un-d-autre");
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));
         when(userRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(anyString(), anyString()))
                 .thenReturn(List.of(ancienProprietaire));
 
@@ -161,7 +161,7 @@ class RiotAccountServiceTest {
     @Test
     @DisplayName("Connecteur injoignable : la déclaration est conservée, en attente de résolution")
     void accepteSansPuuidQuandLeConnecteurNeRepondPas() {
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
 
         RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
@@ -175,11 +175,11 @@ class RiotAccountServiceTest {
     @Test
     @DisplayName("Rejouer la déclaration relance la résolution — c'est le « réessayer » de l'écran")
     void relanceLaResolutionAuSecondAppel() {
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
         assertThat(service.link(acteur, "J1HUIV#000", false).state())
                 .isEqualTo(RiotAccountState.EN_ATTENTE_DE_RESOLUTION);
 
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));
 
         assertThat(service.link(acteur, "J1HUIV#000", false).state()).isEqualTo(RiotAccountState.RESOLU);
         assertThat(acteur.getRiotPuuid()).isEqualTo(PUUID);
@@ -198,14 +198,14 @@ class RiotAccountServiceTest {
                     .isInstanceOf(IllegalArgumentException.class);
         }
         assertThatThrownBy(() -> service.link(acteur, null, false)).isInstanceOf(IllegalArgumentException.class);
-        verify(riotIdResolver, never()).resolvePuuid(anyString(), anyString());
+        verify(riotIdResolver, never()).resolve(anyString(), anyString());
         verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     @DisplayName("Les espaces autour de la saisie sont mangés, ceux du pseudo respectés")
     void nettoieLaSaisie() {
-        when(riotIdResolver.resolvePuuid("Le Joueur", "EUW")).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve("Le Joueur", "EUW")).thenReturn(RiotIdResolution.resolved(PUUID));
 
         RiotAccountDto dto = service.link(acteur, "  Le Joueur # EUW  ", false);
 
@@ -230,7 +230,7 @@ class RiotAccountServiceTest {
     @DisplayName("Remplacer un compte résolu par un autre est refusé tant que ce n'est pas confirmé")
     void refuseUnChangementNonConfirme() {
         acteurDejaLie();
-        when(riotIdResolver.resolvePuuid("Nouveau", "EUW")).thenReturn(Optional.of("puuid-nouveau"));
+        when(riotIdResolver.resolve("Nouveau", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-nouveau"));
 
         assertThatThrownBy(() -> service.link(acteur, "Nouveau#EUW", false))
                 .isInstanceOf(RiotAccountChangeNotConfirmedException.class);
@@ -245,7 +245,7 @@ class RiotAccountServiceTest {
     @DisplayName("Le refus porte les conséquences, sinon l'écran devrait les réécrire en dur")
     void leRefusPorteLesConsequences() {
         acteurDejaLie();
-        when(riotIdResolver.resolvePuuid("Nouveau", "EUW")).thenReturn(Optional.of("puuid-nouveau"));
+        when(riotIdResolver.resolve("Nouveau", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-nouveau"));
 
         RiotAccountChangeDto change = catchThrowableOfType(
                 () -> service.link(acteur, "Nouveau#EUW", false),
@@ -263,7 +263,7 @@ class RiotAccountServiceTest {
     @DisplayName("Confirmé, le changement s'applique et demande la collecte du nouveau compte")
     void appliqueUnChangementConfirme() {
         acteurDejaLie();
-        when(riotIdResolver.resolvePuuid("Nouveau", "EUW")).thenReturn(Optional.of("puuid-nouveau"));
+        when(riotIdResolver.resolve("Nouveau", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-nouveau"));
         when(riotConnectorService.requestIngest("puuid-nouveau")).thenReturn(true);
 
         RiotAccountDto dto = service.link(acteur, "Nouveau#EUW", true);
@@ -279,7 +279,7 @@ class RiotAccountServiceTest {
     @DisplayName("Changer de Riot ID sans changer de compte n'est pas un changement : même puuid")
     void unRenommageChezRiotNEstPasUnChangementDeCompte() {
         acteurDejaLie();
-        when(riotIdResolver.resolvePuuid("NouveauPseudo", "EUW")).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve("NouveauPseudo", "EUW")).thenReturn(RiotIdResolution.resolved(PUUID));
         when(userRepository.findByRiotPuuid(PUUID)).thenReturn(Optional.of(acteur));
 
         RiotAccountDto dto = service.link(acteur, "NouveauPseudo#EUW", false);
@@ -295,7 +295,7 @@ class RiotAccountServiceTest {
     @DisplayName("Relancer le même Riot ID avec un connecteur muet ne perd pas le puuid connu")
     void nePerdPasLePuuidQuandLeConnecteurSeTait() {
         acteurDejaLie();
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
 
         RiotAccountDto dto = service.link(acteur, "J1HUIV#000", false);
 
@@ -306,7 +306,7 @@ class RiotAccountServiceTest {
     @Test
     @DisplayName("Une première liaison demande la collecte : sans elle, aucune partie n'arriverait jamais")
     void demandeLaCollecteALaPremiereLiaison() {
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.of(PUUID));
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));
 
         service.link(acteur, "J1HUIV#000", false);
 
@@ -410,5 +410,43 @@ class RiotAccountServiceTest {
         user.setId(id);
         user.setDiscordId(discordId);
         return user;
+    }
+
+    @Test
+    @DisplayName("un Riot ID inconnu de Riot est refusé, il ne part pas en attente de résolution")
+    void riotIdInconnuRefuse() {
+        when(riotIdResolver.resolve("NexistePas", "ZZZZ")).thenReturn(RiotIdResolution.notFound());
+
+        assertThatThrownBy(() -> service.link(acteur, "NexistePas#ZZZZ", true))
+                .isInstanceOf(UnknownRiotAccountException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("un compte déjà lié survit à une saisie inexistante")
+    void compteExistantPreserveFaceAUnRiotIdInconnu() {
+        acteur.setRiotPuuid(PUUID);
+        acteur.setRiotGameName("J1HUIV");
+        acteur.setRiotTagLine("000");
+        when(riotIdResolver.resolve("NexistePas", "ZZZZ")).thenReturn(RiotIdResolution.notFound());
+
+        assertThatThrownBy(() -> service.link(acteur, "NexistePas#ZZZZ", true))
+                .isInstanceOf(UnknownRiotAccountException.class);
+
+        assertThat(acteur.getRiotPuuid()).isEqualTo(PUUID);
+        assertThat(acteur.getRiotGameName()).isEqualTo("J1HUIV");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("connecteur muet : la saisie est conservée en attente, elle n'est pas refusée")
+    void connecteurMuetNestPasUnRefus() {
+        when(riotIdResolver.resolve(anyString(), anyString()))
+                .thenReturn(RiotIdResolution.unavailable());
+
+        RiotAccountDto dto = service.link(acteur, "Quelquun#EUW", true);
+
+        assertThat(dto.state()).isEqualTo(RiotAccountState.EN_ATTENTE_DE_RESOLUTION);
     }
 }

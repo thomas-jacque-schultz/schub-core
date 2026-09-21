@@ -92,7 +92,11 @@ public class RiotAccountService {
      */
     public RiotAccountDto link(User actor, String riotIdSaisi, boolean confirmChange) {
         RiotId riotId = RiotId.parse(riotIdSaisi);
-        String puuid = riotIdResolver.resolvePuuid(riotId.gameName(), riotId.tagLine()).orElse(null);
+        RiotIdResolution resolution = riotIdResolver.resolve(riotId.gameName(), riotId.tagLine());
+        if (resolution.isNotFound()) {
+            throw new UnknownRiotAccountException(riotId.gameName() + "#" + riotId.tagLine());
+        }
+        String puuid = resolution.puuid();
 
         refuseSiRevendiqueAilleurs(actor, riotId, puuid);
 
