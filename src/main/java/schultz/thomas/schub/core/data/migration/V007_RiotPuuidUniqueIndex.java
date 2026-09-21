@@ -40,8 +40,8 @@ import schultz.thomas.schub.core.data.model.User;
  * prod est vierge au moment où cette migration est écrite, donc le cas est théorique — mais
  * découvrir le doublon au démarrage vaut mieux que le découvrir dans un tableau de statistiques.</p>
  */
-@ChangeUnit(id = "riot-puuid-unique-index", order = "006", author = "schub")
-public class V006_RiotPuuidUniqueIndex {
+@ChangeUnit(id = "riot-puuid-unique-index", order = "007", author = "schub")
+public class V007_RiotPuuidUniqueIndex {
 
     private static final String NOM = "riotPuuid_unique";
 
