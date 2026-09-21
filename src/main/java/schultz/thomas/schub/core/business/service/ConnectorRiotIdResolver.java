@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
 import java.util.Optional;
@@ -40,9 +41,9 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
     }
 
     @Override
-    public Optional<String> resolvePuuid(String gameName, String tagLine) {
+    public RiotIdResolution resolve(String gameName, String tagLine) {
         if (gameName == null || gameName.isBlank() || tagLine == null || tagLine.isBlank()) {
-            return Optional.empty();
+            return RiotIdResolution.unavailable();
         }
         try {
             PlayerIdentityResponse identity = restClient.get()
@@ -52,11 +53,14 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
                             .build())
                     .retrieve()
                     .body(PlayerIdentityResponse.class);
-            return Optional.ofNullable(identity).map(PlayerIdentityResponse::puuid);
+            String puuid = identity == null ? null : identity.puuid();
+            return puuid == null ? RiotIdResolution.notFound() : RiotIdResolution.resolved(puuid);
+        } catch (HttpClientErrorException.NotFound e) {
+            return RiotIdResolution.notFound();
         } catch (RestClientException e) {
-            log.warn("Riot ID {}#{} non résolu ({}) — le membre est ajouté sans puuid",
+            log.warn("Riot ID {}#{} non résolu ({}) — connecteur indisponible",
                     gameName, tagLine, e.getMessage());
-            return Optional.empty();
+            return RiotIdResolution.unavailable();
         }
     }
 

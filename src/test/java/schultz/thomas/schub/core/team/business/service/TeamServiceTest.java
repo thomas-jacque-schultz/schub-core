@@ -8,6 +8,7 @@ import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.SystemRole;
 import schultz.thomas.schub.core.business.service.GameServerService;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.business.service.RiotIdResolution;
 import schultz.thomas.schub.core.business.service.RiotIdResolver;
 import schultz.thomas.schub.core.data.model.Role;
 import schultz.thomas.schub.core.data.model.User;
@@ -95,7 +96,7 @@ class TeamServiceTest {
             }
             return team;
         });
-        when(riotIdResolver.resolvePuuid(anyString(), anyString())).thenReturn(Optional.empty());
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
         when(memberDirectory.byRiotPuuid(anyString())).thenReturn(Optional.empty());
     }
 
@@ -222,7 +223,7 @@ class TeamServiceTest {
     @DisplayName("un Riot ID déjà revendiqué par un compte donne un membre lié d'emblée")
     void ajouteUnMembreDejaInscrit() {
         donneLEquipe();
-        when(riotIdResolver.resolvePuuid("Bibi", "EUW")).thenReturn(Optional.of("puuid-bibi"));
+        when(riotIdResolver.resolve("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
         when(memberDirectory.byRiotPuuid("puuid-bibi")).thenReturn(Optional.of(
                 new MemberDirectory.MemberIdentity("bibi", "Bibi", null, "puuid-bibi", "Bibi", "EUW")));
 
@@ -243,7 +244,7 @@ class TeamServiceTest {
         teamService.addMember(capitaine, "equipe-1",
                 new TeamService.NewMember("Bibi", "EUW", "puuid-bibi", GameRole.ADC, null));
 
-        verify(riotIdResolver, never()).resolvePuuid(anyString(), anyString());
+        verify(riotIdResolver, never()).resolve(anyString(), anyString());
     }
 
     @Test

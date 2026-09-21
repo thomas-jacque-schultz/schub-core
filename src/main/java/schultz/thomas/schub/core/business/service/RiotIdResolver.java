@@ -29,5 +29,9 @@ import java.util.Optional;
  */
 public interface RiotIdResolver {
 
-    Optional<String> resolvePuuid(String gameName, String tagLine);
+    RiotIdResolution resolve(String gameName, String tagLine);
+
+    default Optional<String> resolvePuuid(String gameName, String tagLine) {
+        return Optional.ofNullable(resolve(gameName, tagLine).puuid());
+    }
 }

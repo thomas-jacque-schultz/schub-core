@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import schultz.thomas.schub.core.business.service.RiotAccountChangeNotConfirmedException;
+import schultz.thomas.schub.core.business.service.UnknownRiotAccountException;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -52,6 +53,11 @@ public class CoreExceptionHandler {
             RiotAccountChangeNotConfirmedException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", e.getMessage(), "change", e.getChange()));
+    }
+
+    @ExceptionHandler(UnknownRiotAccountException.class)
+    public ResponseEntity<Map<String, String>> handleUnknownRiotAccount(UnknownRiotAccountException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(IllegalStateException.class)

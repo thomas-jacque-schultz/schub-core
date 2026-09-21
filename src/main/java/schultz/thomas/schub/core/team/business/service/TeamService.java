@@ -148,7 +148,12 @@ public class TeamService {
 
         String puuid = trimOrNull(demande.riotPuuid());
         if (puuid == null) {
-            puuid = riotIdResolver.resolvePuuid(gameName, tagLine).orElse(null);
+            var resolution = riotIdResolver.resolve(gameName, tagLine);
+            if (resolution.isNotFound()) {
+                throw new IllegalArgumentException(
+                        "Aucun compte Riot ne porte « " + gameName + "#" + tagLine + " »");
+            }
+            puuid = resolution.puuid();
         }
 
         refuseLesDoublons(team, gameName, tagLine, puuid);
