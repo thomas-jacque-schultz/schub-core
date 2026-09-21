@@ -14,6 +14,7 @@ import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
+import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Les équipes : leur création, leur effectif, et la revendication d'un membre libre.
@@ -44,6 +46,7 @@ public class TeamService {
 
     private final TeamRepository teamRepository;
     private final CompositionRepository compositionRepository;
+    private final TeamChampionPoolRepository championPoolRepository;
     private final GameReviewRepository reviewRepository;
     private final PermissionEvaluator permissionEvaluator;
     private final MemberDirectory memberDirectory;
@@ -126,6 +129,7 @@ public class TeamService {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
         compositionRepository.deleteByTeamId(teamId);
+        championPoolRepository.deleteById(teamId);
         reviewRepository.deleteByTeamId(teamId);
         teamRepository.delete(team);
         log.info("Équipe « {} » supprimée par {}", team.getName(), actor.getDiscordId());
@@ -166,7 +170,7 @@ public class TeamService {
         member.setRiotGameName(gameName);
         member.setRiotTagLine(tagLine);
         member.setRiotPuuid(puuid);
-        member.setRole(demande.role());
+        member.setRoles(postesValides(demande.roles()));
         member.setStatus(demande.status() == null ? MemberStatus.TITULAIRE : demande.status());
         member.setAddedAt(Instant.now());
 
@@ -187,13 +191,14 @@ public class TeamService {
         return touch(team);
     }
 
-    public Team updateMember(User actor, String teamId, String memberId, GameRole role, MemberStatus status) {
+    public Team updateMember(User actor, String teamId, String memberId, List<GameRole> roles,
+                             MemberStatus status) {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
 
         TeamMember member = team.findMember(memberId)
                 .orElseThrow(() -> new NoSuchElementException("Aucun membre d'identifiant '" + memberId + "'"));
-        member.setRole(role);
+        member.setRoles(postesValides(roles));
         if (status != null) {
             member.setStatus(status);
         }
@@ -340,9 +345,25 @@ public class TeamService {
      * composition qui pourrait le retenir.
      */
     private void refuseCoachAvecPoste(TeamMember member) {
-        if (member.getStatus() == MemberStatus.COACH && member.getRole() != null) {
-            throw new IllegalArgumentException("Un coach ne tient pas de poste : laisser le rôle vide");
+        if (member.getStatus() == MemberStatus.COACH && !member.getRoles().isEmpty()) {
+            throw new IllegalArgumentException("Un coach ne tient pas de poste : laisser la liste vide");
         }
+    }
+
+    /**
+     * Les postes retenus : ceux qui existent, une fois chacun, dans l'ordre déclaré.
+     *
+     * <p>L'ordre est conservé parce qu'il porte une information — le premier est le poste
+     * habituel, et c'est lui qui range l'effectif. Le doublon est écarté en silence : il ne
+     * change rien à ce qu'un membre peut jouer, et le refuser ferait échouer un formulaire pour
+     * une répétition sans conséquence.</p>
+     */
+    private static List<GameRole> postesValides(List<GameRole> roles) {
+        if (roles == null) {
+            return new ArrayList<>();
+        }
+        return roles.stream().filter(Objects::nonNull).distinct()
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private String nomValide(String name) {
@@ -383,7 +404,7 @@ public class TeamService {
             String riotGameName,
             String riotTagLine,
             String riotPuuid,
-            GameRole role,
+            List<GameRole> roles,
             MemberStatus status
     ) {
     }

@@ -96,7 +96,7 @@ public interface RiotStatsGateway {
     ) {
     }
 
-    record Standing(String queue, String tier, String division, int leaguePoints, int wins,
-                    int losses, boolean hotStreak, Instant observedAt) {
+    record Standing(String queue, String riotQueueType, String tier, String division, int leaguePoints,
+                    int wins, int losses, boolean hotStreak, boolean inactive, Instant observedAt) {
     }
 }

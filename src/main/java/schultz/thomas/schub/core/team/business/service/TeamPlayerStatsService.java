@@ -77,7 +77,7 @@ public class TeamPlayerStatsService {
         return team.getMembers().stream()
                 .filter(membre -> membre.getStatus() != MemberStatus.COACH)
                 .sorted(Comparator
-                        .comparingInt((TeamMember membre) -> rang(membre.getRole()))
+                        .comparingInt((TeamMember membre) -> rang(membre.mainRole()))
                         .thenComparing(membre -> membre.getStatus() != MemberStatus.TITULAIRE)
                         .thenComparing(membre -> Optional.ofNullable(membre.riotId()).orElse(""),
                                 String.CASE_INSENSITIVE_ORDER))
@@ -105,7 +105,7 @@ public class TeamPlayerStatsService {
                 membre.getRiotGameName(),
                 membre.getRiotTagLine(),
                 membre.getStatus(),
-                membre.getRole(),
+                membre.getRoles(),
                 membre.isLinked(),
                 state,
                 chiffres == null ? null : chiffres.coverage(),
@@ -158,7 +158,7 @@ public class TeamPlayerStatsService {
                 StatLines.ecart(mien.damagePerMinute(), moyenne(autres, StatLineDto::damagePerMinute)),
                 StatLines.ecart(mien.visionPerMinute(), moyenne(autres, StatLineDto::visionPerMinute)));
         return new PlayerStatsDto(colonne.memberId(), colonne.displayName(), colonne.avatarUrl(),
-                colonne.riotGameName(), colonne.riotTagLine(), colonne.status(), colonne.role(),
+                colonne.riotGameName(), colonne.riotTagLine(), colonne.status(), colonne.roles(),
                 colonne.linked(), colonne.state(), colonne.coverage(), colonne.overall(),
                 colonne.champions(), colonne.positions(), colonne.queues(), colonne.months(),
                 colonne.rankings(), comparaison);

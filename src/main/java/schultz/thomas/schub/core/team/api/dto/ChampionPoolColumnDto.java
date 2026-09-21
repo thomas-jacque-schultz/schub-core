@@ -5,11 +5,16 @@ import schultz.thomas.schub.core.team.business.model.GameRole;
 import java.util.List;
 
 /**
- * Une colonne du panneau : un poste, et ceux qui le tiennent.
+ * Une colonne du panneau : un poste, les champions qu'on s'y autorise, et qui peut les prendre.
  *
- * <p>Une liste et non un membre unique : le plan §D.2 bis a écarté « une équipe = cinq joueurs »
- * (point 3). Un roster réel a des remplaçants, et deux personnes peuvent tenir le même poste —
- * une colonne qui n'en accepterait qu'une en perdrait une sans le dire.</p>
+ * @param unavailableMembers ceux qui tiennent ce poste et dont on ne sait pas les maîtrises —
+ *                           compte Riot non lié, connecteur muet, aucune maîtrise. Ils sont
+ *                           rendus ici, une fois pour la colonne, plutôt que répétés sous chaque
+ *                           champion : ce qui est à dire d'eux ne dépend pas du champion
  */
-public record ChampionPoolColumnDto(GameRole role, List<ChampionPoolMemberDto> members) {
+public record ChampionPoolColumnDto(
+        GameRole role,
+        List<ChampionPoolEntryDto> champions,
+        List<ChampionPoolMemberDto> unavailableMembers
+) {
 }

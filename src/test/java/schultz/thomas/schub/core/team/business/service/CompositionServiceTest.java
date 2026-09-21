@@ -21,6 +21,7 @@ import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
 import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
+import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.util.ArrayList;
@@ -75,6 +76,7 @@ class CompositionServiceTest {
                 List.of(new TeamScopedAuthority(teamRepository)));
 
         TeamService teamService = new TeamService(teamRepository, compositionRepository,
+                mock(TeamChampionPoolRepository.class),
                 mock(GameReviewRepository.class), evaluator, mock(MemberDirectory.class),
                 mock(RiotIdResolver.class));
         compositionService = new CompositionService(compositionRepository, teamService, evaluator);

@@ -3,6 +3,8 @@ package schultz.thomas.schub.core.team.api.dto;
 import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
 
+import java.util.List;
+
 /**
  * Ajouter quelqu'un à l'effectif.
  *
@@ -14,15 +16,15 @@ import schultz.thomas.schub.core.team.business.model.MemberStatus;
  * @param riotPuuid facultatif. Fourni, il évite un appel au connecteur Riot ; absent, il est
  *                  résolu au mieux depuis {@code gameName}/{@code tagLine}, et son absence
  *                  n'empêche pas l'ajout — le membre sera rattrapé à la revendication
- * @param role      le poste, ou {@code null} : un coach n'en a pas, un remplaçant polyvalent non
- *                  plus
+ * @param roles     les postes tenus, éventuellement plusieurs. Vide pour un coach, et pour un
+ *                  membre dont on ne sait pas encore à quel poste il joue
  * @param status    {@code TITULAIRE} par défaut
  */
 public record AddMemberRequest(
         String riotGameName,
         String riotTagLine,
         String riotPuuid,
-        GameRole role,
+        List<GameRole> roles,
         MemberStatus status
 ) {
 }

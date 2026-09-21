@@ -14,7 +14,7 @@ public record PlayerStatsDto(
         String riotGameName,
         String riotTagLine,
         MemberStatus status,
-        GameRole role,
+        List<GameRole> roles,
         boolean linked,
         StatsState state,
         StatsCoverageDto coverage,

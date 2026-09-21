@@ -3,7 +3,10 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.business.model.Permission;
+import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.data.model.User;
+import schultz.thomas.schub.core.team.api.dto.ChampionCatalogEntryDto;
 import schultz.thomas.schub.core.team.api.dto.ChampionPoolColumnDto;
 import schultz.thomas.schub.core.team.api.dto.ChampionPoolDto;
 import schultz.thomas.schub.core.team.api.dto.ChampionPoolEntryDto;
@@ -12,117 +15,277 @@ import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.business.model.PoolState;
 import schultz.thomas.schub.core.team.data.model.Team;
+import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
+import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * <strong>Le panneau 3 — le pool de champions d'une équipe</strong> (plan §D.5).
+ * <strong>Le panneau 3 — ce que l'équipe peut aligner à chaque poste</strong> (plan §D.5).
  *
- * <p>Cinq colonnes, une par poste, croisant les maîtrises de chaque membre avec le catalogue des
- * champions. C'est le premier panneau utile du chantier D : il ne dépend d'aucune ingestion de
- * parties, et le pool vient des maîtrises, jamais de l'historique.</p>
+ * <h2>La question que ce service répond</h2>
  *
- * <h2>Ce que ce service décide, et que le connecteur ne peut pas décider</h2>
+ * <p>Pas « qu'est-ce que chacun maîtrise ? » — ça, c'est la matière première, et le connecteur la
+ * détient. La question est « <em>qu'est-ce qu'on peut poser à ce poste ?</em> », et elle demande
+ * trois choses qu'aucune API ne donne : un <strong>choix</strong> de champions par poste, fait par
+ * l'équipe et gardé ; la liste des membres <strong>qui tiennent ce poste</strong> ; un
+ * <strong>plancher</strong> en dessous duquel on ne compte pas quelqu'un sur un champion.</p>
  *
- * <p>Le connecteur rend des maîtrises ; ranger un joueur sous un poste est un jugement de
- * domaine, et il se fonde sur le rôle porté par {@link TeamMember} — pas sur une déduction à
- * partir des champions. Un joueur qui maîtrise Lux n'est pas pour autant milieu, et deviner le
- * poste à la place du capitaine donnerait un effectif que personne ne reconnaît.</p>
+ * <h2>Le plancher appartient à l'équipe</h2>
  *
- * <h2>Trois refus de faire simple</h2>
+ * <p>Il change la réponse, donc il ne peut pas être un réglage d'affichage : deux membres qui
+ * regardent le même poste avec deux planchers différents liraient deux listes et se croiraient
+ * d'accord. Il est enregistré, et un plancher passé en paramètre de lecture ne sert qu'à voir —
+ * il n'écrit rien, et la réponse dit les deux valeurs.</p>
  *
- * <ol>
- *   <li><strong>Aucun cache ici.</strong> Le connecteur détient déjà les quatre politiques du
- *       plan §D.2 ter. Un second cache dans le cœur, c'est deux vérités et une divergence
- *       garantie.</li>
- *   <li><strong>Aucun membre n'est perdu.</strong> Sans {@code puuid}, sans maîtrises, sans
- *       poste : il est rendu avec l'état qui dit pourquoi. Faire échouer la requête pour un seul
- *       joueur non lié rendrait le panneau inutilisable pour les quatre autres.</li>
- *   <li><strong>Pas de catalogue, pas un seul champion.</strong> Les noms et les icônes n'ont de
- *       sens que rapportés à une version de Data Dragon ; en rendre sans elle produirait une
- *       donnée fausse dans trois mois, invisible aujourd'hui.</li>
- * </ol>
+ * <h2>Personne ne disparaît</h2>
+ *
+ * <p>Un membre sans compte Riot lié, un connecteur muet, un compte neuf sans maîtrise : le membre
+ * est rendu dans sa colonne, avec l'état qui dit pourquoi on ne sait rien de lui. Le taire ferait
+ * chercher pendant dix minutes pourquoi il manque quelqu'un.</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChampionPoolService {
 
-    /**
-     * Combien de champions par membre si l'appelant ne demande rien.
-     *
-     * <p>Une colonne n'affiche pas cent soixante champions, et les maîtrises sont rendues du plus
-     * au moins maîtrisé : au-delà d'une dizaine, on liste des champions joués une fois.</p>
-     */
-    public static final int CHAMPIONS_PAR_MEMBRE_DEFAUT = 10;
-
-    /** Au-delà, ce n'est plus un pool mais un export — et cinq requêtes d'autant plus lourdes. */
-    public static final int CHAMPIONS_PAR_MEMBRE_MAX = 50;
+    /** Au-delà, un poste n'est plus un choix mais le catalogue recopié. */
+    public static final int CHAMPIONS_PAR_POSTE_MAX = 40;
 
     private final TeamService teamService;
     private final MemberDirectory memberDirectory;
     private final RiotChampionGateway championGateway;
+    private final TeamChampionPoolRepository pools;
+    private final PermissionEvaluator permissionEvaluator;
+
+    // --- lecture ---
 
     /**
-     * Le pool d'une équipe, pour un lecteur qui a le droit de la voir.
-     *
-     * <p>L'autorisation n'est pas réécrite ici : {@code requireVisible} pose la question
-     * {@code TEAM_VIEW} <em>sur cette équipe</em> au seul évaluateur du système, qui interroge
-     * {@link TeamScopedAuthority} pour savoir ce que l'appartenance donne. Un non-membre est
-     * refusé par la même chaîne que partout ailleurs (plan §A.1).</p>
+     * @param plancherDemande un plancher à appliquer pour cette lecture seulement, ou {@code null}
+     *                        pour celui de l'équipe
      */
-    public ChampionPoolDto of(User actor, String teamId, Integer championsDemandes) {
+    public ChampionPoolDto of(User actor, String teamId, Integer plancherDemande) {
         Team team = teamService.requireVisible(actor, teamId);
-        int parMembre = borne(championsDemandes);
+        TeamChampionPool pool = poolDe(teamId);
+        int plancher = plancherDemande == null ? pool.getMasteryFloor() : Math.max(0, plancherDemande);
 
+        Optional<RiotChampionGateway.Catalogue> catalogue = championGateway.catalogue();
         List<TeamMember> joueurs = joueursDe(team);
-        Optional<RiotChampionGateway.Catalogue> catalogue =
-                joueurs.isEmpty() ? Optional.empty() : championGateway.catalogue();
-        Map<String, ChampionPoolMemberDto> parMembreId =
-                projette(joueurs, catalogue, parMembre);
+        Map<String, Maitrises> maitrises = maitrisesDe(joueurs, catalogue.isPresent());
+        Map<String, MemberDirectory.MemberIdentity> identites = resoutLesComptes(joueurs);
 
         List<ChampionPoolColumnDto> colonnes = new ArrayList<>();
         for (GameRole role : GameRole.values()) {
-            colonnes.add(new ChampionPoolColumnDto(role, joueurs.stream()
-                    .filter(membre -> membre.getRole() == role)
-                    .map(membre -> parMembreId.get(membre.getMemberId()))
-                    .toList()));
+            colonnes.add(colonne(role, pool, joueurs, maitrises, identites, catalogue, plancher));
         }
-        List<ChampionPoolMemberDto> sansPoste = joueurs.stream()
-                .filter(membre -> membre.getRole() == null)
-                .map(membre -> parMembreId.get(membre.getMemberId()))
-                .toList();
 
         return new ChampionPoolDto(
                 team.getId(),
                 team.getName(),
                 catalogue.map(RiotChampionGateway.Catalogue::version).orElse(null),
-                parMembre,
+                plancher,
+                pool.getMasteryFloor(),
+                catalogue.map(ChampionPoolService::catalogue).orElseGet(List::of),
                 colonnes,
-                sansPoste,
                 placeDuLecteur(team, actor),
+                peutEcrire(actor, teamId),
                 Instant.now());
+    }
+
+    // --- écriture ---
+
+    /**
+     * Remplace les champions retenus à un poste.
+     *
+     * <p>Les clés sont validées contre le catalogue : une clé inventée resterait en base sans
+     * jamais rien afficher, et personne ne saurait d'où elle vient. Sans catalogue, l'écriture est
+     * refusée plutôt que faite à l'aveugle.</p>
+     */
+    public ChampionPoolDto setChampions(User actor, String teamId, GameRole role, List<String> championKeys) {
+        teamService.requireVisible(actor, teamId);
+        permissionEvaluator.require(actor, Permission.COMPOSITION_EDIT, TeamService.ref(teamId));
+
+        RiotChampionGateway.Catalogue catalogue = championGateway.catalogue().orElseThrow(
+                () -> new IllegalStateException(
+                        "Catalogue des champions indisponible : le choix ne peut pas être vérifié"));
+
+        Set<String> connues = new HashSet<>();
+        catalogue.parId().values().forEach(champion -> connues.add(champion.key()));
+
+        Set<String> retenues = new LinkedHashSet<>();
+        for (String key : championKeys == null ? List.<String>of() : championKeys) {
+            String propre = key == null ? null : key.trim();
+            if (propre == null || propre.isEmpty()) {
+                continue;
+            }
+            if (!connues.contains(propre)) {
+                throw new IllegalArgumentException("Aucun champion nommé « " + propre + " » dans ce patch");
+            }
+            retenues.add(propre);
+        }
+        if (retenues.size() > CHAMPIONS_PAR_POSTE_MAX) {
+            throw new IllegalArgumentException("Un poste ne retient pas plus de "
+                    + CHAMPIONS_PAR_POSTE_MAX + " champions");
+        }
+
+        TeamChampionPool pool = poolDe(teamId);
+        pool.setChampionKeys(role, List.copyOf(retenues));
+        pool.setUpdatedAt(Instant.now());
+        pools.save(pool);
+        log.info("Pool du poste {} de l'équipe {} : {} champion(s) retenu(s)", role, teamId, retenues.size());
+        return of(actor, teamId, null);
+    }
+
+    public ChampionPoolDto setMasteryFloor(User actor, String teamId, int masteryFloor) {
+        teamService.requireVisible(actor, teamId);
+        permissionEvaluator.require(actor, Permission.COMPOSITION_EDIT, TeamService.ref(teamId));
+        if (masteryFloor < 0) {
+            throw new IllegalArgumentException("Un plancher de maîtrise ne peut pas être négatif");
+        }
+
+        TeamChampionPool pool = poolDe(teamId);
+        pool.setMasteryFloor(masteryFloor);
+        pool.setUpdatedAt(Instant.now());
+        pools.save(pool);
+        return of(actor, teamId, null);
     }
 
     // --- interne ---
 
+    private TeamChampionPool poolDe(String teamId) {
+        return pools.findById(teamId).orElseGet(() -> {
+            TeamChampionPool neuf = new TeamChampionPool();
+            neuf.setTeamId(teamId);
+            return neuf;
+        });
+    }
+
+    private boolean peutEcrire(User actor, String teamId) {
+        return permissionEvaluator.can(actor, Permission.COMPOSITION_EDIT, TeamService.ref(teamId));
+    }
+
+    private ChampionPoolColumnDto colonne(
+            GameRole role,
+            TeamChampionPool pool,
+            List<TeamMember> joueurs,
+            Map<String, Maitrises> maitrises,
+            Map<String, MemberDirectory.MemberIdentity> identites,
+            Optional<RiotChampionGateway.Catalogue> catalogue,
+            int plancher) {
+
+        List<TeamMember> duPoste = joueurs.stream().filter(membre -> membre.playsRole(role)).toList();
+
+        List<ChampionPoolMemberDto> muets = duPoste.stream()
+                .filter(membre -> etat(membre, maitrises) != PoolState.MAITRISES_CONNUES)
+                .map(membre -> projette(membre, maitrises, identites, null))
+                .toList();
+
+        if (catalogue.isEmpty()) {
+            return new ChampionPoolColumnDto(role, List.of(), muets);
+        }
+
+        Map<String, RiotChampionGateway.Champion> parCle = new HashMap<>();
+        catalogue.get().parId().values().forEach(champion -> parCle.put(champion.key(), champion));
+
+        List<ChampionPoolEntryDto> champions = new ArrayList<>();
+        for (String key : pool.championKeys(role)) {
+            RiotChampionGateway.Champion champion = parCle.get(key);
+            if (champion == null) {
+                // Retenu sous un patch qui le connaissait, absent de celui-ci. Le taire ferait
+                // disparaître un choix que personne n'a défait.
+                champions.add(new ChampionPoolEntryDto(0, key, null, null, List.of(), 0));
+                continue;
+            }
+            champions.add(entree(champion, duPoste, maitrises, identites, plancher));
+        }
+        return new ChampionPoolColumnDto(role, champions, muets);
+    }
+
+    private ChampionPoolEntryDto entree(
+            RiotChampionGateway.Champion champion,
+            List<TeamMember> duPoste,
+            Map<String, Maitrises> maitrises,
+            Map<String, MemberDirectory.MemberIdentity> identites,
+            int plancher) {
+
+        List<ChampionPoolMemberDto> retenus = new ArrayList<>();
+        int ecartes = 0;
+
+        for (TeamMember membre : duPoste) {
+            Maitrises siennes = maitrises.get(membre.getMemberId());
+            if (siennes == null || siennes.state() != PoolState.MAITRISES_CONNUES) {
+                continue;
+            }
+            RiotChampionGateway.Mastery maitrise = siennes.parChampion().get(champion.id());
+            int points = maitrise == null ? 0 : maitrise.points();
+            if (points == 0) {
+                // Jamais touché ce champion : ce n'est pas un candidat que le plancher écarte,
+                // c'est un non-candidat. Le compter comme écarté ferait croire à un réglage trop
+                // haut là où il n'y a rien à régler.
+                continue;
+            }
+            if (points < plancher) {
+                ecartes++;
+                continue;
+            }
+            retenus.add(projette(membre, maitrises, identites, maitrise));
+        }
+
+        retenus.sort(Comparator.comparingInt(
+                (ChampionPoolMemberDto joueur) -> joueur.masteryPoints() == null ? 0 : joueur.masteryPoints())
+                .reversed());
+
+        return new ChampionPoolEntryDto(champion.id(), champion.key(), champion.name(),
+                champion.iconUrl(), retenus, ecartes);
+    }
+
+    private ChampionPoolMemberDto projette(
+            TeamMember membre,
+            Map<String, Maitrises> maitrises,
+            Map<String, MemberDirectory.MemberIdentity> identites,
+            RiotChampionGateway.Mastery maitrise) {
+
+        Maitrises siennes = maitrises.get(membre.getMemberId());
+        MemberDirectory.MemberIdentity identite =
+                membre.getUserId() == null ? null : identites.get(membre.getUserId());
+
+        Integer points = siennes != null && siennes.state() == PoolState.MAITRISES_CONNUES
+                ? (maitrise == null ? 0 : maitrise.points())
+                : null;
+
+        return new ChampionPoolMemberDto(
+                membre.getMemberId(),
+                nomAffiche(membre, identite),
+                identite == null ? null : identite.avatarUrl(),
+                membre.getRiotGameName(),
+                membre.getRiotTagLine(),
+                membre.getStatus(),
+                membre.isLinked(),
+                etat(membre, maitrises),
+                maitrise == null ? null : maitrise.level(),
+                points,
+                maitrise == null ? null : maitrise.lastPlayedAt(),
+                siennes == null ? null : siennes.observedAt());
+    }
+
+    private static PoolState etat(TeamMember membre, Map<String, Maitrises> maitrises) {
+        Maitrises siennes = maitrises.get(membre.getMemberId());
+        return siennes == null ? PoolState.COMPTE_RIOT_ABSENT : siennes.state();
+    }
+
     /**
-     * Qui entre dans le panneau.
-     *
-     * <p><strong>Les coachs en sortent</strong>, et c'est le seul retrait : ils n'ont pas de
-     * poste, ne sont jamais retenus dans une composition, et leur maîtrise de champions ne dit
-     * rien de ce que l'équipe peut aligner. Les remplaçants restent — c'est justement ce qu'on
-     * regarde pour préparer une rotation.</p>
+     * Les coachs sortent du panneau — ils ne tiennent aucun poste et ne sont jamais alignés. Les
+     * remplaçants restent : c'est justement ce qu'on regarde pour préparer une rotation.
      */
     private static List<TeamMember> joueursDe(Team team) {
         if (team.getMembers() == null) {
@@ -138,110 +301,57 @@ public class ChampionPoolService {
     }
 
     /**
-     * Un appel de maîtrises par {@code puuid} distinct, et un seul aller-retour vers l'identité
-     * pour toute l'équipe — jamais un par membre, ce qui est exactement ce que le front ne doit
-     * pas avoir à faire non plus.
+     * Un appel de maîtrises par {@code puuid} distinct, et <strong>toutes</strong> les maîtrises :
+     * un « top 10 » répondrait « aucune maîtrise » sur le onzième champion retenu à un poste.
      */
-    private Map<String, ChampionPoolMemberDto> projette(
-            List<TeamMember> joueurs,
-            Optional<RiotChampionGateway.Catalogue> catalogue, int parMembre) {
+    private Map<String, Maitrises> maitrisesDe(List<TeamMember> joueurs, boolean catalogueLa) {
+        Map<String, Maitrises> parPuuid = new HashMap<>();
+        Map<String, Maitrises> parMembre = new HashMap<>();
 
-        Map<String, MemberDirectory.MemberIdentity> identites = resoutLesComptes(joueurs);
-        Map<String, Optional<List<RiotChampionGateway.Mastery>>> maitrisesParPuuid = new HashMap<>();
-
-        Map<String, ChampionPoolMemberDto> projections = new HashMap<>();
         for (TeamMember membre : joueurs) {
-            projections.put(membre.getMemberId(),
-                    projette(membre, identites, catalogue, maitrisesParPuuid, parMembre));
+            String puuid = membre.getRiotPuuid();
+            if (puuid == null || puuid.isBlank()) {
+                parMembre.put(membre.getMemberId(), Maitrises.sans(PoolState.COMPTE_RIOT_ABSENT));
+                continue;
+            }
+            if (!catalogueLa) {
+                parMembre.put(membre.getMemberId(), Maitrises.sans(PoolState.CATALOGUE_INDISPONIBLE));
+                continue;
+            }
+            parMembre.put(membre.getMemberId(),
+                    parPuuid.computeIfAbsent(puuid, p -> lit(championGateway.masteries(p))));
         }
-        return projections;
+        return parMembre;
     }
 
-    private ChampionPoolMemberDto projette(
-            TeamMember membre,
-            Map<String, MemberDirectory.MemberIdentity> identites,
-            Optional<RiotChampionGateway.Catalogue> catalogue,
-            Map<String, Optional<List<RiotChampionGateway.Mastery>>> maitrisesParPuuid,
-            int parMembre) {
-
-        String puuid = membre.getRiotPuuid();
-        PoolState state;
-        List<ChampionPoolEntryDto> champions = List.of();
+    private static Maitrises lit(Optional<List<RiotChampionGateway.Mastery>> reponse) {
+        if (reponse.isEmpty()) {
+            return Maitrises.sans(PoolState.MAITRISES_INDISPONIBLES);
+        }
+        if (reponse.get().isEmpty()) {
+            return Maitrises.sans(PoolState.AUCUNE_MAITRISE);
+        }
+        Map<Integer, RiotChampionGateway.Mastery> parChampion = new HashMap<>();
         Instant observedAt = null;
-
-        if (puuid == null || puuid.isBlank()) {
-            state = PoolState.COMPTE_RIOT_ABSENT;
-        } else if (catalogue.isEmpty()) {
-            // Sans catalogue, on n'a ni nom, ni icône, ni version : demander les maîtrises
-            // coûterait un appel pour une donnée qu'on ne pourrait pas servir.
-            state = PoolState.CATALOGUE_INDISPONIBLE;
-        } else {
-            Optional<List<RiotChampionGateway.Mastery>> maitrises = maitrisesParPuuid
-                    .computeIfAbsent(puuid, p -> championGateway.masteries(p, parMembre));
-            if (maitrises.isEmpty()) {
-                state = PoolState.MAITRISES_INDISPONIBLES;
-            } else if (maitrises.get().isEmpty()) {
-                state = PoolState.AUCUNE_MAITRISE;
-            } else {
-                state = PoolState.MAITRISES_CONNUES;
-                champions = croise(maitrises.get(), catalogue.get(), parMembre);
-                observedAt = maitrises.get().stream()
-                        .map(RiotChampionGateway.Mastery::observedAt)
-                        .filter(Objects::nonNull)
-                        .findFirst()
-                        .orElse(null);
+        for (RiotChampionGateway.Mastery maitrise : reponse.get()) {
+            parChampion.put(maitrise.championId(), maitrise);
+            if (observedAt == null) {
+                observedAt = maitrise.observedAt();
             }
         }
-
-        MemberDirectory.MemberIdentity identite =
-                membre.getUserId() == null ? null : identites.get(membre.getUserId());
-        return new ChampionPoolMemberDto(
-                membre.getMemberId(),
-                nomAffiche(membre, identite),
-                identite == null ? null : identite.avatarUrl(),
-                membre.getRiotGameName(),
-                membre.getRiotTagLine(),
-                membre.getStatus(),
-                membre.isLinked(),
-                state,
-                champions,
-                observedAt);
+        return new Maitrises(PoolState.MAITRISES_CONNUES, parChampion, observedAt);
     }
 
-    /**
-     * Croise les maîtrises au catalogue, <strong>sans jamais écarter une maîtrise</strong>.
-     *
-     * <p>Un champion absent du catalogue est un champion sorti après la version servie. Le
-     * supprimer ferait disparaître une maîtrise réelle et donnerait une colonne plus courte sans
-     * explication ; il est donc rendu avec son seul identifiant numérique, et c'est l'écran qui
-     * décide comment dessiner une case sans icône.</p>
-     *
-     * <p>L'ordre du connecteur est conservé — du plus maîtrisé au moins maîtrisé. Le
-     * {@code limit} est déjà passé à l'appel ; la borne est réappliquée ici parce qu'un
-     * connecteur qui rendrait plus que demandé ne doit pas faire gonfler la réponse.</p>
-     */
-    private static List<ChampionPoolEntryDto> croise(
-            List<RiotChampionGateway.Mastery> maitrises,
-            RiotChampionGateway.Catalogue catalogue,
-            int parMembre) {
-
-        return maitrises.stream()
-                .limit(parMembre)
-                .map(maitrise -> {
-                    RiotChampionGateway.Champion champion = catalogue.parId().get(maitrise.championId());
-                    return new ChampionPoolEntryDto(
-                            maitrise.championId(),
-                            champion == null ? null : champion.key(),
-                            champion == null ? null : champion.name(),
-                            champion == null ? null : champion.iconUrl(),
-                            maitrise.level(),
-                            maitrise.points(),
-                            maitrise.lastPlayedAt());
-                })
+    private static List<ChampionCatalogEntryDto> catalogue(RiotChampionGateway.Catalogue catalogue) {
+        return catalogue.parId().values().stream()
+                .map(champion -> new ChampionCatalogEntryDto(
+                        champion.id(), champion.key(), champion.name(), champion.iconUrl()))
+                .sorted(Comparator.comparing(
+                        entree -> Optional.ofNullable(entree.name()).orElse(entree.championKey()),
+                        String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 
-    /** Le pseudo du compte quand le membre est lié, son Riot ID sinon — jamais recopié en base. */
     private static String nomAffiche(TeamMember membre, MemberDirectory.MemberIdentity identite) {
         if (identite != null && identite.displayName() != null && !identite.displayName().isBlank()) {
             return identite.displayName();
@@ -269,15 +379,12 @@ public class ChampionPoolService {
                 .orElse(null);
     }
 
-    /**
-     * Borne la demande plutôt que de la refuser : un {@code ?champions=500} est une maladresse
-     * d'appelant, pas une raison de ne rien afficher. La valeur réellement appliquée est rendue
-     * dans la réponse, donc le silence n'en est pas un.
-     */
-    private static int borne(Integer demande) {
-        if (demande == null) {
-            return CHAMPIONS_PAR_MEMBRE_DEFAUT;
+    private record Maitrises(PoolState state,
+                             Map<Integer, RiotChampionGateway.Mastery> parChampion,
+                             Instant observedAt) {
+
+        static Maitrises sans(PoolState state) {
+            return new Maitrises(state, Map.of(), null);
         }
-        return Math.clamp(demande.longValue(), 1, CHAMPIONS_PAR_MEMBRE_MAX);
     }
 }
