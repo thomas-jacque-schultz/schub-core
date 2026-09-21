@@ -1,6 +1,7 @@
 package schultz.thomas.schub.core.business.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.api.dto.RiotAccountChangeDto;
@@ -59,6 +60,7 @@ public class RiotAccountService {
     private final UserRepository userRepository;
     private final RiotIdResolver riotIdResolver;
     private final RiotConnectorService riotConnectorService;
+    private final ApplicationEventPublisher events;
 
     /** Ce que l'appelant a déclaré, où en est la résolution, et où en est la collecte. */
     public RiotAccountDto of(User actor) {
@@ -120,6 +122,10 @@ public class RiotAccountService {
 
         User enregistre = userRepository.save(actor);
         boolean collecteDemandee = demandeLaCollecte(enregistre, ancienPuuid, puuid);
+        if (puuid != null && !puuid.equals(ancienPuuid)) {
+            events.publishEvent(new RiotAccountResolved(enregistre.getId(), enregistre.getDiscordId(),
+                enregistre.getRiotPuuid(), enregistre.getRiotGameName(), enregistre.getRiotTagLine()));
+        }
 
         if (puuid == null) {
             log.warn("Riot ID {} déclaré par {} sans puuid — le connecteur Riot n'a pas répondu, "
@@ -170,6 +176,42 @@ public class RiotAccountService {
      * <p>Marquer plutôt qu'écarter les comptes déjà liés : les retirer ferait croire à une faute
      * de saisie, alors que le vrai message est « ce compte est pris ».</p>
      */
+    /**
+     * Rejoue la résolution d'un lien resté en attente. Appelé à la connexion : sans ça, un compte
+     * déclaré pendant que le connecteur était muet n'a plus aucun chemin vers son puuid, et
+     * personne ne s'en aperçoit — la place d'effectif reste libre indéfiniment.
+     */
+    public boolean resolvePendingLink(User actor) {
+        if (actor == null || trimOrNull(actor.getRiotPuuid()) != null) {
+            return false;
+        }
+        String gameName = trimOrNull(actor.getRiotGameName());
+        String tagLine = trimOrNull(actor.getRiotTagLine());
+        if (gameName == null || tagLine == null) {
+            return false;
+        }
+
+        RiotIdResolution resolution = riotIdResolver.resolve(gameName, tagLine);
+        if (resolution.puuid() == null) {
+            return false;
+        }
+        if (userRepository.findByRiotPuuid(resolution.puuid())
+                .filter(autre -> !autre.getId().equals(actor.getId())).isPresent()) {
+            log.warn("Lien en attente de {} non résolu : le puuid est déjà revendiqué ailleurs",
+                    actor.getDiscordId());
+            return false;
+        }
+
+        actor.setRiotPuuid(resolution.puuid());
+        User enregistre = userRepository.save(actor);
+        demandeLaCollecte(enregistre, null, resolution.puuid());
+        events.publishEvent(new RiotAccountResolved(enregistre.getId(), enregistre.getDiscordId(),
+                enregistre.getRiotPuuid(), enregistre.getRiotGameName(), enregistre.getRiotTagLine()));
+        log.info("Lien en attente de {} résolu à la connexion : {}#{}",
+                actor.getDiscordId(), gameName, tagLine);
+        return true;
+    }
+
     public List<RiotAccountSuggestionDto> suggestions(User actor, String query, int limit) {
         RiotId aVerifier = RiotId.completOuNull(query);
         if (aVerifier != null) {
