@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import schultz.thomas.schub.core.business.service.RiotAccountChangeNotConfirmedException;
+import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 import schultz.thomas.schub.core.business.service.UnknownRiotAccountException;
 
 import java.util.Map;
@@ -58,6 +59,11 @@ public class CoreExceptionHandler {
     @ExceptionHandler(UnknownRiotAccountException.class)
     public ResponseEntity<Map<String, String>> handleUnknownRiotAccount(UnknownRiotAccountException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(RiotConnectorUnavailableException.class)
+    public ResponseEntity<Map<String, String>> handleConnectorDown(RiotConnectorUnavailableException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(IllegalStateException.class)

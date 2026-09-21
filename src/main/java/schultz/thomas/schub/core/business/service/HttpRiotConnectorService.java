@@ -85,12 +85,14 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     record SuggestionResponse(String puuid, String gameName, String tagLine, String riotId,
-                              long matchCount, List<PositionResponse> positions, Instant lastPlayedAt) {
+                              long matchCount, List<PositionResponse> positions, Instant lastPlayedAt,
+                              Instant observedAt, String source) {
 
         KnownPlayer toKnownPlayer() {
             List<PositionPlayed> postes = positions == null ? List.of()
                     : positions.stream().map(PositionResponse::toPositionPlayed).toList();
-            return new KnownPlayer(puuid, gameName, tagLine, riotId, matchCount, postes, lastPlayedAt);
+            return new KnownPlayer(puuid, gameName, tagLine, riotId, matchCount, postes, lastPlayedAt,
+                    observedAt, source);
         }
     }
 

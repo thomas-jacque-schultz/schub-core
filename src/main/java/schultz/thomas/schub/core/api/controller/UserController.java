@@ -141,16 +141,22 @@ public class UserController {
     }
 
     /**
-     * Les comptes Riot connus de nos parties qui ressemblent à cette saisie.
+     * Les comptes connus qui ressemblent à cette saisie — la seule route de l'écran de liaison
+     * avant le clic.
      *
      * <p>Elle existe parce que l'API Riot <strong>ne sait pas chercher par pseudo partiel</strong> :
      * {@code account-v1} ne résout qu'un {@code gameName#tagLine} exact. Les propositions viennent
-     * donc des participants de nos propres parties collectées, et chacune porte de quoi
-     * reconnaître son compte — parties vues, postes tenus, dernière partie.</p>
+     * donc de l'index du connecteur — joueurs croisés dans nos parties, et comptes qu'une
+     * vérification a fait confirmer par Riot.</p>
      *
-     * <p>Liste vide si rien ne ressemble, ou si le connecteur ne répond pas. Ce n'est pas une
-     * erreur : saisir son Riot ID exact reste le chemin toujours disponible, et c'est d'ailleurs
-     * ce que fait un clic sur une proposition.</p>
+     * <p><strong>Une saisie partielle cherche ; un {@code Pseudo#TAG} complet vérifie.</strong>
+     * Dans le second cas, le cœur fait d'abord résoudre ce Riot ID par le connecteur, ce qui
+     * l'inscrit dans l'index : le compte revient ensuite dans la liste comme n'importe quel
+     * autre, et c'est ce qui rend l'écran praticable quand rien n'a encore été collecté. La
+     * vérification <em>ne lie rien</em> — seul {@code PUT /users/me/riot-account} lie.</p>
+     *
+     * <p>Liste vide si rien ne ressemble : ce n'est pas une erreur. 404 si Riot ne connaît pas un
+     * Riot ID complet, 503 si le connecteur ne répond pas — là, le silence serait un mensonge.</p>
      */
     @GetMapping("/me/riot-account/suggestions")
     public List<RiotAccountSuggestionDto> suggestRiotAccounts(
