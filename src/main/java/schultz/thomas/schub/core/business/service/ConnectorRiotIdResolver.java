@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.business.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.HttpClientErrorException;
@@ -21,6 +22,10 @@ import java.util.Optional;
  * bonne réponse est « je ne sais pas », et l'appelant décide quoi en faire. Le seul cas qu'on ne
  * veut pas est qu'une équipe devienne impossible à constituer, ou un Riot ID impossible à
  * déclarer, parce qu'un service tiers est indisponible.</p>
+ *
+ * <p><strong>Ce qu'elle distingue depuis le 21-09 :</strong> un 429 du connecteur — occupé,
+ * quota saturé — d'une panne. Le message « connecteur indisponible » était faux et faisait
+ * renoncer un utilisateur qui reliait son compte pendant une collecte.</p>
  *
  * <p><strong>Ce que cette classe ne distingue pas, et c'est un choix.</strong> Un 404 (« ce Riot
  * ID n'existe pas ») et un 503 (« le connecteur n'a pas de clé ») donnent le même
@@ -57,11 +62,21 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
             return puuid == null ? RiotIdResolution.notFound() : RiotIdResolution.resolved(puuid);
         } catch (HttpClientErrorException.NotFound e) {
             return RiotIdResolution.notFound();
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.info("Riot ID {}#{} non résolu — connecteur occupé, à réessayer{}",
+                    gameName, tagLine, retryAfter(e));
+            return RiotIdResolution.busy();
         } catch (RestClientException e) {
             log.warn("Riot ID {}#{} non résolu ({}) — connecteur indisponible",
                     gameName, tagLine, e.getMessage());
             return RiotIdResolution.unavailable();
         }
+    }
+
+    private String retryAfter(HttpClientErrorException e) {
+        String delai = e.getResponseHeaders() == null ? null
+                : e.getResponseHeaders().getFirst(HttpHeaders.RETRY_AFTER);
+        return delai == null ? "" : " dans " + delai + " s";
     }
 
     /**

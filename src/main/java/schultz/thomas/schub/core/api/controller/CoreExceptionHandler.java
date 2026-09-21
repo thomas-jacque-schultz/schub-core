@@ -7,6 +7,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import schultz.thomas.schub.core.business.service.RiotAccountChangeNotConfirmedException;
+import schultz.thomas.schub.core.business.service.RiotConnectorBusyException;
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 import schultz.thomas.schub.core.business.service.UnknownRiotAccountException;
 
@@ -59,6 +60,12 @@ public class CoreExceptionHandler {
     @ExceptionHandler(UnknownRiotAccountException.class)
     public ResponseEntity<Map<String, String>> handleUnknownRiotAccount(UnknownRiotAccountException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+    }
+
+    /** Occupé, pas en panne : 429 et non 503, parce que réessayer tout de suite a du sens. */
+    @ExceptionHandler(RiotConnectorBusyException.class)
+    public ResponseEntity<Map<String, String>> handleConnectorBusy(RiotConnectorBusyException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of("error", e.getMessage()));
     }
 
     @ExceptionHandler(RiotConnectorUnavailableException.class)
