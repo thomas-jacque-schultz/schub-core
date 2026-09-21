@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -211,6 +212,11 @@ public class TeamService {
      * l'équipe sur son compte. À appeler après la liaison de compte Riot (lot D.3) ; l'appeler
      * deux fois ne fait rien de plus, l'opération est idempotente.</p>
      *
+     * <p><strong>Elle resynchronise aussi les places déjà revendiquées par l'appelant</strong> :
+     * après un changement de compte Riot, une place restée sur l'ancien {@code puuid} afficherait
+     * les parties d'un compte qui n'est plus le sien. C'est pourquoi le front la rappelle après un
+     * changement accepté, et pas seulement après une première liaison.</p>
+     *
      * <p>Deux façons de reconnaître une place : par {@code puuid} quand le membre en a un, sinon
      * par Riot ID écrit à la main. La seconde est nécessaire parce qu'un membre peut avoir été
      * ajouté alors que le connecteur Riot était indisponible ; elle est moins sûre — deux
@@ -242,6 +248,10 @@ public class TeamService {
         for (Team team : teamRepository.findAll()) {
             boolean modifiee = false;
             for (TeamMember member : team.getMembers()) {
+                if (actor.getId().equals(member.getUserId())) {
+                    modifiee |= resynchronise(member, actor, puuid, team.getName());
+                    continue;
+                }
                 if (member.isLinked() || !correspond(member, puuid, riotId)) {
                     continue;
                 }
@@ -259,6 +269,40 @@ public class TeamService {
             }
         }
         return liees;
+    }
+
+
+    /**
+     * La place d'une personne qui vient de changer de compte Riot suit le compte, pas l'inverse.
+     *
+     * <p>Sans ça, une place revendiquée reste collée à l'ancien {@code puuid} : le panneau
+     * d'équipe continuerait d'afficher les parties de l'ancien compte sous le nom de son
+     * titulaire, et personne ne verrait que c'est faux. C'est la seule conséquence d'un
+     * changement de compte que le domaine des équipes ait à traiter, et elle est traitée ici
+     * parce que l'identité n'écrit pas dans les équipes (plan §D.2).</p>
+     *
+     * <p><strong>Un {@code puuid} n'est jamais remplacé par rien.</strong> Si le nouveau Riot ID
+     * n'est pas encore résolu — connecteur éteint —, la place garde celui qu'elle a jusqu'à la
+     * prochaine revendication : perdre une clé stable pour une déclaration en attente serait
+     * échanger du sûr contre de l'incertain.</p>
+     */
+    private boolean resynchronise(TeamMember member, User actor, String puuid, String teamName) {
+        String gameName = trimOrNull(actor.getRiotGameName());
+        String tagLine = trimOrNull(actor.getRiotTagLine());
+        boolean puuidAJour = puuid == null || puuid.equals(member.getRiotPuuid());
+        if (puuidAJour
+                && Objects.equals(gameName, member.getRiotGameName())
+                && Objects.equals(tagLine, member.getRiotTagLine())) {
+            return false;
+        }
+        log.info("Place de {} dans l'équipe « {} » resynchronisée sur son compte Riot courant : {} devient {}",
+                actor.getDiscordId(), teamName, member.riotId(), riotIdDe(gameName, tagLine));
+        if (puuid != null) {
+            member.setRiotPuuid(puuid);
+        }
+        member.setRiotGameName(gameName);
+        member.setRiotTagLine(tagLine);
+        return true;
     }
 
     // --- règles ---
