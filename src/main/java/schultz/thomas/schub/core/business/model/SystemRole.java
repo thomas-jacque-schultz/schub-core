@@ -32,7 +32,33 @@ public enum SystemRole {
     MODERATOR(EnumSet.of(Permission.SERVER_VIEW, Permission.SERVER_START, Permission.SERVER_STOP,
             Permission.TEAM_CREATE)),
 
-    ADMINISTRATOR(EnumSet.complementOf(EnumSet.of(Permission.ROLE_MANAGE))),
+    /**
+     * Administrateur <strong>de l'hébergement</strong> — et de rien d'autre.
+     *
+     * <p>Ce rôle était défini comme « tout sauf {@code ROLE_MANAGE} ». Il héritait donc
+     * mécaniquement de {@code TEAM_VIEW}, {@code TEAM_EDIT} et {@code COMPOSITION_EDIT} dès leur
+     * apparition, et pouvait modifier l'effectif de <em>n'importe quelle</em> équipe. Ce n'était
+     * l'intention de personne : piloter des serveurs de jeu et composer une équipe LoL sont deux
+     * domaines distincts, qui ne partageaient ce rôle que par accident de définition.</p>
+     *
+     * <p><strong>La liste est désormais explicite, et c'est le vrai correctif.</strong> Avec
+     * {@code complementOf}, <em>toute</em> permission ajoutée plus tard atterrissait ici en
+     * silence — y compris celles d'un domaine qui n'existe pas encore. Une permission
+     * s'accorde, elle ne se reçoit pas par défaut : ajouter une entrée à {@link Permission}
+     * n'accorde plus rien à personne tant que quelqu'un ne l'a pas écrit ici.</p>
+     *
+     * <p>{@code TEAM_CREATE} y figure parce qu'un administrateur est aussi une personne, qui a
+     * le droit de monter son équipe. Les trois autres s'obtiennent en étant capitaine ou membre
+     * de l'équipe concernée, comme pour tout le monde — voir {@code TeamScopedAuthority}.</p>
+     */
+    ADMINISTRATOR(EnumSet.of(
+            Permission.SERVER_VIEW, Permission.SERVER_INFRA_VIEW,
+            Permission.SERVER_START, Permission.SERVER_STOP,
+            Permission.SERVER_CREATE, Permission.SERVER_EDIT, Permission.SERVER_DELETE,
+            Permission.PORT_VIEW, Permission.PORT_RULE_EDIT,
+            Permission.DISCORD_CHANNEL_MANAGE,
+            Permission.USER_VIEW, Permission.USER_ROLE_ASSIGN,
+            Permission.TEAM_CREATE)),
 
     OWNER(EnumSet.allOf(Permission.class));
 
