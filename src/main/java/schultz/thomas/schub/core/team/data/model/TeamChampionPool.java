@@ -7,7 +7,7 @@ import schultz.thomas.schub.core.team.business.model.GameRole;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +25,11 @@ import java.util.Map;
  * comme dans une composition. L'identifiant numérique aurait aussi marché ; la clé est ce que le
  * reste du domaine manipule déjà, et mélanger les deux est la façon la plus sûre de ne plus
  * retrouver un champion.</p>
+ *
+ * <p><strong>La clé de la map est une chaîne, et la conversion se fait ici.</strong> Un
+ * {@code Map<GameRole, …>} se serait relu en clés de chaîne si le convertisseur ne les avait pas
+ * converties, et un {@code get(GameRole.TOP)} aurait alors répondu « aucun champion » sans lever
+ * la moindre erreur — une colonne vide, et rien à quoi le rattacher.</p>
  */
 @Data
 @Document(collection = "team_champion_pools")
@@ -33,7 +38,7 @@ public class TeamChampionPool {
     @Id
     private String teamId;
 
-    private Map<GameRole, List<String>> championKeysByRole = new EnumMap<>(GameRole.class);
+    private Map<String, List<String>> championKeysByRole = new LinkedHashMap<>();
 
     /**
      * Le nombre de points de maîtrise en dessous duquel un joueur n'est pas proposé sur un
@@ -52,13 +57,13 @@ public class TeamChampionPool {
         if (championKeysByRole == null || role == null) {
             return List.of();
         }
-        return championKeysByRole.getOrDefault(role, List.of());
+        return championKeysByRole.getOrDefault(role.name(), List.of());
     }
 
     public void setChampionKeys(GameRole role, List<String> keys) {
         if (championKeysByRole == null) {
-            championKeysByRole = new EnumMap<>(GameRole.class);
+            championKeysByRole = new LinkedHashMap<>();
         }
-        championKeysByRole.put(role, new ArrayList<>(keys));
+        championKeysByRole.put(role.name(), new ArrayList<>(keys));
     }
 }
