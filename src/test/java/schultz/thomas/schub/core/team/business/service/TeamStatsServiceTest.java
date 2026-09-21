@@ -25,6 +25,7 @@ import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
 import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
+import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.time.Instant;
@@ -88,6 +89,7 @@ class TeamStatsServiceTest {
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
                 List.of(new TeamScopedAuthority(teamRepository)));
         TeamService teamService = new TeamService(teamRepository, mock(CompositionRepository.class),
+                mock(TeamChampionPoolRepository.class),
                 mock(GameReviewRepository.class), evaluator, memberDirectory,
                 mock(RiotIdResolver.class));
         PlayerStatsService playerStats =
@@ -160,9 +162,9 @@ class TeamStatsServiceTest {
     void ordreDesPostes() {
         TeamPlayersStatsDto panneau = joueurs.of(capitaine, "equipe-1", null, null);
 
-        assertThat(panneau.players()).extracting(PlayerStatsDto::role)
-                .containsExactly(GameRole.TOP, GameRole.JGL, GameRole.MID, GameRole.ADC,
-                        GameRole.SUP);
+        assertThat(panneau.players()).extracting(PlayerStatsDto::roles)
+                .containsExactly(List.of(GameRole.TOP), List.of(GameRole.JGL), List.of(GameRole.MID),
+                        List.of(GameRole.ADC), List.of(GameRole.SUP));
     }
 
     @Test
@@ -322,7 +324,7 @@ class TeamStatsServiceTest {
         membre.setRiotPuuid(puuid);
         membre.setRiotGameName("Joueur" + memberId);
         membre.setRiotTagLine("EUW");
-        membre.setRole(role);
+        membre.setRoles(role == null ? List.of() : List.of(role));
         membre.setStatus(MemberStatus.TITULAIRE);
         return membre;
     }

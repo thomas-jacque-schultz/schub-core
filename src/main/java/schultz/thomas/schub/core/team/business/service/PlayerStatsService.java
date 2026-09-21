@@ -114,9 +114,10 @@ public class PlayerStatsService {
         }
         return statsGateway.rankings(puuid)
                 .orElseGet(List::of).stream()
-                .map(standing -> new RankedStandingDto(standing.queue(), standing.tier(),
-                        standing.division(), standing.leaguePoints(), standing.wins(),
-                        standing.losses(), standing.hotStreak(), standing.observedAt()))
+                .map(standing -> new RankedStandingDto(standing.queue(), standing.riotQueueType(),
+                        standing.tier(), standing.division(), standing.leaguePoints(),
+                        standing.wins(), standing.losses(), standing.hotStreak(),
+                        standing.inactive(), standing.observedAt()))
                 .toList();
     }
 

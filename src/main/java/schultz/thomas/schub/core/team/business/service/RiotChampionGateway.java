@@ -48,6 +48,16 @@ public interface RiotChampionGateway {
     Optional<List<Mastery>> masteries(String puuid, int limit);
 
     /**
+     * Toutes les maîtrises de ce joueur.
+     *
+     * <p>Le pool croise un choix de champions fait par l'équipe : un « top 10 » répondrait
+     * « aucune maîtrise » sur le onzième champion retenu, ce qui est faux et invisible.</p>
+     */
+    default Optional<List<Mastery>> masteries(String puuid) {
+        return masteries(puuid, 0);
+    }
+
+    /**
      * Le catalogue figé à une version.
      *
      * @param parId indexé par l'identifiant numérique, parce que c'est lui que portent les

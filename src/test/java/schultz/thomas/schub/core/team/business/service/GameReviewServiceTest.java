@@ -22,6 +22,7 @@ import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
 import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
+import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.time.Instant;
@@ -87,6 +88,7 @@ class GameReviewServiceTest {
         when(annuaire.byIds(any())).thenReturn(Map.of());
 
         TeamService teamService = new TeamService(teamRepository, mock(CompositionRepository.class),
+                mock(TeamChampionPoolRepository.class),
                 reviewRepository, evaluator, annuaire, mock(RiotIdResolver.class));
         TeamGamesStatsService parties = new TeamGamesStatsService(teamService, annuaire,
                 statsGateway, mock(RiotChampionGateway.class));
@@ -316,7 +318,7 @@ class GameReviewServiceTest {
         member.setRiotPuuid(puuid);
         member.setRiotGameName(memberId);
         member.setRiotTagLine("EUW");
-        member.setRole(role);
+        member.setRoles(role == null ? List.of() : List.of(role));
         member.setStatus(status);
         return member;
     }

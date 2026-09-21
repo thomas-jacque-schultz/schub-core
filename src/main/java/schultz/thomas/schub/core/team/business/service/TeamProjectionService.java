@@ -124,7 +124,7 @@ public class TeamProjectionService {
                 identite == null ? null : identite.avatarUrl(),
                 member.getRiotGameName(),
                 member.getRiotTagLine(),
-                member.getRole(),
+                member.getRoles(),
                 member.getStatus(),
                 member.isLinked(),
                 member.getUserId() != null && member.getUserId().equals(team.getCreatedBy()));

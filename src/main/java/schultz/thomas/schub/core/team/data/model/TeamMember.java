@@ -5,6 +5,8 @@ import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Quelqu'un dans l'effectif d'une équipe — <strong>lié à un compte Schub, ou libre</strong>.
@@ -45,8 +47,14 @@ public class TeamMember {
     private String riotGameName;
     private String riotTagLine;
 
-    /** Le poste. {@code null} est licite : un coach n'en a pas. */
-    private GameRole role;
+    /**
+     * Les postes tenus, du plus habituel au moins habituel. Vide est licite : un coach n'en a pas,
+     * et un membre dont on ignore le poste non plus.
+     *
+     * <p>Une liste et non un poste unique : un joueur en tient plusieurs, donc il apparaît dans
+     * plusieurs colonnes du pool et reste éligible à plusieurs lignes d'une composition.</p>
+     */
+    private List<GameRole> roles = new ArrayList<>();
 
     private MemberStatus status;
 
@@ -58,6 +66,15 @@ public class TeamMember {
     /** Un fait dérivé, jamais persisté : le stocker créerait une seconde vérité. */
     public boolean isLinked() {
         return userId != null && !userId.isBlank();
+    }
+
+    public boolean playsRole(GameRole role) {
+        return role != null && roles != null && roles.contains(role);
+    }
+
+    /** Le premier poste déclaré, ou {@code null}. Il sert à ordonner l'effectif, pas à le filtrer. */
+    public GameRole mainRole() {
+        return roles == null || roles.isEmpty() ? null : roles.getFirst();
     }
 
     /** {@code Pseudo#TAG}, ou {@code null} si ce membre n'a pas de Riot ID connu. */

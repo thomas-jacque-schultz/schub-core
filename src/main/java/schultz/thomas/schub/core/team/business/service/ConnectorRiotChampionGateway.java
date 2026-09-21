@@ -68,7 +68,8 @@ public class ConnectorRiotChampionGateway implements RiotChampionGateway {
         try {
             List<MasteryResponse> reponse = restClient.get()
                     .uri(uri -> uri.path("/players/{puuid}/champion-mastery")
-                            .queryParam("limit", limit)
+                            .queryParamIfPresent("limit",
+                                    limit > 0 ? java.util.Optional.of(limit) : java.util.Optional.empty())
                             .build(puuid))
                     .retrieve()
                     .body(MAITRISES);

@@ -3,6 +3,8 @@ package schultz.thomas.schub.core.team.api.dto;
 import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
 
+import java.util.List;
+
 /**
  * Un membre tel qu'il est servi sur le fil.
  *
@@ -18,6 +20,8 @@ import schultz.thomas.schub.core.team.business.model.MemberStatus;
  * @param linked      a-t-il un compte Schub ? Un membre libre n'a que son Riot ID, et c'est
  *                    exactement ce qui permet de constituer une équipe avant que les cinq se
  *                    soient connectés
+ * @param roles       les postes tenus, du plus habituel au moins habituel. Vide pour un coach,
+ *                    et pour un membre dont personne n'a encore dit à quel poste il joue
  * @param captain     ce membre est-il le créateur de l'équipe ? C'est un fait sur l'équipe, pas
  *                    la liste de ceux qui peuvent l'écrire
  */
@@ -27,7 +31,7 @@ public record TeamMemberDto(
         String avatarUrl,
         String riotGameName,
         String riotTagLine,
-        GameRole role,
+        List<GameRole> roles,
         MemberStatus status,
         boolean linked,
         boolean captain

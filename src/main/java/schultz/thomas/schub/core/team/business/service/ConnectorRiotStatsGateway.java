@@ -110,9 +110,9 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                     .retrieve()
                     .body(CLASSEMENTS);
             return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
-                    .map(row -> new Standing(row.queue(), row.tier(), row.division(),
-                            row.leaguePoints(), row.wins(), row.losses(), row.hotStreak(),
-                            row.observedAt()))
+                    .map(row -> new Standing(row.queue(), row.riotQueueType(), row.tier(),
+                            row.division(), row.leaguePoints(), row.wins(), row.losses(),
+                            row.hotStreak(), row.inactive(), row.observedAt()))
                     .toList());
         } catch (RestClientException e) {
             log.warn("Classement non obtenu pour un joueur ({})", e.getMessage());
