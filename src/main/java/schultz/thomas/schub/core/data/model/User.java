@@ -33,6 +33,21 @@ public class User {
     private String discordUsername;
     private String avatarUrl;
 
+    /**
+     * Le nom affiché sur le site, choisi par la personne.
+     *
+     * <p><strong>{@code null} tant qu'elle n'en a pas choisi un</strong>, et c'est ce qui fait
+     * que le pseudo Discord continue de suivre ses changements. Recopier le pseudo Discord à la
+     * création figerait un nom que plus rien ne rafraîchirait.</p>
+     *
+     * <p>Il n'est <strong>pas unique</strong> : ce n'est pas un identifiant, rien ne s'y connecte
+     * et rien ne s'y retrouve. L'unicité coûterait un refus incompréhensible sur un champ
+     * décoratif, une course à la réservation de pseudo et un index à maintenir ; quand deux
+     * personnes doivent être distinguées, c'est le pseudo Discord et l'avatar qui le font.
+     * {@code discordId} reste la seule clé d'identité.</p>
+     */
+    private String displayName;
+
     /** Référence vers {@link Role}. Un utilisateur a exactement un rôle. */
     private String roleId;
 

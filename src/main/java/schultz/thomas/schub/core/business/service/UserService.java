@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.api.dto.MeDto;
 import schultz.thomas.schub.core.api.dto.UserDto;
 import schultz.thomas.schub.core.api.dto.UserIdentityDto;
 import schultz.thomas.schub.core.business.model.Permission;
@@ -31,6 +32,10 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionEvaluator permissionEvaluator;
+    private final RiotAccountService riotAccountService;
+
+    /** Ce qu'un bandeau peut afficher sans le tronquer. */
+    private static final int DISPLAY_NAME_MAX = 32;
 
     public Optional<User> findByDiscordId(String discordId) {
         return discordId == null || discordId.isBlank()
@@ -92,6 +97,61 @@ public class UserService {
         }
         user.setLastLoginAt(Instant.now());
         return userRepository.save(user);
+    }
+
+
+    /**
+     * Le nom à afficher : celui que la personne a choisi, à défaut son pseudo Discord.
+     *
+     * <p>Le repli est calculé à la lecture et jamais recopié en base : recopier le pseudo Discord
+     * dans {@code displayName} figerait un nom que plus rien ne rafraîchirait.</p>
+     */
+    public String displayNameOf(User user) {
+        String choisi = user.getDisplayName();
+        return choisi == null || choisi.isBlank() ? user.getDiscordUsername() : choisi;
+    }
+
+    /**
+     * Change le nom d'affichage — ou le rend à Discord si la saisie est vide.
+     *
+     * <p><strong>Aucune unicité.</strong> Ce n'est pas un identifiant : rien ne s'y connecte,
+     * rien ne s'y retrouve, et {@code discordId} reste la seule clé. L'imposer coûterait un refus
+     * incompréhensible sur un champ décoratif et une course à la réservation de pseudo, pour une
+     * ambiguïté que l'avatar et le pseudo Discord lèvent déjà partout où deux personnes doivent
+     * être distinguées.</p>
+     *
+     * <p>Ce qui est contrôlé est ce qui casserait un écran : une longueur bornée, et au moins un
+     * caractère affichable — un nom fait d'espaces insécables ne se voit qu'en production.</p>
+     */
+    public User changeDisplayName(User actor, String displayName) {
+        String propre = displayName == null ? null : displayName.trim();
+        if (propre == null || propre.isEmpty()) {
+            actor.setDisplayName(null);
+            log.info("Nom d'affichage de {} rendu au pseudo Discord", actor.getDiscordId());
+            return userRepository.save(actor);
+        }
+        if (propre.length() > DISPLAY_NAME_MAX) {
+            throw new IllegalArgumentException(
+                    "Un nom d'affichage ne dépasse pas " + DISPLAY_NAME_MAX + " caractères");
+        }
+        if (propre.codePoints().noneMatch(Character::isLetterOrDigit)) {
+            throw new IllegalArgumentException(
+                    "Un nom d'affichage doit contenir au moins une lettre ou un chiffre");
+        }
+        actor.setDisplayName(propre);
+        return userRepository.save(actor);
+    }
+
+    /** Le profil complet de l'appelant : identité, rôle, permissions, compte Riot et collecte. */
+    public MeDto toMeDto(User user) {
+        Role role = user.getRoleId() == null ? null : roleRepository.findById(user.getRoleId()).orElse(null);
+        return new MeDto(
+                user.getId(),
+                new MeDto.DiscordIdentityDto(user.getDiscordId(), user.getDiscordUsername(), user.getAvatarUrl()),
+                displayNameOf(user),
+                new MeDto.RoleSummaryDto(role == null ? null : role.getName(),
+                        permissionEvaluator.rolePermissions(user)),
+                riotAccountService.of(user));
     }
 
     public List<User> findAll() {
@@ -180,6 +240,7 @@ public class UserService {
                 user.getId(),
                 user.getDiscordId(),
                 user.getDiscordUsername(),
+                displayNameOf(user),
                 user.getAvatarUrl(),
                 user.getRoleId(),
                 roleName,
