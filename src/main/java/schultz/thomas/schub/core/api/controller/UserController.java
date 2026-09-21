@@ -66,7 +66,9 @@ public class UserController {
     public UserIdentityDto byDiscordId(@PathVariable String discordId,
                                        @RequestParam(required = false) String discordUsername,
                                        @RequestParam(required = false) String avatarUrl) {
-        return userService.toIdentityDto(userService.findOrCreateByDiscordId(discordId, discordUsername, avatarUrl));
+        User user = userService.findOrCreateByDiscordId(discordId, discordUsername, avatarUrl);
+        riotAccountService.resolvePendingLink(user);
+        return userService.toIdentityDto(user);
     }
 
     /**

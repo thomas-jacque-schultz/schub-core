@@ -51,7 +51,8 @@ class RiotAccountServiceTest {
         userRepository = mock(UserRepository.class);
         riotIdResolver = mock(RiotIdResolver.class);
         riotConnectorService = mock(RiotConnectorService.class);
-        service = new RiotAccountService(userRepository, riotIdResolver, riotConnectorService);
+        service = new RiotAccountService(userRepository, riotIdResolver, riotConnectorService,
+                mock(org.springframework.context.ApplicationEventPublisher.class));
 
         acteur = compte("user-1", "discord-1");
 
@@ -526,5 +527,61 @@ class RiotAccountServiceTest {
         assertThat(proposition.source()).isEqualTo("RESOLUTION");
         assertThat(proposition.matchCount()).isZero();
         assertThat(proposition.lastPlayedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("un lien resté en attente se résout à la connexion, et lance la collecte")
+    void lienEnAttenteResoluALaConnexion() {
+        acteur.setRiotGameName("LaFolleDuBus");
+        acteur.setRiotTagLine("214");
+        acteur.setRiotPuuid(null);
+        when(riotIdResolver.resolve("LaFolleDuBus", "214")).thenReturn(RiotIdResolution.resolved(PUUID));
+
+        assertThat(service.resolvePendingLink(acteur)).isTrue();
+
+        assertThat(acteur.getRiotPuuid()).isEqualTo(PUUID);
+        verify(riotConnectorService).requestIngest(PUUID);
+    }
+
+    @Test
+    @DisplayName("un lien déjà résolu n'interroge pas le connecteur à chaque connexion")
+    void lienDejaResoluNeRelancePas() {
+        acteur.setRiotGameName("J1HUIV");
+        acteur.setRiotTagLine("000");
+        acteur.setRiotPuuid(PUUID);
+
+        assertThat(service.resolvePendingLink(acteur)).isFalse();
+
+        verify(riotIdResolver, never()).resolve(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("connecteur toujours muet : on reste en attente, sans rien écrire")
+    void connecteurToujoursMuetNecritRien() {
+        acteur.setRiotGameName("LaFolleDuBus");
+        acteur.setRiotTagLine("214");
+        acteur.setRiotPuuid(null);
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
+
+        assertThat(service.resolvePendingLink(acteur)).isFalse();
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("un puuid déjà revendiqué ailleurs ne se vole pas à la connexion")
+    void puuidDejaRevendiqueNeSeVolePas() {
+        acteur.setRiotGameName("LaFolleDuBus");
+        acteur.setRiotTagLine("214");
+        acteur.setRiotPuuid(null);
+        User autre = new User();
+        autre.setId("un-autre");
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));
+        when(userRepository.findByRiotPuuid(PUUID)).thenReturn(Optional.of(autre));
+
+        assertThat(service.resolvePendingLink(acteur)).isFalse();
+
+        assertThat(acteur.getRiotPuuid()).isNull();
+        verify(userRepository, never()).save(any());
     }
 }
