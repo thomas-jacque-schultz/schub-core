@@ -7,6 +7,7 @@ import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.ResourceRef;
 import schultz.thomas.schub.core.business.model.ResourceType;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.business.service.RiotIdResolver;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
