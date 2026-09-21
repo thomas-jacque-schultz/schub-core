@@ -36,6 +36,9 @@ public interface UserRepository extends MongoRepository<User, String> {
      */
     List<User> findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(String riotGameName, String riotTagLine);
 
+    /** Les comptes qui ont revendiqué l'un de ces {@code puuid} — une requête pour toute une liste de propositions. */
+    List<User> findByRiotPuuidIn(java.util.Collection<String> riotPuuids);
+
     List<User> findAllByRoleId(String roleId);
 
     long countByRoleId(String roleId);

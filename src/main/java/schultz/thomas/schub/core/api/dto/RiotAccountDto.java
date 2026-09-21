@@ -27,12 +27,27 @@ import java.time.Instant;
  * @param linkedAt depuis quand ce Riot ID est déclaré. Il ne bouge pas quand la résolution est
  *                 relancée sur le même Riot ID : c'est la date de la déclaration, pas celle du
  *                 dernier appel au connecteur
+ * @param ingest   où en est la collecte des parties, ou {@code null} si le connecteur n'a pas
+ *                 répondu — jamais une erreur, le reste du profil vaut sans lui
+ * @param change   non nul <strong>uniquement sur la réponse d'un changement effectué</strong> :
+ *                 ce que ce changement vient d'emporter, pour que l'écran l'annonce au lieu de
+ *                 le laisser découvrir
  */
 public record RiotAccountDto(
         RiotAccountState state,
         String riotId,
         String gameName,
         String tagLine,
-        Instant linkedAt
+        Instant linkedAt,
+        RiotIngestDto ingest,
+        RiotAccountChangeDto change
 ) {
+
+    public RiotAccountDto withIngest(RiotIngestDto ingest) {
+        return new RiotAccountDto(state, riotId, gameName, tagLine, linkedAt, ingest, change);
+    }
+
+    public RiotAccountDto withChange(RiotAccountChangeDto change) {
+        return new RiotAccountDto(state, riotId, gameName, tagLine, linkedAt, ingest, change);
+    }
 }
