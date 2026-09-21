@@ -46,6 +46,15 @@ public class User {
     private String riotGameName;
     private String riotTagLine;
 
+    /**
+     * Depuis quand ce Riot ID est déclaré — {@code null} tant qu'il ne l'est pas.
+     *
+     * <p>C'est la date de la <em>déclaration</em>, pas celle de la dernière résolution : relancer
+     * la résolution du même Riot ID ne la bouge pas. Sans elle, un compte resté en attente de
+     * résolution ne se distingue pas d'un compte lié hier, et on ne sait pas lequel relancer.</p>
+     */
+    private Instant riotLinkedAt;
+
     private Instant createdAt;
     private Instant lastLoginAt;
 }
