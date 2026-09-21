@@ -1,0 +1,102 @@
+package schultz.thomas.schub.core.team.business.service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Ce que le connecteur sait compter. Un {@code Optional} vide est « on ne sait pas », jamais
+ * « il n'y en a pas » : les deux se lisent pareil à l'écran et n'appellent pas la même phrase.
+ */
+public interface RiotStatsGateway {
+
+    enum Grouping {
+        OVERALL,
+        CHAMPION,
+        POSITION,
+        QUEUE,
+        PATCH,
+        MONTH,
+        SIDE
+    }
+
+    Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Instant since);
+
+    Optional<List<Coverage>> coverage(List<String> puuids);
+
+    Optional<SharedMatches> sharedMatches(List<String> puuids, int minimumPlayers, Instant since,
+                                          Integer limit);
+
+    Optional<List<Standing>> rankings(String puuid);
+
+    record Bucket(
+            String puuid,
+            String key,
+            String championName,
+            long games,
+            long wins,
+            long kills,
+            long deaths,
+            long assists,
+            long minionsKilled,
+            long goldEarned,
+            long damageToChampions,
+            long visionScore,
+            long afkGames,
+            long secondsPlayed,
+            Instant firstPlayedAt,
+            Instant lastPlayedAt
+    ) {
+    }
+
+    record Coverage(
+            String puuid,
+            boolean tracked,
+            long knownMatches,
+            long analysedMatches,
+            Instant firstPlayedAt,
+            Instant lastPlayedAt,
+            Instant lastSyncAt
+    ) {
+    }
+
+    record SharedMatches(int minimumPlayers, long totalMatches, boolean truncated,
+                         List<SharedMatch> matches) {
+    }
+
+    record SharedMatch(
+            String matchId,
+            Instant startedAt,
+            long durationSeconds,
+            int queueId,
+            String queue,
+            String patch,
+            int presentPlayers,
+            boolean splitSides,
+            Boolean win,
+            List<SharedMatchPlayer> players
+    ) {
+    }
+
+    record SharedMatchPlayer(
+            String puuid,
+            int championId,
+            String championName,
+            String position,
+            boolean win,
+            int side,
+            int kills,
+            int deaths,
+            int assists,
+            int minionsKilled,
+            int goldEarned,
+            int damageToChampions,
+            int visionScore,
+            boolean afk
+    ) {
+    }
+
+    record Standing(String queue, String tier, String division, int leaguePoints, int wins,
+                    int losses, boolean hotStreak, Instant observedAt) {
+    }
+}
