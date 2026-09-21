@@ -261,6 +261,9 @@ public class RiotAccountService {
         if (resolution.isNotFound()) {
             throw new UnknownRiotAccountException(riotId.riotId());
         }
+        if (resolution.isBusy()) {
+            throw new RiotConnectorBusyException();
+        }
         if (resolution.puuid() == null) {
             throw new RiotConnectorUnavailableException();
         }

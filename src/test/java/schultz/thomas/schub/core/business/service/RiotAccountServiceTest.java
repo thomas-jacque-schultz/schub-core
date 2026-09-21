@@ -514,6 +514,16 @@ class RiotAccountServiceTest {
     }
 
     @Test
+    @DisplayName("Connecteur occupé : on le distingue d'une panne, parce que réessayer aboutira")
+    void distingueLOccupationDeLIndisponibilite() {
+        when(riotIdResolver.resolve("Thomas", "EUW")).thenReturn(RiotIdResolution.busy());
+
+        assertThatThrownBy(() -> service.suggestions(acteur, "Thomas#EUW", 10))
+                .isInstanceOf(RiotConnectorBusyException.class);
+        verify(riotConnectorService, never()).search(anyString(), anyInt());
+    }
+
+    @Test
     @DisplayName("La fraîcheur de l'observation est servie, c'est elle qui date le Riot ID affiché")
     void sertLaFraicheurDeLObservation() {
         when(riotConnectorService.search("thom", 10)).thenReturn(List.of(
