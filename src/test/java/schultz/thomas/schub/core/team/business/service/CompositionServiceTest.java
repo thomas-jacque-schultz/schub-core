@@ -72,7 +72,7 @@ class CompositionServiceTest {
         when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(visiteur));
 
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
-                gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
+                List.of(new TeamScopedAuthority(teamRepository)));
 
         TeamService teamService = new TeamService(teamRepository, compositionRepository,
                 mock(GameReviewRepository.class), evaluator, mock(MemberDirectory.class),

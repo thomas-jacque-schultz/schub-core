@@ -129,5 +129,27 @@ class UserServiceDisplayNameTest {
         assertThat(me.role().name()).isEqualTo(SystemRole.VISITEUR.roleName());
         assertThat(me.role().permissions()).containsExactly(Permission.SERVER_VIEW);
         assertThat(me.riot().state()).isEqualTo(RiotAccountState.ABSENT);
+        assertThat(me.displayNameChosen()).isFalse();
+    }
+
+    /**
+     * L'accueil déduit ses actions de cette réponse. Sans ce booléen, il devrait comparer le nom
+     * affiché au pseudo Discord — ce qui proposerait « choisis ton nom » à qui a choisi le sien.
+     */
+    @Test
+    @DisplayName("GET /me distingue le nom choisi du repli sur le pseudo Discord")
+    void ditSiLeNomAEteChoisi() {
+        Role role = new Role();
+        role.setId("role-visiteur");
+        role.setName(SystemRole.VISITEUR.roleName());
+        when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(role));
+        when(riotAccountService.of(acteur)).thenReturn(
+                new RiotAccountDto(RiotAccountState.ABSENT, null, null, null, null, null, null));
+        acteur.setDisplayName("Le Thomas");
+
+        assertThat(userService.toMeDto(acteur).displayNameChosen()).isTrue();
+
+        acteur.setDisplayName("   ");
+        assertThat(userService.toMeDto(acteur).displayNameChosen()).isFalse();
     }
 }

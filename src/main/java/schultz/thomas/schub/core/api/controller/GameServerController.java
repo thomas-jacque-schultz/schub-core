@@ -4,7 +4,6 @@ import schultz.thomas.schub.core.api.dto.GameServerDto;
 import schultz.thomas.schub.core.api.dto.PublicServerStatusDto;
 import schultz.thomas.schub.core.business.mapper.GameServerMapper;
 import schultz.thomas.schub.core.business.model.Permission;
-import schultz.thomas.schub.core.business.model.ResourceRef;
 import schultz.thomas.schub.core.business.service.DeploymentService;
 import schultz.thomas.schub.core.business.service.GameServerProjectionService;
 import schultz.thomas.schub.core.business.service.GameServerService;
@@ -32,10 +31,8 @@ import java.util.Optional;
  * L'API du domaine. Tout ce qui concerne un serveur passe par ici — le BFF, le connecteur
  * Discord qui tire périodiquement, et rien d'autre.
  *
- * <p>Depuis le 18-09, chaque route interroge le {@link PermissionEvaluator} au point d'action.
- * C'est le cœur, et lui seul, qui sait qu'un compte figure dans les {@code admins} d'un serveur
- * et gagne donc {@code SERVER_START} sur celui-là ; le contrôle grossier du BFF ne peut pas
- * répondre à cette question (plan §A.2).</p>
+ * <p>Chaque route interroge le {@link PermissionEvaluator} au point d'action : le contrôle du BFF
+ * est grossier et ne vaut que pour le jeton, celui d'ici est la règle (plan §A.2).</p>
  */
 @RestController
 @RequestMapping("/game-servers")
@@ -85,7 +82,7 @@ public class GameServerController {
         User actor = userService.requireActor(actorDiscordId);
         permissionEvaluator.require(actor, Permission.SERVER_CREATE, null);
         GameServer created = gameServerService.create(mapper.toEntity(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created, actor));
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created));
     }
 
     @PutMapping("/{id}")
@@ -96,7 +93,7 @@ public class GameServerController {
         User actor = userService.requireActor(actorDiscordId);
         permissionEvaluator.require(actor, Permission.SERVER_EDIT, null);
         GameServer updated = gameServerService.update(id, mapper.toEntity(dto));
-        return ResponseEntity.ok(projectionService.toInfraDto(updated, actor));
+        return ResponseEntity.ok(projectionService.toInfraDto(updated));
     }
 
     /**
@@ -104,15 +101,13 @@ public class GameServerController {
      * passage à ONLINE et le poussera vers Discord — répondre 200 laisserait croire que c'est
      * déjà fait.
      *
-     * <p>La permission est évaluée <em>sur ce serveur</em> : figurer dans ses {@code admins}
-     * suffit, sans donner le moindre droit sur les autres (décision n°11 du 18-09).</p>
      */
     @PostMapping("/{slug}/start")
     public ResponseEntity<Void> start(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @PathVariable String slug) {
         permissionEvaluator.require(userService.requireActor(actorDiscordId),
-                Permission.SERVER_START, ResourceRef.gameServer(slug));
+                Permission.SERVER_START, null);
         deploymentService.start(gameServerService.requireBySlug(slug));
         return ResponseEntity.accepted().build();
     }
@@ -122,7 +117,7 @@ public class GameServerController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @PathVariable String slug) {
         permissionEvaluator.require(userService.requireActor(actorDiscordId),
-                Permission.SERVER_STOP, ResourceRef.gameServer(slug));
+                Permission.SERVER_STOP, null);
         deploymentService.stop(gameServerService.requireBySlug(slug));
         return ResponseEntity.accepted().build();
     }

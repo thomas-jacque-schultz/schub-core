@@ -81,7 +81,7 @@ class GameReviewServiceTest {
         when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(visiteur));
 
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
-                gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
+                List.of(new TeamScopedAuthority(teamRepository)));
 
         MemberDirectory annuaire = mock(MemberDirectory.class);
         when(annuaire.byIds(any())).thenReturn(Map.of());

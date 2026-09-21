@@ -43,7 +43,6 @@ public class GameServer {
     private String installation;
     private String version;
     private String description;
-    private List<String> admins = new ArrayList<>();
 
     /** Ports à ouvrir tant que ce serveur tourne ; vide = aucune redirection pilotée. */
     private List<GameServerPort> ports = new ArrayList<>();
