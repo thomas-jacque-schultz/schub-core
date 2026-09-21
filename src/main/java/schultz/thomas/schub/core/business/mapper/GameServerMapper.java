@@ -3,7 +3,6 @@ package schultz.thomas.schub.core.business.mapper;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
 import schultz.thomas.schub.core.api.dto.GameServerMemberDto;
 import schultz.thomas.schub.core.api.dto.GameServerStatusHistoryEntryDto;
-import schultz.thomas.schub.core.api.dto.ServerAdminDto;
 import schultz.thomas.schub.core.data.model.Game;
 import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.GameServerStatus;
@@ -26,11 +25,6 @@ import java.util.List;
  * <p>L'état observé — statut, dates, historique — est systématiquement ignoré en entrée : il
  * appartient à la boucle d'observation, pas à celui qui édite la fiche. Sans cette exclusion,
  * un PUT depuis l'interface effacerait l'historique d'état du serveur.</p>
- *
- * <p>{@code admins} est ignoré en sortie et rempli par
- * {@code GameServerProjectionService} : résoudre un id interne en pseudo et avatar demande un
- * aller-retour vers les comptes, ce qu'un mapper ne fait pas. En entrée, à l'inverse, seul le
- * {@code userId} est retenu — le reste du DTO est de l'affichage.</p>
  */
 @Mapper(componentModel = "spring", collectionMappingStrategy = CollectionMappingStrategy.TARGET_IMMUTABLE)
 public interface GameServerMapper {
@@ -48,33 +42,23 @@ public interface GameServerMapper {
     @Mapping(target = "lastStatusChangeAt", ignore = true)
     @Mapping(target = "statusHistory", ignore = true)
     @Mapping(target = "game", source = "game", qualifiedByName = "stringToGame")
-    @Mapping(target = "admins", source = "admins", qualifiedByName = "adminsToIds")
     GameServer toEntity(GameServerDto dto);
 
-    /**
-     * Projection infra : tout, y compris déploiement, ports et administrateurs.
-     *
-     * <p>{@code viewerIsAdmin} est un second paramètre plutôt qu'une propriété de l'entité :
-     * la réponse dépend de <em>qui lit</em>, pas du serveur. La calculer dans le mapper
-     * supposerait qu'il connaisse l'acteur, ce qui n'est pas son rôle.</p>
-     */
-    @Mapping(target = "admins", ignore = true)
-    @Mapping(target = "viewerIsAdmin", source = "viewerIsAdmin")
-    @Mapping(target = "game", source = "entity.game", qualifiedByName = "gameToString")
-    @Mapping(target = "gameLabel", source = "entity.game", qualifiedByName = "gameToLabel")
-    @Mapping(target = "gameIconUrl", source = "entity.game", qualifiedByName = "gameToIcon")
-    @Mapping(target = "status", source = "entity.status", qualifiedByName = "statusToString")
-    @Mapping(target = "statusHistory", source = "entity.statusHistory", qualifiedByName = "historyToDto")
-    GameServerDto toDto(GameServer entity, boolean viewerIsAdmin);
+    /** Projection infra : tout, y compris déploiement et ports. */
+    @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
+    @Mapping(target = "gameLabel", source = "game", qualifiedByName = "gameToLabel")
+    @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
+    @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
+    @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
+    GameServerDto toDto(GameServer entity);
 
     /** Projection membre : de quoi rejoindre et suivre, rien qui décrive l'infrastructure. */
-    @Mapping(target = "viewerIsAdmin", source = "viewerIsAdmin")
-    @Mapping(target = "game", source = "entity.game", qualifiedByName = "gameToString")
-    @Mapping(target = "gameLabel", source = "entity.game", qualifiedByName = "gameToLabel")
-    @Mapping(target = "gameIconUrl", source = "entity.game", qualifiedByName = "gameToIcon")
-    @Mapping(target = "status", source = "entity.status", qualifiedByName = "statusToString")
-    @Mapping(target = "statusHistory", source = "entity.statusHistory", qualifiedByName = "historyToDto")
-    GameServerMemberDto toMemberDto(GameServer entity, boolean viewerIsAdmin);
+    @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
+    @Mapping(target = "gameLabel", source = "game", qualifiedByName = "gameToLabel")
+    @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
+    @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
+    @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
+    GameServerMemberDto toMemberDto(GameServer entity);
 
     /** Tolère le nom technique comme le libellé : « MINECRAFT » et « Minecraft » désignent le même jeu. */
     @Named("stringToGame")
@@ -106,22 +90,6 @@ public interface GameServerMapper {
     @Named("statusToString")
     default String statusToString(GameServerStatus value) {
         return value != null ? value.name() : null;
-    }
-
-    /**
-     * Seul l'{@code userId} traverse. Renvoyer {@code null} sur une liste absente est
-     * volontaire : combiné à {@code NullValuePropertyMappingStrategy.IGNORE}, c'est ce qui fait
-     * qu'un PUT sans le champ {@code admins} laisse la liste existante intacte au lieu de la vider.
-     */
-    @Named("adminsToIds")
-    default List<String> adminsToIds(List<ServerAdminDto> value) {
-        if (value == null) {
-            return null;
-        }
-        return value.stream()
-                .map(ServerAdminDto::userId)
-                .filter(id -> id != null && !id.isBlank())
-                .toList();
     }
 
     @Named("historyToDto")

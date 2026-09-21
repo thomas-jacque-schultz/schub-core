@@ -6,8 +6,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.ResourceRef;
-import schultz.thomas.schub.core.business.model.ResourceType;
-import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.Role;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
@@ -15,48 +13,36 @@ import schultz.thomas.schub.core.data.repository.UserRepository;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
  * « Cet acteur a-t-il le droit de faire X sur Y ? » — <strong>un seul endroit</strong>.
  *
  * <pre>
- *   autorité = permissions du rôle  ∪  (acteur ∈ serveur.admins → START/STOP sur CE serveur)
+ *   autorité = permissions du rôle  ∪  (ce que la ressource visée donne à qui lui appartient)
  * </pre>
  *
- * <p>Pourquoi ici et pas dans le BFF : le BFF ne connaît pas {@code GameServer.admins}, qui vit
- * dans le cœur. Une autorisation à cheval sur deux services serait une autorisation qu'on ne
- * peut pas relire (plan §1). Le BFF garde le contrôle <em>grossier</em> à partir des permissions
- * portées par le jeton ; le contrôle <em>fin</em> est ici, au point d'action.</p>
+ * <p>Pourquoi ici et pas dans le BFF : le BFF ne connaît pas les appartenances, qui vivent dans le
+ * cœur. Une autorisation à cheval sur deux services serait une autorisation qu'on ne peut pas
+ * relire (plan §1). Le BFF garde le contrôle <em>grossier</em> à partir des permissions portées
+ * par le jeton ; le contrôle <em>fin</em> est ici, au point d'action.</p>
  *
- * <p>La ressource est volontairement générique : le chantier D posera exactement la même
- * question pour l'appartenance à une équipe, et réutilisera cette classe sans la rouvrir.</p>
+ * <p>Un serveur de jeu n'est plus une de ces ressources : piloter un serveur vient du rôle et de
+ * lui seul. Une équipe, si — c'est l'appartenance qui donne les droits sur <em>cette</em> équipe.</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PermissionEvaluator {
 
-    /**
-     * Ce qu'un administrateur de serveur gagne sur <em>son</em> serveur, et rien de plus
-     * (décision n°11 du 18-09). Ni l'édition de la fiche, ni les ports : modifier les ports,
-     * c'est écrire dans la table de redirections de la box.
-     */
-    private static final Set<Permission> SERVER_ADMIN_SCOPED =
-            Set.of(Permission.SERVER_START, Permission.SERVER_STOP);
-
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final GameServerService gameServerService;
 
     /**
      * Les domaines qui savent ce que <em>leur</em> ressource donne à qui lui appartient.
      *
-     * <p>Le cas {@code GAME_SERVER} reste écrit en dur juste en dessous : le déplacer serait une
-     * réécriture d'une classe déjà couverte par des tests, sans rien acheter aujourd'hui. Ce qui
-     * comptait était d'ouvrir la porte pour le chantier D sans donner à l'évaluateur la
-     * connaissance d'un dépôt d'équipe (plan §D.2, interdit n°1).</p>
+     * <p>L'évaluateur n'a besoin d'aucun dépôt d'un domaine particulier, ce que l'interdit n°1 du
+     * plan §D.2 exige : chacun déclare lui-même ce que sa ressource accorde.</p>
      */
     private final List<ScopedAuthorityProvider> scopedAuthorityProviders;
 
@@ -100,17 +86,14 @@ public class PermissionEvaluator {
     /**
      * L'union des deux sources d'autorité pour une ressource donnée.
      *
-     * <p>{@code resource} à {@code null} pose la question globale : « a-t-il le droit de créer
-     * un serveur ? » n'a pas de ressource, et ne doit surtout pas répondre oui parce qu'il est
-     * admin d'un serveur quelconque.</p>
+     * <p>{@code resource} à {@code null} pose la question globale : « a-t-il le droit de créer une
+     * équipe ? » n'a pas de ressource, et ne doit surtout pas répondre oui parce qu'il est membre
+     * d'une équipe quelconque.</p>
      */
     public Set<Permission> effectivePermissions(User actor, ResourceRef resource) {
         Set<Permission> effective = rolePermissions(actor);
         if (actor == null || resource == null) {
             return effective;
-        }
-        if (resource.type() == ResourceType.GAME_SERVER && isServerAdmin(actor, resource.id())) {
-            effective.addAll(SERVER_ADMIN_SCOPED);
         }
         for (ScopedAuthorityProvider provider : scopedAuthorityProviders) {
             if (provider.resourceType() == resource.type()) {
@@ -118,12 +101,5 @@ public class PermissionEvaluator {
             }
         }
         return effective;
-    }
-
-    private boolean isServerAdmin(User actor, String slug) {
-        Optional<GameServer> server = gameServerService.findBySlug(slug);
-        return server.isPresent()
-                && server.get().getAdmins() != null
-                && server.get().getAdmins().contains(actor.getId());
     }
 }

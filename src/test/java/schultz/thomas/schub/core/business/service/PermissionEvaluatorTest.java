@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.ResourceRef;
-import schultz.thomas.schub.core.data.model.GameServer;
+import schultz.thomas.schub.core.business.model.ResourceType;
 import schultz.thomas.schub.core.data.model.Role;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
@@ -15,10 +15,10 @@ import schultz.thomas.schub.core.data.repository.UserRepository;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -26,10 +26,9 @@ import static org.mockito.Mockito.when;
  * Les deux sources d'autorité, et surtout leur frontière.
  *
  * <p>Ce qui est vérifié ici n'est pas que l'évaluateur dit oui quand il faut — c'est qu'il dit
- * <strong>non</strong> aux trois cas qui rendraient le modèle décoratif : un admin de serveur qui
- * déborderait sur un autre serveur, un admin de serveur qui obtiendrait autre chose que
- * démarrer/arrêter, et une question globale qui répondrait oui parce que l'acteur est admin
- * quelque part.</p>
+ * <strong>non</strong> aux cas qui rendraient le modèle décoratif : une appartenance qui
+ * déborderait sur une autre ressource, et une question globale qui répondrait oui parce que
+ * l'acteur appartient à quelque chose quelque part.</p>
  */
 class PermissionEvaluatorTest {
 
@@ -37,17 +36,31 @@ class PermissionEvaluatorTest {
 
     private UserRepository userRepository;
     private RoleRepository roleRepository;
-    private GameServerService gameServerService;
     private PermissionEvaluator evaluator;
 
     private User acteur;
+
+    /** Un domaine qui accorde {@code TEAM_EDIT} sur une seule ressource, et rien ailleurs. */
+    private static ScopedAuthorityProvider surLaRessource(String resourceId, Permission accordee) {
+        return new ScopedAuthorityProvider() {
+            @Override
+            public ResourceType resourceType() {
+                return ResourceType.TEAM;
+            }
+
+            @Override
+            public Set<Permission> grantedTo(User actor, String id) {
+                return resourceId.equals(id) ? Set.of(accordee) : Set.of();
+            }
+        };
+    }
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         roleRepository = mock(RoleRepository.class);
-        gameServerService = mock(GameServerService.class);
-        evaluator = new PermissionEvaluator(userRepository, roleRepository, gameServerService, List.of());
+        evaluator = new PermissionEvaluator(userRepository, roleRepository,
+                List.of(surLaRessource("equipe-1", Permission.TEAM_EDIT)));
 
         acteur = new User();
         acteur.setId(ACTEUR_ID);
@@ -59,7 +72,6 @@ class PermissionEvaluatorTest {
         visiteur.setName("VISITEUR");
         visiteur.setPermissions(EnumSet.of(Permission.SERVER_VIEW));
         when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(visiteur));
-        when(gameServerService.findBySlug(anyString())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -69,42 +81,42 @@ class PermissionEvaluatorTest {
         assertThat(evaluator.can(acteur, Permission.SERVER_START, null)).isFalse();
     }
 
+    /**
+     * La régression que le point 3 corrige : démarrer un serveur ne dépend plus que du rôle,
+     * donc un modérateur peut le faire sur tous les serveurs et sans qu'on l'y ait inscrit.
+     */
     @Test
-    @DisplayName("être admin d'un serveur donne START et STOP sur CE serveur")
-    void adminDeServeur() {
-        donneLeServeur("minecraft", ACTEUR_ID);
+    @DisplayName("piloter un serveur vient du rôle seul, sans ressource")
+    void piloterVientDuRole() {
+        Role moderateur = new Role();
+        moderateur.setId("role-modo");
+        moderateur.setName("MODERATOR");
+        moderateur.setPermissions(EnumSet.of(Permission.SERVER_VIEW, Permission.SERVER_START,
+                Permission.SERVER_STOP));
+        when(roleRepository.findById("role-modo")).thenReturn(Optional.of(moderateur));
+        acteur.setRoleId("role-modo");
 
-        ResourceRef ressource = ResourceRef.gameServer("minecraft");
-        assertThat(evaluator.can(acteur, Permission.SERVER_START, ressource)).isTrue();
-        assertThat(evaluator.can(acteur, Permission.SERVER_STOP, ressource)).isTrue();
+        assertThat(evaluator.can(acteur, Permission.SERVER_START, null)).isTrue();
+        assertThat(evaluator.can(acteur, Permission.SERVER_STOP, null)).isTrue();
+        assertThat(evaluator.can(acteur, Permission.SERVER_EDIT, null)).isFalse();
     }
 
     @Test
-    @DisplayName("être admin d'un serveur ne donne rien de plus que START et STOP")
-    void adminDeServeurNeDebordePas() {
-        donneLeServeur("minecraft", ACTEUR_ID);
-
-        ResourceRef ressource = ResourceRef.gameServer("minecraft");
-        assertThat(evaluator.can(acteur, Permission.SERVER_EDIT, ressource)).isFalse();
-        assertThat(evaluator.can(acteur, Permission.PORT_RULE_EDIT, ressource)).isFalse();
-        assertThat(evaluator.can(acteur, Permission.SERVER_INFRA_VIEW, ressource)).isFalse();
+    @DisplayName("appartenir à une ressource donne un droit sur CETTE ressource")
+    void porteeDeRessource() {
+        assertThat(evaluator.can(acteur, Permission.TEAM_EDIT, ResourceRef.team("equipe-1"))).isTrue();
     }
 
     @Test
-    @DisplayName("être admin d'un serveur ne donne aucun droit sur un autre")
-    void adminDeServeurNeDeborderPasSurUnAutre() {
-        donneLeServeur("minecraft", ACTEUR_ID);
-        donneLeServeur("valheim", "quelquun-dautre");
-
-        assertThat(evaluator.can(acteur, Permission.SERVER_START, ResourceRef.gameServer("valheim"))).isFalse();
+    @DisplayName("appartenir à une ressource ne donne rien sur une autre")
+    void porteeQuiNeDebordePas() {
+        assertThat(evaluator.can(acteur, Permission.TEAM_EDIT, ResourceRef.team("equipe-2"))).isFalse();
     }
 
     @Test
-    @DisplayName("sans ressource, la question est globale : être admin quelque part ne compte pas")
+    @DisplayName("sans ressource, la question est globale : appartenir quelque part ne compte pas")
     void questionGlobale() {
-        donneLeServeur("minecraft", ACTEUR_ID);
-
-        assertThat(evaluator.can(acteur, Permission.SERVER_START, null)).isFalse();
+        assertThat(evaluator.can(acteur, Permission.TEAM_EDIT, null)).isFalse();
     }
 
     @Test
@@ -123,12 +135,5 @@ class PermissionEvaluatorTest {
         assertThatThrownBy(() -> evaluator.require(acteur, Permission.SERVER_DELETE, null))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("SERVER_DELETE");
-    }
-
-    private void donneLeServeur(String slug, String adminId) {
-        GameServer server = new GameServer();
-        server.setSlug(slug);
-        server.setAdmins(List.of(adminId));
-        when(gameServerService.findBySlug(slug)).thenReturn(Optional.of(server));
     }
 }

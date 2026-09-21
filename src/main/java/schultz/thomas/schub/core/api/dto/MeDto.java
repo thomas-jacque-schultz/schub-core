@@ -16,15 +16,19 @@ import java.util.Set;
  * quand le connecteur Riot ne répond pas, et le profil s'affiche quand même — la disponibilité
  * d'une API tierce ne conditionne aucune fonctionnalité du domaine (plan §D, lot D).</p>
  *
- * @param displayName toujours rempli : le nom choisi, à défaut le pseudo Discord
- * @param role        les permissions du <em>rôle seul</em>, comme {@code UserIdentityDto} :
- *                    celles qu'un acteur tient d'être administrateur d'un serveur ou membre
- *                    d'une équipe dépendent de la ressource visée et s'évaluent au point d'action
+ * @param displayName       toujours rempli : le nom choisi, à défaut le pseudo Discord
+ * @param displayNameChosen faux quand le nom affiché est le repli sur le pseudo Discord. C'est
+ *                          un fait sur le lecteur, et le seul moyen pour l'accueil de proposer
+ *                          « choisis ton nom » sans comparer deux chaînes à l'aveugle
+ * @param role              les permissions du <em>rôle seul</em>, comme {@code UserIdentityDto} :
+ *                          celles qu'un acteur tient d'être membre d'une équipe dépendent de la
+ *                          ressource visée et s'évaluent au point d'action
  */
 public record MeDto(
         String userId,
         DiscordIdentityDto discord,
         String displayName,
+        boolean displayNameChosen,
         RoleSummaryDto role,
         RiotAccountDto riot
 ) {

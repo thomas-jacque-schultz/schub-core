@@ -83,7 +83,7 @@ class TeamServiceTest {
         when(roleRepository.findById("role-muet")).thenReturn(Optional.of(sansDroits));
 
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
-                gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
+                List.of(new TeamScopedAuthority(teamRepository)));
 
         teamService = new TeamService(teamRepository, compositionRepository, reviewRepository, evaluator,
                 memberDirectory, riotIdResolver);

@@ -66,7 +66,7 @@ class TeamProjectionServiceTest {
                 role("role-owner", SystemRole.OWNER.roleName(), SystemRole.OWNER.permissions())));
 
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
-                gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
+                List.of(new TeamScopedAuthority(teamRepository)));
         projection = new TeamProjectionService(evaluator, memberDirectory);
 
         capitaine = compte("capitaine", "role-visiteur");

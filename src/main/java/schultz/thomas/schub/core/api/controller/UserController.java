@@ -16,7 +16,6 @@ import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
 import schultz.thomas.schub.core.api.dto.UserDto;
 import schultz.thomas.schub.core.api.dto.UserIdentityDto;
 import schultz.thomas.schub.core.business.model.Permission;
-import schultz.thomas.schub.core.business.model.ResourceRef;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotAccountService;
 import schultz.thomas.schub.core.business.service.UserService;
@@ -72,19 +71,16 @@ public class UserController {
     }
 
     /**
-     * Les permissions <em>effectives</em> de ce compte, éventuellement sur une ressource précise.
+     * Les permissions de ce compte.
      *
      * <p>Sert au connecteur Discord, qui a cessé de juger lui-même : il pose la question, le cœur
-     * répond, et il n'existe plus qu'une seule règle. Avec {@code gameServer}, la réponse inclut
-     * ce que l'acteur tient d'être administrateur de <em>ce</em> serveur — ce qu'un jeu de
-     * permissions de rôle seul ne dirait pas.</p>
+     * répond, et il n'existe plus qu'une seule règle.</p>
      */
     @GetMapping("/by-discord/{discordId}/permissions")
     public Set<Permission> effectivePermissions(@PathVariable String discordId,
-                                                @RequestParam(required = false) String discordUsername,
-                                                @RequestParam(required = false) String gameServer) {
+                                                @RequestParam(required = false) String discordUsername) {
         User user = userService.findOrCreateByDiscordId(discordId, discordUsername, null);
-        return permissionEvaluator.effectivePermissions(user, ResourceRef.gameServer(gameServer));
+        return permissionEvaluator.rolePermissions(user);
     }
 
     // --- le lien vers le compte Riot ---

@@ -149,6 +149,7 @@ public class UserService {
                 user.getId(),
                 new MeDto.DiscordIdentityDto(user.getDiscordId(), user.getDiscordUsername(), user.getAvatarUrl()),
                 displayNameOf(user),
+                user.getDisplayName() != null && !user.getDisplayName().isBlank(),
                 new MeDto.RoleSummaryDto(role == null ? null : role.getName(),
                         permissionEvaluator.rolePermissions(user)),
                 riotAccountService.of(user));
