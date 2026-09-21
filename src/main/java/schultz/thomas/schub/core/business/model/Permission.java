@@ -43,6 +43,10 @@ public enum Permission {
     USER_VIEW,
     USER_ROLE_ASSIGN,
 
+    /** Charge de la collecte Riot : file, debit, echeance. Exploitation, pas domaine. */
+    INGEST_VIEW,
+
+
     // --- domaine d'équipe (chantier D, lot D.4) ---
     //
     // Les trois dernières s'évaluent SUR une équipe : en être membre y donne des droits,

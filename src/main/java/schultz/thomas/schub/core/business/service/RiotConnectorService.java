@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.business.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -25,10 +26,17 @@ public interface RiotConnectorService {
      */
     boolean requestIngest(String puuid);
 
+    /** Charge globale de la collecte, vide si le connecteur n'a pas répondu. */
+    Optional<IngestLoad> load();
+
     /** Les comptes connus de nos participations qui ressemblent à cette saisie. Jamais nul. */
     List<KnownPlayer> search(String query, int limit);
 
     record PlayerIngest(long pending, long running, Instant estimatedReadyAt) {
+    }
+
+    record IngestLoad(long pending, long running, long failed, double callsPerMinute,
+                      Duration estimatedDrain, Instant estimatedReadyAt, Duration throttledFor) {
     }
 
     /**

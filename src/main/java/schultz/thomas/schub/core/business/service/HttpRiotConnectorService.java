@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +48,18 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     @Override
+    public Optional<IngestLoad> load() {
+        try {
+            LoadResponse r = restClient.get().uri("/ingest").retrieve().body(LoadResponse.class);
+            return Optional.ofNullable(r).map(b -> new IngestLoad(b.pending(), b.running(), b.failed(),
+                    b.callsPerMinute(), b.estimatedDrain(), b.estimatedReadyAt(), b.throttledFor()));
+        } catch (RestClientException indisponible) {
+            log.debug("Charge de la collecte indisponible : {}", indisponible.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public boolean requestIngest(String puuid) {
         if (puuid == null || puuid.isBlank()) {
             return false;
@@ -82,6 +95,10 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     record IngestResponse(long pending, long running, Instant estimatedReadyAt) {
+    }
+
+    record LoadResponse(long pending, long running, long failed, double callsPerMinute,
+                        Duration estimatedDrain, Instant estimatedReadyAt, Duration throttledFor) {
     }
 
     record SuggestionResponse(String puuid, String gameName, String tagLine, String riotId,
