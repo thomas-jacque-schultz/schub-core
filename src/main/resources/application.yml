@@ -3,6 +3,12 @@ spring:
     import: "optional:configtree:/run/secrets/"
   application:
     name: schub.core
+  jackson:
+    serialization:
+      # Contrat HTTP : une Duration sort en ISO-8601 ("PT20M"), jamais en secondes décimales.
+      # C'est le défaut de Boot, mais un défaut ne fige rien — et un 1200.0 lu comme des
+      # minutes s'affiche en "1200 minutes" sans lever d'erreur.
+      write-durations-as-timestamps: false
   data:
     mongodb:
       uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST:schub-mongo}:27017/${MONGO_DB}?authSource=${MONGO_DB}
