@@ -375,6 +375,48 @@ class TeamServiceTest {
                 .hasMessageContaining("Riot");
     }
 
+    @Test
+    @DisplayName("après un changement de compte Riot, la place déjà liée suit le nouveau compte")
+    void resynchroniseLaPlaceApresUnChangementDeCompte() {
+        Team equipe = equipe();
+        TeamMember place = membreLibre("m-bibi", "AncienPseudo", "EUW", "ancien-puuid");
+        place.setUserId("bibi");
+        equipe.getMembers().add(place);
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotPuuid("nouveau-puuid");
+        bibi.setRiotGameName("NouveauCompte");
+        bibi.setRiotTagLine("FR1");
+
+        List<Team> liees = teamService.claim(bibi);
+
+        TeamMember apres = liees.get(0).findMember("m-bibi").orElseThrow();
+        // Sans ça, le panneau d'équipe afficherait les parties d'un compte qui n'est plus le sien.
+        assertThat(apres.getRiotPuuid()).isEqualTo("nouveau-puuid");
+        assertThat(apres.riotId()).isEqualTo("NouveauCompte#FR1");
+        assertThat(apres.getUserId()).isEqualTo("bibi");
+    }
+
+    @Test
+    @DisplayName("un puuid connu n'est jamais remplacé par une déclaration non résolue")
+    void neRemplacePasUnPuuidParRien() {
+        Team equipe = equipe();
+        TeamMember place = membreLibre("m-bibi", "Bibi", "EUW", "puuid-bibi");
+        place.setUserId("bibi");
+        equipe.getMembers().add(place);
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotGameName("Bibi");
+        bibi.setRiotTagLine("EUW2");
+
+        teamService.claim(bibi);
+
+        assertThat(equipe.findMember("m-bibi").orElseThrow().getRiotPuuid()).isEqualTo("puuid-bibi");
+        assertThat(equipe.findMember("m-bibi").orElseThrow().getRiotTagLine()).isEqualTo("EUW2");
+    }
+
     // --- « mes équipes » ---
 
     @Test
