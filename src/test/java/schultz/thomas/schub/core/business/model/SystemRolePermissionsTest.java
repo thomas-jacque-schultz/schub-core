@@ -31,6 +31,18 @@ class SystemRolePermissionsTest {
     }
 
     @Test
+    @DisplayName("la charge de la collecte est réservée à OWNER")
+    void chargeDeCollecteReserveeAOwner() {
+        for (SystemRole role : SystemRole.values()) {
+            if (role != SystemRole.OWNER) {
+                assertThat(role.permissions())
+                        .as("%s ne doit pas voir la charge de la collecte", role)
+                        .doesNotContain(Permission.INGEST_VIEW);
+            }
+        }
+    }
+
+    @Test
     @DisplayName("mais un administrateur reste une personne, qui monte son équipe")
     void administratorPeutCreerSonEquipe() {
         assertThat(SystemRole.ADMINISTRATOR.permissions()).contains(Permission.TEAM_CREATE);
@@ -67,6 +79,7 @@ class SystemRolePermissionsTest {
                 Permission.DISCORD_CHANNEL_MANAGE,
                 Permission.USER_VIEW, Permission.USER_ROLE_ASSIGN,
                 Permission.ROLE_MANAGE,
+                Permission.INGEST_VIEW,
                 Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_EDIT,
                 Permission.COMPOSITION_EDIT);
 
