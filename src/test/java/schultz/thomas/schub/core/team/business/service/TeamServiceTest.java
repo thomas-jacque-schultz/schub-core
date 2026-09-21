@@ -8,6 +8,7 @@ import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.SystemRole;
 import schultz.thomas.schub.core.business.service.GameServerService;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.business.service.RiotIdResolver;
 import schultz.thomas.schub.core.data.model.Role;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
