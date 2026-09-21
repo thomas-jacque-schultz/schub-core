@@ -138,21 +138,44 @@ public class RiotAccountService {
     }
 
     /**
-     * Les comptes connus de nos parties qui ressemblent à cette saisie.
+     * Les comptes connus qui ressemblent à cette saisie — et, si la saisie <em>est</em> un Riot ID
+     * complet, ce que Riot en dit avant de répondre.
+     *
+     * <h2>Une saisie partielle cherche, un Riot ID complet vérifie</h2>
+     *
+     * <p>Chercher {@code Thom} est une question sur nos données : l'index y répond seul, sans un
+     * appel sortant. Écrire {@code Thomas#EUW} est autre chose — c'est nommer un compte précis, et
+     * la seule autorité sur son existence est Riot. Le cœur le fait donc résoudre d'abord ; la
+     * résolution inscrit l'observation dans l'index du connecteur, et le compte se trouve alors
+     * dans la réponse comme n'importe quel autre. <strong>C'est ce qui rend l'écran praticable
+     * quand nos données sont vides</strong> : personne n'est ingéré, on écrit son Riot ID entier,
+     * il apparaît.</p>
+     *
+     * <p>Et l'index profite à tout le monde : le compte vérifié par l'un est trouvable par les
+     * suivants sans que Riot soit redemandé.</p>
+     *
+     * <p>404 si Riot ne connaît pas ce Riot ID, 503 si le connecteur est muet. Ce sont les deux
+     * seuls cas où cette route échoue : une saisie partielle qui ne ressemble à rien rend une
+     * liste vide, ce qui n'est pas une erreur.</p>
      *
      * <h2>Pourquoi la recherche est dans le connecteur et le « pourquoi » ici</h2>
      *
      * <p>Le §4 de la migration tranche : <em>un connecteur ne sait pas pourquoi on l'appelle</em>.
-     * Trouver un pseudo dans les participations est une question sur <strong>ses</strong> données
-     * — il détient les parties, leurs index, et il est seul à pouvoir le faire sans les recopier
-     * ailleurs. Savoir qu'un de ces comptes est <em>déjà revendiqué par un autre compte Schub</em>
-     * est une question sur l'identité, qui vit ici et dont le connecteur n'a jamais entendu
-     * parler. Chacun finit son propre travail : il cherche, le cœur qualifie.</p>
+     * Trouver un pseudo dans son index est une question sur <strong>ses</strong> données — il
+     * détient les parties, les observations et leurs index. Savoir qu'un de ces comptes est
+     * <em>déjà revendiqué par un autre compte Schub</em> est une question sur l'identité, qui vit
+     * ici et dont le connecteur n'a jamais entendu parler. Chacun finit son propre travail : il
+     * cherche, le cœur qualifie.</p>
      *
      * <p>Marquer plutôt qu'écarter les comptes déjà liés : les retirer ferait croire à une faute
      * de saisie, alors que le vrai message est « ce compte est pris ».</p>
      */
     public List<RiotAccountSuggestionDto> suggestions(User actor, String query, int limit) {
+        RiotId aVerifier = RiotId.completOuNull(query);
+        if (aVerifier != null) {
+            verifieAupresDeRiot(aVerifier);
+        }
+
         List<RiotConnectorService.KnownPlayer> trouves = riotConnectorService.search(query, limit);
         if (trouves.isEmpty()) {
             return List.of();
@@ -180,9 +203,25 @@ public class RiotAccountService {
                                     poste.position(), poste.matches()))
                             .toList(),
                     joueur.lastPlayedAt(),
+                    joueur.observedAt(),
+                    joueur.source(),
                     proprietaire != null && !mien,
                     mien);
         }).toList();
+    }
+
+    /**
+     * Le geste « va demander à Riot ». Il n'écrit rien sur le {@code User} et ne lie personne :
+     * il fait exister le compte dans l'index, et c'est le clic qui reste le seul geste de liaison.
+     */
+    private void verifieAupresDeRiot(RiotId riotId) {
+        RiotIdResolution resolution = riotIdResolver.resolve(riotId.gameName(), riotId.tagLine());
+        if (resolution.isNotFound()) {
+            throw new UnknownRiotAccountException(riotId.riotId());
+        }
+        if (resolution.puuid() == null) {
+            throw new RiotConnectorUnavailableException();
+        }
     }
 
     // --- règles ---
@@ -322,6 +361,18 @@ public class RiotAccountService {
                         "Un Riot ID s'écrit Pseudo#TAG, avec un seul # et rien de vide autour");
             }
             return new RiotId(gameName, tagLine);
+        }
+
+        /**
+         * Le même découpage, mais sans refus : {@code null} veut dire « ce n'est pas un Riot ID
+         * complet », donc une saisie à chercher et non un compte à vérifier.
+         */
+        static RiotId completOuNull(String saisie) {
+            try {
+                return parse(saisie);
+            } catch (IllegalArgumentException pasUnRiotId) {
+                return null;
+            }
         }
 
         static RiotId deOuNull(String gameName, String tagLine) {

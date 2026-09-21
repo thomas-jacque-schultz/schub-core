@@ -31,8 +31,15 @@ public interface RiotConnectorService {
     record PlayerIngest(long pending, long running, Instant estimatedReadyAt) {
     }
 
+    /**
+     * @param observedAt date de l'observation qui a écrit cette identité — la partie où on a
+     *                   croisé ce joueur, ou l'appel qui l'a fait confirmer par Riot.
+     * @param source     PARTICIPATION ou RESOLUTION. Servi en chaîne : le connecteur reste libre
+     *                   d'en ajouter une sans casser le cœur.
+     */
     record KnownPlayer(String puuid, String gameName, String tagLine, String riotId,
-                       long matchCount, List<PositionPlayed> positions, Instant lastPlayedAt) {
+                       long matchCount, List<PositionPlayed> positions, Instant lastPlayedAt,
+                       Instant observedAt, String source) {
     }
 
     record PositionPlayed(String position, long matches) {

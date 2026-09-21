@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -402,7 +403,8 @@ class RiotAccountServiceTest {
 
     private static RiotConnectorService.KnownPlayer joueur(String puuid, String gameName, String tagLine) {
         return new RiotConnectorService.KnownPlayer(puuid, gameName, tagLine, gameName + "#" + tagLine,
-                42, List.of(new RiotConnectorService.PositionPlayed("MIDDLE", 30)), Instant.now());
+                42, List.of(new RiotConnectorService.PositionPlayed("MIDDLE", 30)), Instant.now(),
+                Instant.now(), "PARTICIPATION");
     }
 
     private static User compte(String id, String discordId) {
@@ -448,5 +450,81 @@ class RiotAccountServiceTest {
         RiotAccountDto dto = service.link(acteur, "Quelquun#EUW", true);
 
         assertThat(dto.state()).isEqualTo(RiotAccountState.EN_ATTENTE_DE_RESOLUTION);
+    }
+
+    // --- la vérification : une saisie partielle cherche, un Riot ID complet demande à Riot ---
+
+    @Test
+    @DisplayName("Une saisie partielle ne dérange jamais Riot")
+    void neDerangePasRiotSurUneSaisiePartielle() {
+        when(riotConnectorService.search("thom", 10)).thenReturn(List.of());
+
+        assertThat(service.suggestions(acteur, "thom", 10)).isEmpty();
+        verify(riotIdResolver, never()).resolve(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Un Riot ID complet est vérifié chez Riot, puis apparaît dans la liste")
+    void verifieUnRiotIdCompletEtLeRendTrouvable() {
+        when(riotIdResolver.resolve("Thomas", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-neuf"));
+        when(riotConnectorService.search("Thomas#EUW", 10))
+                .thenReturn(List.of(joueur("puuid-neuf", "Thomas", "EUW")));
+        when(userRepository.findByRiotPuuidIn(any())).thenReturn(List.of());
+
+        List<RiotAccountSuggestionDto> propositions = service.suggestions(acteur, "Thomas#EUW", 10);
+
+        assertThat(propositions).extracting(RiotAccountSuggestionDto::riotId).containsExactly("Thomas#EUW");
+        verify(riotIdResolver).resolve("Thomas", "EUW");
+    }
+
+    @Test
+    @DisplayName("Vérifier ne lie rien : le compte de l'appelant n'est pas touché")
+    void laVerificationNeLiePersonne() {
+        when(riotIdResolver.resolve("Thomas", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-neuf"));
+        when(riotConnectorService.search("Thomas#EUW", 10))
+                .thenReturn(List.of(joueur("puuid-neuf", "Thomas", "EUW")));
+        when(userRepository.findByRiotPuuidIn(any())).thenReturn(List.of());
+
+        service.suggestions(acteur, "Thomas#EUW", 10);
+
+        verify(userRepository, never()).save(any(User.class));
+        assertThat(acteur.getRiotPuuid()).isNull();
+        assertThat(acteur.getRiotGameName()).isNull();
+    }
+
+    @Test
+    @DisplayName("Un Riot ID que Riot ne connaît pas est refusé, il n'entre pas dans la liste")
+    void refuseUnRiotIdInexistantALaVerification() {
+        when(riotIdResolver.resolve("NexistePas", "ZZZZ")).thenReturn(RiotIdResolution.notFound());
+
+        assertThatThrownBy(() -> service.suggestions(acteur, "NexistePas#ZZZZ", 10))
+                .isInstanceOf(UnknownRiotAccountException.class);
+        verify(riotConnectorService, never()).search(anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("Connecteur muet : on le dit, on ne répond pas « ce compte n'existe pas »")
+    void distingueLIndisponibiliteDeLInexistence() {
+        when(riotIdResolver.resolve("Thomas", "EUW")).thenReturn(RiotIdResolution.unavailable());
+
+        assertThatThrownBy(() -> service.suggestions(acteur, "Thomas#EUW", 10))
+                .isInstanceOf(RiotConnectorUnavailableException.class);
+        verify(riotConnectorService, never()).search(anyString(), anyInt());
+    }
+
+    @Test
+    @DisplayName("La fraîcheur de l'observation est servie, c'est elle qui date le Riot ID affiché")
+    void sertLaFraicheurDeLObservation() {
+        when(riotConnectorService.search("thom", 10)).thenReturn(List.of(
+                new RiotConnectorService.KnownPlayer("puuid-vu", "Thomas", "EUW", "Thomas#EUW", 0,
+                        List.of(), null, Instant.parse("2024-09-20T18:00:00Z"), "RESOLUTION")));
+        when(userRepository.findByRiotPuuidIn(any())).thenReturn(List.of());
+
+        RiotAccountSuggestionDto proposition = service.suggestions(acteur, "thom", 10).getFirst();
+
+        assertThat(proposition.observedAt()).isEqualTo(Instant.parse("2024-09-20T18:00:00Z"));
+        assertThat(proposition.source()).isEqualTo("RESOLUTION");
+        assertThat(proposition.matchCount()).isZero();
+        assertThat(proposition.lastPlayedAt()).isNull();
     }
 }
