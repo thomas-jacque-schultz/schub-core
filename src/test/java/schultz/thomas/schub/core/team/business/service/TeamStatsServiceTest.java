@@ -86,7 +86,7 @@ class TeamStatsServiceTest {
         when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(visiteur));
 
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
-                gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
+                List.of(new TeamScopedAuthority(teamRepository)));
         TeamService teamService = new TeamService(teamRepository, mock(CompositionRepository.class),
                 mock(GameReviewRepository.class), evaluator, memberDirectory,
                 mock(RiotIdResolver.class));
@@ -242,7 +242,7 @@ class TeamStatsServiceTest {
         assertThat(panneau.overall().games()).isEqualTo(3);
         assertThat(panneau.overall().wins()).isEqualTo(2);
         assertThat(panneau.byQueue()).extracting(bilan -> bilan.key() + ":" + bilan.games())
-                .containsExactly("440:2", "400:1");
+                .containsExactly("RANKED_FLEX:2", "NORMAL_DRAFT:1");
         assertThat(panneau.games()).extracting(partie -> partie.queueId())
                 .containsExactly(440, 400, 440);
         verify(statsGateway).sharedMatches(any(), eq(4), any(), any());

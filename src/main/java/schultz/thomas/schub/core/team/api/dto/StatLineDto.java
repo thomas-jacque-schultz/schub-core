@@ -8,8 +8,9 @@ import java.time.Instant;
  * <p>Tous les ratios sont nuls quand ils n'ont pas de dénominateur — jamais zéro, qui se lirait
  * comme un résultat.</p>
  *
- * @param key        la clé du groupe telle qu'elle vient : id de champion, poste, {@code queueId},
- *                   patch, {@code yyyy-MM}. Vide pour le total.
+ * @param key        la clé du groupe telle qu'elle vient : id de champion, poste, mode de jeu,
+ *                   patch, {@code yyyy-MM}. Vide pour le total. Le mode de jeu est un nom de
+ *                   file, pas un {@code queueId} — plusieurs identifiants désignent le même mode.
  * @param versusRest ce groupe comparé au reste des parties du même joueur.
  */
 public record StatLineDto(
