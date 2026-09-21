@@ -121,8 +121,7 @@ public class TeamGamesStatsService {
                 joueurs.size(),
                 StatsState.STATISTIQUES_CONNUES,
                 bilan("", null, decidees),
-                bilans(decidees, partie -> String.valueOf(partie.queueId()),
-                        RiotStatsGateway.SharedMatch::queue),
+                bilans(decidees, TeamGamesStatsService::mode, partie -> null),
                 bilans(decidees, partie -> String.valueOf(cote(partie)), partie -> null),
                 bilans(decidees, RiotStatsGateway.SharedMatch::patch, partie -> null).stream()
                         .sorted(Comparator.comparing(TeamRecordDto::key).reversed())
@@ -205,6 +204,16 @@ public class TeamGamesStatsService {
                         libelle.apply(entree.getValue().getFirst()), entree.getValue()))
                 .sorted(Comparator.comparingLong(TeamRecordDto::games).reversed())
                 .toList();
+    }
+
+    /**
+     * Le mode de jeu d'une partie, jamais son {@code queueId}.
+     *
+     * <p>Le connecteur le nomme à partir de la liste officielle de Riot ; « File 1700 » ne se lit
+     * pas, « Arène » se lit. Un mode absent vaut {@code OTHER}, qui est un nom, pas un trou.</p>
+     */
+    private static String mode(RiotStatsGateway.SharedMatch partie) {
+        return partie.queue() == null || partie.queue().isBlank() ? "OTHER" : partie.queue();
     }
 
     /** Le côté de l'équipe dans cette partie : celui de ses membres, qui y sont tous ensemble. */
