@@ -3,6 +3,7 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamePlayerDto;
@@ -44,10 +45,41 @@ public class TeamGamesStatsService {
     public static final int PARTIES_MAX = 500;
     private static final int PATCHS_RENDUS = 6;
 
+    /** Le maximum que le connecteur rende sur une requête de parties communes. */
+    private static final int PARTIES_VERIFIEES = 1000;
+
     private final TeamService teamService;
     private final MemberDirectory memberDirectory;
     private final RiotStatsGateway statsGateway;
     private final RiotChampionGateway championGateway;
+
+    /**
+     * Cette partie est-elle une partie de cette équipe ?
+     *
+     * <p>La question n'a qu'une source : le connecteur, seul à détenir les participations. Son
+     * silence lève {@link RiotConnectorUnavailableException} au lieu de répondre « non » — une
+     * note refusée se réessaie, une note acceptée sur une partie inconnue ne se rattrape pas.</p>
+     *
+     * <p>La vérification porte sur les {@value #PARTIES_VERIFIEES} parties d'équipe les plus
+     * récentes, soit le maximum que le connecteur rende et le double de ce que le panneau
+     * affiche.</p>
+     */
+    public boolean estPartieDEquipe(Team team, String matchId) {
+        if (matchId == null || matchId.isBlank()) {
+            return false;
+        }
+        Map<String, TeamMember> parPuuid =
+                TeamPlayerStatsService.parPuuid(TeamPlayerStatsService.joueursDe(team));
+        if (parPuuid.size() < MINIMUM_MEMBRES) {
+            return false;
+        }
+        RiotStatsGateway.SharedMatches communes = statsGateway
+                .sharedMatches(List.copyOf(parPuuid.keySet()), MINIMUM_MEMBRES, null,
+                        PARTIES_VERIFIEES)
+                .orElseThrow(RiotConnectorUnavailableException::new);
+        return communes.matches().stream()
+                .anyMatch(partie -> matchId.equals(partie.matchId()));
+    }
 
     public TeamGamesStatsDto of(User actor, String teamId, Integer days, Integer limit) {
         Team team = teamService.requireVisible(actor, teamId);

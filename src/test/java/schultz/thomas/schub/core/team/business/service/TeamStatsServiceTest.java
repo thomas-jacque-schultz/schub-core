@@ -24,6 +24,7 @@ import schultz.thomas.schub.core.team.business.model.StatsState;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
+import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.time.Instant;
@@ -87,7 +88,8 @@ class TeamStatsServiceTest {
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
                 gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
         TeamService teamService = new TeamService(teamRepository, mock(CompositionRepository.class),
-                evaluator, memberDirectory, mock(RiotIdResolver.class));
+                mock(GameReviewRepository.class), evaluator, memberDirectory,
+                mock(RiotIdResolver.class));
         PlayerStatsService playerStats =
                 new PlayerStatsService(statsGateway, championGateway, riotConnector);
         joueurs = new TeamPlayerStatsService(teamService, memberDirectory, playerStats);

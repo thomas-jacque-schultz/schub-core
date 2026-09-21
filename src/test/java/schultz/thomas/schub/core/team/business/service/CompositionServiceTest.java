@@ -20,6 +20,7 @@ import schultz.thomas.schub.core.team.data.model.CompositionSlot;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
+import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.util.ArrayList;
@@ -73,8 +74,9 @@ class CompositionServiceTest {
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
                 gameServerService, List.of(new TeamScopedAuthority(teamRepository)));
 
-        TeamService teamService = new TeamService(teamRepository, compositionRepository, evaluator,
-                mock(MemberDirectory.class), mock(RiotIdResolver.class));
+        TeamService teamService = new TeamService(teamRepository, compositionRepository,
+                mock(GameReviewRepository.class), evaluator, mock(MemberDirectory.class),
+                mock(RiotIdResolver.class));
         compositionService = new CompositionService(compositionRepository, teamService, evaluator);
 
         capitaine = compte("capitaine");
