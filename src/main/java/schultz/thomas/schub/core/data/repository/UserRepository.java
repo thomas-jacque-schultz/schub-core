@@ -22,6 +22,20 @@ public interface UserRepository extends MongoRepository<User, String> {
      */
     Optional<User> findByRiotPuuid(String riotPuuid);
 
+    /**
+     * Les comptes qui portent ce Riot ID, casse ignorée.
+     *
+     * <p><strong>Une liste, pas un {@code Optional}.</strong> Rien ne garantit l'unicité d'un
+     * Riot ID en base : c'est une chaîne d'affichage, pas une clé, et elle peut rester périmée
+     * sur le compte d'un joueur qui en a changé. Rendre un {@code Optional} promettrait une
+     * unicité que seul le {@code puuid} possède — et la promesse casserait sur une exception
+     * Mongo le jour où deux comptes en portent le même, ce qui est licite.</p>
+     *
+     * <p>Ne sert qu'au refus de doublon quand le {@code puuid} n'a pas pu être résolu. Le reste
+     * du système ne cherche jamais un joueur par son pseudo.</p>
+     */
+    List<User> findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(String riotGameName, String riotTagLine);
+
     List<User> findAllByRoleId(String roleId);
 
     long countByRoleId(String roleId);
