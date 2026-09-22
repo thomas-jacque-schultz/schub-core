@@ -182,15 +182,14 @@ class ChampionPoolServiceTest {
 
     @Test
     @DisplayName("Un champion que personne ne maîtrise est rendu, avec une liste vide")
-    void unChampionSansPersonneResteAffiche() {
+    void unChampionSansPersonneEstMasqueEtCompte() {
         pool.setChampionKeys(GameRole.TOP, List.of("Jax", "LeeSin"));
 
-        ChampionPoolEntryDto lee =
-                champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "LeeSin");
+        ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
 
-        assertThat(lee.championId()).isEqualTo(LEE_SIN);
-        assertThat(lee.players()).isEmpty();
-        assertThat(lee.setAsideByFloor()).isZero();
+        assertThat(top.champions()).extracting("championKey").doesNotContain("LeeSin");
+        assertThat(top.hiddenByFloor()).isEqualTo(1);
+        assertThat(pool.championKeys(GameRole.TOP)).contains("LeeSin");
     }
 
     @Test
@@ -208,14 +207,15 @@ class ChampionPoolServiceTest {
     // --- le plancher ---
 
     @Test
-    @DisplayName("Le plancher écarte, et dit combien : une colonne vidée n'est pas une panne")
-    void lePlancherEcarteEtLeDit() {
+    @DisplayName("Le plancher masque le champion et dit combien")
+    void lePlancherMasqueEtLeDit() {
         pool.setMasteryFloor(300_000);
 
-        ChampionPoolEntryDto jax = champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "Jax");
+        ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
 
-        assertThat(jax.players()).isEmpty();
-        assertThat(jax.setAsideByFloor()).isEqualTo(2);
+        assertThat(top.champions()).extracting("championKey").doesNotContain("Jax");
+        assertThat(top.hiddenByFloor()).isPositive();
+        assertThat(pool.championKeys(GameRole.TOP)).contains("Jax");
     }
 
     @Test
