@@ -15,6 +15,7 @@ import java.util.List;
 public record ChampionPoolColumnDto(
         GameRole role,
         List<ChampionPoolEntryDto> champions,
-        List<ChampionPoolMemberDto> unavailableMembers
+        List<ChampionPoolMemberDto> unavailableMembers,
+        int hiddenByFloor
 ) {
 }

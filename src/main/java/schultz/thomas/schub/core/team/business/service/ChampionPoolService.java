@@ -59,9 +59,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ChampionPoolService {
 
-    /** Au-delà, un poste n'est plus un choix mais le catalogue recopié. */
-    public static final int CHAMPIONS_PAR_POSTE_MAX = 40;
-
     private final TeamService teamService;
     private final MemberDirectory memberDirectory;
     private final RiotChampionGateway championGateway;
@@ -133,11 +130,6 @@ public class ChampionPoolService {
             }
             retenues.add(propre);
         }
-        if (retenues.size() > CHAMPIONS_PAR_POSTE_MAX) {
-            throw new IllegalArgumentException("Un poste ne retient pas plus de "
-                    + CHAMPIONS_PAR_POSTE_MAX + " champions");
-        }
-
         TeamChampionPool pool = poolDe(teamId);
         pool.setChampionKeys(role, List.copyOf(retenues));
         pool.setUpdatedAt(Instant.now());
@@ -191,13 +183,14 @@ public class ChampionPoolService {
                 .toList();
 
         if (catalogue.isEmpty()) {
-            return new ChampionPoolColumnDto(role, List.of(), muets);
+            return new ChampionPoolColumnDto(role, List.of(), muets, 0);
         }
 
         Map<String, RiotChampionGateway.Champion> parCle = new HashMap<>();
         catalogue.get().parId().values().forEach(champion -> parCle.put(champion.key(), champion));
 
         List<ChampionPoolEntryDto> champions = new ArrayList<>();
+        int masques = 0;
         for (String key : pool.championKeys(role)) {
             RiotChampionGateway.Champion champion = parCle.get(key);
             if (champion == null) {
@@ -206,9 +199,17 @@ public class ChampionPoolService {
                 champions.add(new ChampionPoolEntryDto(0, key, null, null, List.of(), 0));
                 continue;
             }
-            champions.add(entree(champion, duPoste, maitrises, identites, plancher));
+            ChampionPoolEntryDto entree = entree(champion, duPoste, maitrises, identites, plancher);
+            // Un champion que personne du poste ne tient au-dessus du plancher n'est pas alignable :
+            // il encombre la colonne sans rien dire. Le choix reste enregistré, seul l'affichage
+            // l'écarte — le compte dit qu'ils existent, sinon baisser le plancher serait un pari.
+            if (entree.players().isEmpty() && entree.name() != null) {
+                masques++;
+                continue;
+            }
+            champions.add(entree);
         }
-        return new ChampionPoolColumnDto(role, champions, muets);
+        return new ChampionPoolColumnDto(role, champions, muets, masques);
     }
 
     private ChampionPoolEntryDto entree(
