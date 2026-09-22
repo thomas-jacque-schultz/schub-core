@@ -204,6 +204,21 @@ class ChampionPoolServiceTest {
                 .extracting("memberId").doesNotContain("m-libre");
     }
 
+    @Test
+    @DisplayName("Les champions d'une colonne sont triés par maîtrise moyenne décroissante")
+    void trieParMaitriseMoyenne() {
+        pool.setChampionKeys(GameRole.TOP, List.of("Jax", "Ahri"));
+        when(championGateway.masteries(PUUID_TOP)).thenReturn(Optional.of(List.of(
+                maitrise(JAX, 7, 10_000), maitrise(AHRI, 7, 400_000))));
+        when(championGateway.masteries(PUUID_POLYVALENT)).thenReturn(Optional.of(List.of(
+                maitrise(JAX, 4, 20_000), maitrise(AHRI, 6, 200_000))));
+
+        ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
+
+        // Ahri : (400 000 + 200 000) / 2 = 300 000 ; Jax : (10 000 + 20 000) / 2 = 15 000.
+        assertThat(top.champions()).extracting("championKey").containsExactly("Ahri", "Jax");
+    }
+
     // --- le plancher ---
 
     @Test

@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -209,7 +210,21 @@ public class ChampionPoolService {
             }
             champions.add(entree);
         }
+
+        champions.sort(Comparator.comparingDouble(ChampionPoolService::maitriseMoyenne).reversed()
+                .thenComparing(entree -> entree.name() == null ? "" : entree.name()));
+
         return new ChampionPoolColumnDto(role, champions, muets, masques);
+    }
+
+    /** Sans joueur retenu — champion hors catalogue — la moyenne vaut zéro et l'entrée finit la liste. */
+    private static double maitriseMoyenne(ChampionPoolEntryDto entree) {
+        return entree.players().stream()
+                .map(ChampionPoolMemberDto::masteryPoints)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .average()
+                .orElse(0d);
     }
 
     private ChampionPoolEntryDto entree(
