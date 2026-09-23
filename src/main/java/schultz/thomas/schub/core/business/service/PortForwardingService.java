@@ -18,19 +18,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Maintient les redirections du routeur alignées sur l'état voulu, en trois temps :
- * {@link PortRuleResolver} calcule ce qui devrait être ouvert, {@link #plan} compare au réel,
- * {@link #execute} applique. Seule la dernière étape touche le routeur.
- *
- * <p>Les règles que nous n'avons pas posées ne sont jamais modifiées : une redirection créée à
- * la main sur un port que l'on voudrait piloter est signalée comme conflit et laissée intacte.</p>
- *
- * <p>Les règles pilotées sont créées puis ouvertes/fermées plutôt que créées/supprimées : une
- * règle fermée est sans effet côté Internet tout en restant lisible sur le routeur, ce qui rend
- * l'inventaire des ports vérifiable d'un coup d'œil. {@code port-forwarding.prune-orphans}
- * bascule vers la suppression pour les règles qui ne sont plus déclarées nulle part.</p>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -42,21 +29,12 @@ public class PortForwardingService {
 
     private final PortRuleResolver resolver;
 
-    /** Sérialise les réconciliations : commandes Discord, front et scheduler peuvent les déclencher en parallèle. */
     private final ReentrantLock lock = new ReentrantLock();
 
-    /**
-     * Recalcule l'ensemble des redirections voulues et applique l'écart.
-     * Ne lève jamais : un routeur en panne ne doit pas empêcher un serveur de jeu de démarrer.
-     */
     public PortForwardingReport reconcile() {
         return reconcile(null, false);
     }
 
-    /**
-     * Comme {@link #reconcile()}, en forçant l'état ouvert/fermé du serveur {@code overrideIdentifier}
-     * au lieu de le déduire de son statut.
-     */
     public PortForwardingReport reconcile(String overrideIdentifier, boolean overrideOpen) {
         String inactiveReason = inactiveReason();
         if (inactiveReason != null) {
@@ -99,8 +77,6 @@ public class PortForwardingService {
         return report;
     }
 
-    // --- décision (aucune I/O) ---------------------------------------------
-
     private Plan plan(Map<PortRuleKey, PortRule> desired, List<PortRule> current) {
         List<PlannedAction> actions = new ArrayList<>();
         List<String> conflicts = new ArrayList<>();
@@ -140,18 +116,12 @@ public class PortForwardingService {
         return new PlannedAction(Outcome.UNCHANGED, target);
     }
 
-    /**
-     * Sort d'une règle que nous avons posée mais que plus rien ne réclame : serveur supprimé,
-     * port retiré de sa fiche, règle permanente effacée du fichier. Null s'il n'y a rien à faire.
-     */
     private PlannedAction decideOrphan(PortRule orphan) {
         if (properties.isPruneOrphans()) {
             return new PlannedAction(Outcome.DELETED, orphan);
         }
         return orphan.open() ? new PlannedAction(Outcome.CLOSED, orphan.withOpen(false)) : null;
     }
-
-    // --- application --------------------------------------------------------
 
     private PortForwardingReport execute(Plan plan, List<String> rejected) {
         List<RuleOutcome> outcomes = new ArrayList<>();
@@ -175,7 +145,7 @@ public class PortForwardingService {
             case CREATED -> redirectionRequestService.createRule(action.rule());
             case OPENED, CLOSED, REROUTED -> redirectionRequestService.updateRule(action.rule());
             case DELETED -> redirectionRequestService.deleteRule(action.rule());
-            case UNCHANGED -> { /* rien à écrire */ }
+            case UNCHANGED -> { }
         }
     }
 
@@ -184,11 +154,9 @@ public class PortForwardingService {
                 + (rule.open() ? " (ouvert)" : " (fermé)");
     }
 
-    /** Ce qu'il faut faire d'une règle, décidé avant tout appel au routeur. */
     private record PlannedAction(Outcome outcome, PortRule rule) {
     }
 
-    /** Le plan complet : les actions à appliquer, et les ports que l'on ne peut pas réclamer. */
     private record Plan(List<PlannedAction> actions, List<String> conflicts) {
     }
 }

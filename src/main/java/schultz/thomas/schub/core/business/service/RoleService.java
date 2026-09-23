@@ -15,19 +15,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-/**
- * L'écran des rôles, côté domaine : la moitié éditable du modèle de droits.
- *
- * <p>Trois invariants, et aucun n'est décoratif :</p>
- * <ul>
- *   <li><strong>{@code ROLE_MANAGE} n'entre dans aucun rôle</strong> créé ou modifié par
- *       l'API — elle appartient au seul {@code OWNER} (décision n°2 du 18-09) ;</li>
- *   <li><strong>le rôle {@code OWNER} est intouchable</strong> : l'amputer, c'est fermer
- *       l'administration à tout le monde, définitivement ;</li>
- *   <li><strong>un rôle porté par des comptes ne se supprime pas</strong> : ils pointeraient
- *       vers un rôle absent, donc n'auraient plus aucun droit, sans message d'erreur.</li>
- * </ul>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -101,11 +88,7 @@ public class RoleService {
         return name.trim();
     }
 
-    /**
-     * Retire {@code ROLE_MANAGE} silencieusement plutôt que de refuser : l'interface ne la
-     * propose pas, donc la voir arriver signale un appel forgé, pas une erreur d'utilisateur.
-     * Refuser apprendrait à l'appelant qu'elle existe ; l'ignorer ne lui apprend rien.
-     */
+    // ROLE_MANAGE retirée sans refus : la recevoir signale un appel forgé, refuser en révélerait l'existence.
     private Set<Permission> sanitize(Set<Permission> permissions) {
         Set<Permission> sanitized = permissions == null || permissions.isEmpty()
                 ? EnumSet.noneOf(Permission.class)

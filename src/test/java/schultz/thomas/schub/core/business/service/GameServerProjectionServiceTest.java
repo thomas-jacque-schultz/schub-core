@@ -18,13 +18,6 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Qui voit quoi d'un serveur.
- *
- * <p>La projection membre ne décrit pas l'installation : ni déploiement, ni ports. La garantie
- * est portée par le type — {@link GameServerMemberDto} n'a pas ces champs — et le dernier test
- * la verrouille, parce qu'un champ ajouté un jour ne lèverait aucune erreur.</p>
- */
 class GameServerProjectionServiceTest {
 
     private PermissionEvaluator permissionEvaluator;

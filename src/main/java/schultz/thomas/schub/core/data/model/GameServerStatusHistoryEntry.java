@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
-/** Début d'un segment d'état. La fin se déduit de l'entrée suivante. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

@@ -20,10 +20,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-/**
- * Le calcul de l'état voulu ne touche à rien : ces tests valident la politique
- * (ports interdits, doublons, valeurs par défaut) sans routeur ni HTTP.
- */
 @ExtendWith(MockitoExtension.class)
 class PortRuleResolverTest {
 
@@ -38,9 +34,6 @@ class PortRuleResolverTest {
     void setUp() {
         properties = new PortForwardingProperties();
         properties.setDefaultLanIp("192.168.1.202");
-        // Le fournisseur pointe sur les propriétés : chaque test continue de déclarer ses
-        // règles permanentes via properties.setStaticRules(...), comme avant leur passage
-        // en base. Le resolver ne sait pas d'où vient la liste, c'est tout l'intérêt.
         resolver = new PortRuleResolver(properties, gameServerService, properties::getStaticRules);
     }
 
@@ -193,8 +186,6 @@ class PortRuleResolverTest {
         assertThat(resolution.rules()).isEmpty();
         assertThat(resolution.rejected()).isEmpty();
     }
-
-    // --- fixtures ---------------------------------------------------------
 
     private void givenServers(GameServer... servers) {
         when(gameServerService.findAll()).thenReturn(List.of(servers));

@@ -19,13 +19,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Traduction entre l'entité et ses contrats.
- *
- * <p>L'état observé — statut, dates, historique — est systématiquement ignoré en entrée : il
- * appartient à la boucle d'observation, pas à celui qui édite la fiche. Sans cette exclusion,
- * un PUT depuis l'interface effacerait l'historique d'état du serveur.</p>
- */
 @Mapper(componentModel = "spring", collectionMappingStrategy = CollectionMappingStrategy.TARGET_IMMUTABLE)
 public interface GameServerMapper {
 
@@ -44,7 +37,6 @@ public interface GameServerMapper {
     @Mapping(target = "game", source = "game", qualifiedByName = "stringToGame")
     GameServer toEntity(GameServerDto dto);
 
-    /** Projection infra : tout, y compris déploiement et ports. */
     @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
     @Mapping(target = "gameLabel", source = "game", qualifiedByName = "gameToLabel")
     @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
@@ -52,7 +44,6 @@ public interface GameServerMapper {
     @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
     GameServerDto toDto(GameServer entity);
 
-    /** Projection membre : de quoi rejoindre et suivre, rien qui décrive l'infrastructure. */
     @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
     @Mapping(target = "gameLabel", source = "game", qualifiedByName = "gameToLabel")
     @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
@@ -60,7 +51,6 @@ public interface GameServerMapper {
     @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
     GameServerMemberDto toMemberDto(GameServer entity);
 
-    /** Tolère le nom technique comme le libellé : « MINECRAFT » et « Minecraft » désignent le même jeu. */
     @Named("stringToGame")
     default Game stringToGame(String value) {
         if (value == null) {

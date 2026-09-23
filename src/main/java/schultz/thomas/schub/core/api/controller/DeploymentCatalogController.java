@@ -14,19 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
-/**
- * Le catalogue des déploiements disponibles, pour lier un serveur sans saisie manuelle.
- *
- * <p>{@code deploymentId} est une clé de liaison : une faute de frappe ne se voit qu'au premier
- * démarrage raté. Proposer la liste supprime la classe d'erreur entière.</p>
- *
- * <p>Le connecteur rapporte <em>tous</em> les déploiements, y compris ceux d'infrastructure :
- * c'est ici, et au-dessus, qu'on trie.</p>
- *
- * <p>Derrière {@code SERVER_INFRA_VIEW}, et pas {@code SERVER_CREATE} : cette liste <em>est</em>
- * l'inventaire des stacks de la machine, y compris celles qui n'ont rien à voir avec un jeu.
- * C'est de la cartographie d'infrastructure, quel que soit l'usage qu'on en fait ensuite.</p>
- */
 @RestController
 @RequestMapping("/deployments")
 @RequiredArgsConstructor

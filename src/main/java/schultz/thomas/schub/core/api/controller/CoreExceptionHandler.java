@@ -14,7 +14,6 @@ import schultz.thomas.schub.core.business.service.UnknownRiotAccountException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-/** Traduit les refus du domaine en statuts HTTP qui portent leur motif. */
 @Slf4j
 @RestControllerAdvice
 public class CoreExceptionHandler {
@@ -24,14 +23,6 @@ public class CoreExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
     }
 
-    /**
-     * 403, avec le motif.
-     *
-     * <p>Volontairement pas 404 : masquer l'existence de la ressource n'apporte rien ici — la
-     * frontière du maillage est déjà fermée par le secret interne, et seul un service Schub
-     * atteint ce point. Un 403 explicite est ce qui permet au BFF de distinguer « droits
-     * insuffisants » de « n'existe pas », donc d'afficher le bon message.</p>
-     */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleDenied(AccessDeniedException e) {
         log.warn("Accès refusé : {}", e.getMessage());
@@ -43,13 +34,6 @@ public class CoreExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
 
-    /**
-     * 409 avec les conséquences dans le corps, et pas seulement un message.
-     *
-     * <p>Un refus qui dit « confirmez » sans dire ce qu'on confirme oblige l'écran à
-     * réécrire les conséquences en dur, donc à diverger du serveur au premier changement de
-     * règle. {@code change} les porte, et l'écran n'a qu'à les afficher.</p>
-     */
     @ExceptionHandler(RiotAccountChangeNotConfirmedException.class)
     public ResponseEntity<Map<String, Object>> handleUnconfirmedChange(
             RiotAccountChangeNotConfirmedException e) {
@@ -62,7 +46,6 @@ public class CoreExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
     }
 
-    /** Occupé, pas en panne : 429 et non 503, parce que réessayer tout de suite a du sens. */
     @ExceptionHandler(RiotConnectorBusyException.class)
     public ResponseEntity<Map<String, String>> handleConnectorBusy(RiotConnectorBusyException e) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of("error", e.getMessage()));

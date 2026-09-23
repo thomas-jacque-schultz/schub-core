@@ -6,7 +6,6 @@ import schultz.thomas.schub.core.team.data.model.Composition;
 
 import java.util.List;
 
-/** Comme {@link TeamRepository} : jamais injecté hors du paquet {@code …core.team}. */
 @Repository
 public interface CompositionRepository extends MongoRepository<Composition, String> {
 

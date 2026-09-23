@@ -13,16 +13,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * L'unicité protocole + port WAN n'a jamais existé.
- *
- * <p>{@code StaticPortRuleEntity} porte {@code @CompoundIndex(unique = true)} depuis toujours, et
- * l'annotation est inerte : {@code auto-index-creation} vaut {@code false} par défaut. Vérifié en
- * base — la collection ne portait que {@code _id_}. Deux règles sur le même port étaient donc
- * acceptées, et le conflit se découvrait devant la box, ce que cette contrainte devait empêcher.
- *
- * <p>Quatrième occurrence du même piège après V001, V002, V007 et V009.</p>
- */
 @ChangeUnit(id = "static-port-rule-unique-index", order = "011", author = "schub")
 public class V011_StaticPortRuleUniqueIndex {
 

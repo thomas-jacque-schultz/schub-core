@@ -22,14 +22,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Les deux sources d'autorité, et surtout leur frontière.
- *
- * <p>Ce qui est vérifié ici n'est pas que l'évaluateur dit oui quand il faut — c'est qu'il dit
- * <strong>non</strong> aux cas qui rendraient le modèle décoratif : une appartenance qui
- * déborderait sur une autre ressource, et une question globale qui répondrait oui parce que
- * l'acteur appartient à quelque chose quelque part.</p>
- */
 class PermissionEvaluatorTest {
 
     private static final String ACTEUR_ID = "user-1";
@@ -40,7 +32,6 @@ class PermissionEvaluatorTest {
 
     private User acteur;
 
-    /** Un domaine qui accorde {@code TEAM_EDIT} sur une seule ressource, et rien ailleurs. */
     private static ScopedAuthorityProvider surLaRessource(String resourceId, Permission accordee) {
         return new ScopedAuthorityProvider() {
             @Override
@@ -81,10 +72,6 @@ class PermissionEvaluatorTest {
         assertThat(evaluator.can(acteur, Permission.SERVER_START, null)).isFalse();
     }
 
-    /**
-     * La régression que le point 3 corrige : démarrer un serveur ne dépend plus que du rôle,
-     * donc un modérateur peut le faire sur tous les serveurs et sans qu'on l'y ait inscrit.
-     */
     @Test
     @DisplayName("piloter un serveur vient du rôle seul, sans ressource")
     void piloterVientDuRole() {

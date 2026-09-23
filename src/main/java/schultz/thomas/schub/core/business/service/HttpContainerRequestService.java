@@ -15,13 +15,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-/**
- * Implémentation de {@link ContainerRequestService} déléguant à {@code schub-connector-portainer}.
- *
- * <p>Depuis la phase 2, ce service ne sonde plus Portainer : le connecteur le fait une fois par
- * minute pour tout le monde, et sert un cache. Les lectures d'ici sont donc gratuites, quel que
- * soit le nombre de serveurs.</p>
- */
 @Slf4j
 @Service("portainerRequestService")
 @RequiredArgsConstructor
@@ -50,15 +43,6 @@ public class HttpContainerRequestService implements ContainerRequestService {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Lève plutôt que de rendre un état lorsque la lecture est trop ancienne. L'appelant
-     * traduit toute exception en {@code UNREACHABLE}, ce qui est exactement le sens voulu :
-     * une valeur périmée est une absence de réponse, pas la preuve que le serveur est éteint
-     * (plan §6). Rendre {@code running=false} sur un cache figé ferait croire à une extinction
-     * et déclencherait la fermeture des redirections d'un serveur pourtant en marche.</p>
-     */
     @Override
     public DockerContainerState getContainerState(Integer stackId) {
         PortainerStack stack = restClient.get()

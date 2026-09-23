@@ -19,13 +19,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Ce qu'une équipe donne, et surtout ce qu'elle ne donne pas.
- *
- * <p>La portée est la même mécanique que les {@code admins} d'un serveur : ce qui est vérifié
- * ici n'est pas qu'un capitaine peut écrire — c'est qu'un <strong>membre</strong> ne peut pas, et
- * qu'un inconnu n'obtient rien du tout. Sans ces deux refus, la portée serait décorative.</p>
- */
 class TeamScopedAuthorityTest {
 
     private TeamRepository teamRepository;

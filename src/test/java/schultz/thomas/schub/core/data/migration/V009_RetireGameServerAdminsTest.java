@@ -20,14 +20,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Ce qui échoue en silence dans une migration : être rejouée.
- *
- * <p>Mongock ne rejoue pas ce qu'il a déjà exécuté, mais c'est un filet et non une garantie —
- * une base restaurée, un {@code mongockChangeLog} tronqué, et la migration repasse. Ce qui est
- * vérifié ici est donc la propriété qui la rend inoffensive dans ce cas : elle ne touche que les
- * documents portant encore le champ, et elle ne fait que le retirer.</p>
- */
 class V009_RetireGameServerAdminsTest {
 
     @Test
@@ -51,10 +43,6 @@ class V009_RetireGameServerAdminsTest {
         assertThat(rendu(maj.getValue())).isEqualTo(rendu(Updates.unset("admins")));
     }
 
-    /**
-     * Le second passage : le filtre ne rend plus rien, donc rien n'est écrit et rien n'échoue.
-     * C'est ce que le premier test garantit par construction ; celui-ci le constate à l'exécution.
-     */
     @Test
     @DisplayName("rejouée sur une base déjà migrée, elle ne modifie aucun document")
     void rejouableSansEffet() {

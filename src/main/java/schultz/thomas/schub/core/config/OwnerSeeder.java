@@ -17,20 +17,8 @@ import java.time.Instant;
 import java.util.EnumSet;
 
 /**
- * Le garde-fou anti-verrouillage : à <strong>chaque démarrage</strong>, le compte désigné par
- * {@code DISCORD_ADMIN_ID} est {@code OWNER}.
- *
- * <p>C'est la condition qui rend la suppression du compte local (lot A.6) acceptable. Sans porte
- * de service, une erreur de rôle — la sienne, celle d'un autre, ou un rôle mal composé — fermerait
- * l'administration à tout le monde, définitivement. Ici, redémarrer le service la rouvre.</p>
- *
- * <p>Il ne dépend volontairement <strong>pas</strong> de la migration {@code V003} : il crée le
- * rôle {@code OWNER} s'il manque. Deux raisons. D'abord l'ordre d'exécution entre le runner de
- * Mongock et celui-ci n'est pas garanti, et un garde-fou qui dépend d'un ordre non garanti n'en
- * est pas un. Ensuite {@code V003} ne tourne qu'une fois : si quelqu'un supprime le rôle en
- * base, seul ce runner le rétablit.</p>
- *
- * <p>Il ne touche jamais au rôle d'un autre compte, et ne retire rien : il pose, il n'arbitre pas.</p>
+ * Garde-fou anti-verrouillage : à chaque démarrage, DISCORD_ADMIN_ID est OWNER. Indépendant de V003
+ * (ordre des runners non garanti, V003 ne tourne qu'une fois) : recrée le rôle s'il manque.
  */
 @Slf4j
 @Component
@@ -50,8 +38,7 @@ public class OwnerSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (adminDiscordId == null || adminDiscordId.isBlank()) {
-            // Pas une exception : un cœur qui refuse de démarrer emporte tout le reste avec lui,
-            // y compris les serveurs de jeu déjà en route. Mais l'absence doit sauter aux yeux.
+            // Pas d'exception : un cœur qui refuse de démarrer emporte les serveurs de jeu avec lui.
             log.error("DISCORD_ADMIN_ID n'est pas renseigné : AUCUN compte OWNER ne sera semé. "
                     + "Le garde-fou anti-verrouillage est inactif — corrigez l'environnement.");
             return;
@@ -78,11 +65,6 @@ public class OwnerSeeder implements CommandLineRunner {
         userRepository.save(user);
     }
 
-    /**
-     * Le rôle {@code OWNER} porte toujours toutes les permissions, y compris celles ajoutées à
-     * l'enum depuis le dernier démarrage. C'est ce qui évite qu'une nouvelle permission arrive
-     * sans que personne ne la détienne.
-     */
     private Role ensureOwnerRole() {
         Role owner = roleRepository.findByName(SystemRole.OWNER.roleName()).orElseGet(() -> {
             Role created = new Role();

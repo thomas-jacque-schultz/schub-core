@@ -13,20 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * La passerelle réelle : deux routes du connecteur Riot, et rien d'autre.
- *
- * <p>Le cœur ne parle pas à l'API Riot et ne doit pas l'apprendre — c'est le connecteur qui
- * détient la clé, le quota et le cache (plan §D.1). Ici, ce sont deux appels locaux sur
- * l'overlay, portant le secret interne du maillage.</p>
- *
- * <p><strong>Toute erreur devient un {@link Optional#empty()}.</strong> Connecteur éteint, clé de
- * développement expirée, quota épuisé, {@code puuid} inconnu de Riot : ces quatre cas appellent
- * la même conduite côté panneau — dire que la donnée manque, et laisser le reste de la page
- * s'afficher. Les distinguer demanderait de transporter un statut HTTP jusqu'à l'écran pour lui
- * faire écrire quatre phrases là où une suffit ; le jour où une seule mérite un traitement
- * propre, c'est cette classe qu'il faudra rouvrir.</p>
- */
 @Slf4j
 @Service
 public class ConnectorRiotChampionGateway implements RiotChampionGateway {
@@ -87,10 +73,6 @@ public class ConnectorRiotChampionGateway implements RiotChampionGateway {
         }
     }
 
-    /**
-     * Le dernier gagne si deux entrées portaient le même identifiant numérique — Data Dragon ne
-     * le fait pas, et un doublon ne justifierait pas de faire échouer tout un panneau.
-     */
     private static Map<Integer, Champion> indexe(List<ChampionResponse> champions) {
         Map<Integer, Champion> parId = new LinkedHashMap<>();
         for (ChampionResponse champion : champions) {
@@ -101,14 +83,6 @@ public class ConnectorRiotChampionGateway implements RiotChampionGateway {
         }
         return Map.copyOf(parId);
     }
-
-    // --- les formes rendues par le connecteur ---
-    //
-    // Redéclarées ici plutôt que partagées : deux services ne partagent pas de classes, c'est ce
-    // qui leur permet d'évoluer séparément (migration §5). Les champs non lus — `locale`,
-    // `title`, `tags`, `championName` — sont ignorés à la désérialisation. `championName` en
-    // particulier n'est pas repris : le nom vient du catalogue, qui porte la version qui lui
-    // donne son sens, et le prendre ailleurs le détacherait de son patch.
 
     record CatalogueResponse(String version, String locale, List<ChampionResponse> champions) {
     }

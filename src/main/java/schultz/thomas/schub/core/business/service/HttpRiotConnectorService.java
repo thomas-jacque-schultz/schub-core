@@ -12,13 +12,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * L'implémentation HTTP : un appel local sur l'overlay, protégé par le secret interne.
- *
- * <p>Les formes rendues par le connecteur sont redéclarées ici plutôt que partagées — deux
- * services ne partagent pas de classes, c'est ce qui leur permet d'évoluer séparément
- * (migration §5). Seuls les champs lus sont déclarés ; le reste est ignoré.</p>
- */
 @Slf4j
 @Service
 public class HttpRiotConnectorService implements RiotConnectorService {

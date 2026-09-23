@@ -46,14 +46,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Le panneau 3, branché sur le <em>vrai</em> évaluateur de permissions.
- *
- * <p>Les mocks s'arrêtent aux dépôts et à la passerelle Riot : l'autorisation passe pour de bon
- * par {@link PermissionEvaluator} et {@link TeamScopedAuthority}. Un
- * {@code when(...).thenReturn(false)} ne prouverait pas qu'un non-membre est refusé par la chaîne
- * réelle.</p>
- */
 class ChampionPoolServiceTest {
 
     private static final String PUUID_TOP = "puuid-top";
@@ -132,8 +124,6 @@ class ChampionPoolServiceTest {
                 .thenReturn(Optional.of(List.of(maitrise(JAX, 4, 12_000), maitrise(AHRI, 6, 90_000))));
     }
 
-    // --- l'autorisation ---
-
     @Test
     @DisplayName("Un non-membre n'obtient pas le pool — refusé par la chaîne réelle")
     void refuseUnNonMembre() {
@@ -154,8 +144,6 @@ class ChampionPoolServiceTest {
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining(Permission.COMPOSITION_EDIT.name());
     }
-
-    // --- ce que la colonne répond ---
 
     @Test
     @DisplayName("Sous un champion retenu, ceux qui tiennent le poste, du plus maîtrisé au moins")
@@ -215,11 +203,8 @@ class ChampionPoolServiceTest {
 
         ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
 
-        // Ahri : (400 000 + 200 000) / 2 = 300 000 ; Jax : (10 000 + 20 000) / 2 = 15 000.
         assertThat(top.champions()).extracting("championKey").containsExactly("Ahri", "Jax");
     }
-
-    // --- le plancher ---
 
     @Test
     @DisplayName("Le plancher masque le champion et dit combien")
@@ -246,8 +231,6 @@ class ChampionPoolServiceTest {
                 .extracting("memberId").containsExactly("m-top");
         assertThat(pool.getMasteryFloor()).isEqualTo(1_000);
     }
-
-    // --- l'écriture ---
 
     @Test
     @DisplayName("Une clé de champion inconnue du patch est refusée plutôt qu'enregistrée")
@@ -283,8 +266,6 @@ class ChampionPoolServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    // --- le catalogue ---
-
     @Test
     @DisplayName("Le catalogue entier accompagne le panneau, trié par nom")
     void sertLeCatalogueEntier() {
@@ -319,8 +300,6 @@ class ChampionPoolServiceTest {
         verify(championGateway, times(1)).catalogue();
         verify(championGateway, times(1)).masteries(PUUID_POLYVALENT);
     }
-
-    // --- outillage ---
 
     private static ChampionPoolColumnDto colonne(ChampionPoolDto pool, GameRole role) {
         return pool.columns().stream()

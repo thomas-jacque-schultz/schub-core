@@ -9,13 +9,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Ce qui échoue en silence dans une migration : être rejouée.
- *
- * <p>Mongock ne rejoue pas ce qu'il a exécuté, mais c'est un filet et non une garantie — une base
- * restaurée, un {@code mongockChangeLog} tronqué, et la migration repasse. Ce qui est vérifié ici
- * est la propriété qui la rend alors inoffensive.</p>
- */
 class V010_TeamMemberRolesTest {
 
     @Test

@@ -5,12 +5,7 @@ import schultz.thomas.schub.core.team.api.dto.StatLineDto;
 
 import java.util.List;
 
-/**
- * Les ratios, calculés au dernier moment sur des sommes.
- *
- * <p>C'est ce qui rend « le reste du pool » exact : le reste, c'est le total moins le groupe, et
- * une soustraction de sommes est juste là où une soustraction de moyennes ne veut rien dire.</p>
- */
+// Ratios calculés au dernier moment sur des sommes : « le reste » = total − groupe n'a de sens qu'en sommes.
 final class StatLines {
 
     private StatLines() {
@@ -41,10 +36,6 @@ final class StatLines {
                 versusRest);
     }
 
-    /**
-     * Le groupe comparé au reste des parties du même joueur. Nulle quand le groupe est tout ce
-     * qu'on a : se comparer à rien ne donne pas un écart de zéro.
-     */
     static StatComparisonDto versusRest(RiotStatsGateway.Bucket groupe, RiotStatsGateway.Bucket total) {
         if (total == null || total.games() <= groupe.games()) {
             return null;
@@ -80,7 +71,6 @@ final class StatLines {
         return bucket.games() == 0 ? null : (double) bucket.wins() / bucket.games();
     }
 
-    /** Zéro mort ne divise pas : le total des kills et assists est la lecture retenue. */
     static Double kda(RiotStatsGateway.Bucket bucket) {
         if (bucket.games() == 0) {
             return null;

@@ -19,13 +19,6 @@ import schultz.thomas.schub.core.team.api.dto.GameReviewRequest;
 import schultz.thomas.schub.core.team.api.dto.GameReviewsDto;
 import schultz.thomas.schub.core.team.business.service.GameReviewService;
 
-/**
- * La revue d'après-match, partie par partie (plan §D.10).
- *
- * <p>Sous {@code /teams/{teamId}/games/{matchId}} : une note n'existe pas sans son équipe ni sans
- * sa partie, et c'est l'équipe qui porte les droits. Le chemin porte les deux, donc l'appartenance
- * se vérifie sans avoir à la retrouver.</p>
- */
 @RestController
 @RequestMapping("/teams/{teamId}/games/{matchId}/reviews")
 @RequiredArgsConstructor

@@ -20,13 +20,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-/**
- * Les compositions préparées d'une équipe.
- *
- * <p>Tout l'intérêt de cette classe est dans {@link #valide(Team, List)} : une composition qui
- * ne désigne pas exactement cinq postes n'est pas une composition, et l'accepter en base
- * donnerait un écran qui plante ou, pire, qui affiche quatre colonnes sans le dire.</p>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -100,18 +93,6 @@ public class CompositionService {
         composition.setUpdatedAt(Instant.now());
     }
 
-    /**
-     * <strong>Exactement cinq lignes, un poste chacune.</strong>
-     *
-     * <p>Quatre postes, ou deux fois le même, ce n'est pas une équipe sur la Faille — et le
-     * refuser ici plutôt qu'à l'affichage est ce qui évite qu'une composition fausse dorme en
-     * base jusqu'au jour où quelqu'un la rouvre avant une partie.</p>
-     *
-     * <p>Le joueur, lui, reste facultatif : une composition est un <em>brouillon</em> qu'on
-     * prépare avant que l'effectif soit complet (plan §D, lot D.6). Ce qui est exigé, c'est cinq
-     * postes ; ce qui est vérifié quand un joueur est nommé, c'est qu'il est bien de l'équipe,
-     * qu'il n'y figure pas deux fois, et qu'il n'est pas le coach.</p>
-     */
     List<CompositionSlot> valide(Team team, List<CompositionSlot> slots) {
         if (slots == null || slots.size() != GameRole.values().length) {
             throw new IllegalArgumentException("Une composition désigne exactement "
@@ -166,7 +147,6 @@ public class CompositionService {
         return propre.isEmpty() ? null : propre;
     }
 
-    /** Ce qu'on enregistre : un nom, cinq lignes, le patch qui leur donne leur sens, des notes. */
     public record Draft(String name, List<CompositionSlot> slots, String patch, String notes) {
     }
 }

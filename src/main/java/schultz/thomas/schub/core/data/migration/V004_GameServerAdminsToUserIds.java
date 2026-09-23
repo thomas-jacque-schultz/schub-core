@@ -16,25 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * {@code GameServer.admins} passe de pseudos saisis à la main à des <strong>ids internes de
- * comptes</strong>.
- *
- * <p>Le champ est une {@code List<String>} depuis toujours ; ce qui change est ce qu'elle
- * contient. Un id Discord aurait été un identifiant <em>externe</em> : le jour où un compte se
- * lie autrement, la liste devient fausse. L'id interne, lui, ne bouge jamais (plan §A.4).</p>
- *
- * <p><strong>Ce qui ne correspond à personne est vidé, et journalisé.</strong> C'est la
- * recommandation du plan et elle mérite qu'on la justifie : garder silencieusement une chaîne
- * qui ne désigne plus rien donnerait une liste d'administrateurs qui <em>semble</em> peuplée
- * alors qu'elle n'autorise personne. Un champ vide se voit et se corrige ; une valeur morte
- * se croit.</p>
- *
- * <p>En pratique, sur une base de dev, presque tout tombe : les comptes vivent encore dans
- * {@code discordbot.users}, que le cœur n'a pas le droit de lire, et les pseudos saisis à la
- * main ne correspondent à rien de résoluble. En prod, la base est vierge : il n'y a aucun
- * serveur, donc rien à convertir.</p>
- */
 @ChangeUnit(id = "gameserver-admins-to-user-ids", order = "004", author = "schub")
 public class V004_GameServerAdminsToUserIds {
 
@@ -86,11 +67,6 @@ public class V004_GameServerAdminsToUserIds {
         return id instanceof ObjectId objectId ? objectId : id;
     }
 
-    /**
-     * Pas de retour en arrière possible : les pseudos d'origine ne sont conservés nulle part,
-     * précisément parce qu'ils ne désignaient personne de façon fiable. Les journaux de cette
-     * migration sont la seule trace, et c'est pour ça qu'elle journalise chaque retrait.
-     */
     @RollbackExecution
     public void rollback() {
         log.warn("Retour en arrière impossible : les pseudos d'administrateurs d'origine ne sont pas conservés");

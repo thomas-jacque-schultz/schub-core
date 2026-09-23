@@ -15,17 +15,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * {@code TeamMember.role} devient {@code TeamMember.roles} : un membre tient plusieurs postes.
- *
- * <p>Le poste est un champ d'un sous-document embarqué dans un tableau, donc il n'existe pas de
- * mise à jour ensembliste portable qui le lise et l'écrive en une passe : chaque équipe est relue,
- * son effectif réécrit, et le lot part en {@code bulkWrite}.</p>
- *
- * <p><strong>Rejouable</strong> : seul un membre qui porte encore {@code role} et pas
- * {@code roles} est converti, et une équipe sans membre à convertir n'est pas réécrite. Un second
- * passage ne compte rien et n'écrit rien.</p>
- */
 @ChangeUnit(id = "team-member-roles", order = "010", author = "schub")
 public class V010_TeamMemberRoles {
 
@@ -52,13 +41,6 @@ public class V010_TeamMemberRoles {
         log.info("Postes convertis en listes dans {} équipe(s)", teams.bulkWrite(lot).getModifiedCount());
     }
 
-    /**
-     * Convertit un effectif en place, et dit s'il a changé.
-     *
-     * <p>Un membre qui porte déjà {@code roles} n'est pas retouché — son {@code role} résiduel est
-     * seulement retiré, sans compter pour une modification. C'est ce qui rend la migration
-     * rejouable.</p>
-     */
     static boolean convertit(List<Document> members) {
         boolean converti = false;
         for (Document member : members) {
@@ -73,10 +55,6 @@ public class V010_TeamMemberRoles {
         return converti;
     }
 
-    /**
-     * Rien à rétablir : revenir à un poste unique demanderait de choisir lequel garder, et ce
-     * choix ferait disparaître une donnée que personne n'aurait demandé à perdre.
-     */
     @RollbackExecution
     public void rollback() {
         log.warn("Retour en arrière sans objet : un poste unique ne peut pas représenter plusieurs postes");

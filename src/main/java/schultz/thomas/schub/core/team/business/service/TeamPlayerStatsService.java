@@ -25,16 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-/**
- * <strong>Le panneau 1 — les joueurs d'une équipe</strong> (plan §D.8).
- *
- * <p>Une colonne par joueur. La lecture est gardée par {@code TEAM_VIEW} <em>sur cette
- * équipe</em> : la permission est à portée de ressource, elle vient de l'appartenance et pas du
- * rôle, et c'est {@link TeamService#requireVisible} qui la réclame.</p>
- *
- * <p>Aucun {@code puuid} ne sort d'ici. Un identifiant de membre suffit à l'écran, et un puuid
- * rendu au client serait la clé d'entrée d'un sondage d'historique.</p>
- */
 @Service
 @RequiredArgsConstructor
 public class TeamPlayerStatsService {
@@ -67,8 +57,6 @@ public class TeamPlayerStatsService {
         return new TeamPlayersStatsDto(team.getId(), team.getName(), days, championsMax, compares,
                 placeDuLecteur(team, actor), Instant.now());
     }
-
-    // --- interne ---
 
     static List<TeamMember> joueursDe(Team team) {
         if (team.getMembers() == null) {
@@ -119,11 +107,6 @@ public class TeamPlayerStatsService {
                 null);
     }
 
-    /**
-     * L'écart de chacun à la moyenne des autres. Il n'entre que des colonnes qui ont des parties :
-     * compter un joueur sans données comme un zéro tirerait la moyenne vers le bas et ferait
-     * briller tous les autres.
-     */
     private static List<PlayerStatsDto> comparent(List<PlayerStatsDto> colonnes) {
         List<PlayerStatsDto> avecChiffres = colonnes.stream()
                 .filter(colonne -> colonne.overall() != null && colonne.overall().games() > 0)

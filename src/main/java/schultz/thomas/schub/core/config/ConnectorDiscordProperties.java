@@ -5,7 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
-/** Comment joindre le connecteur Discord, pour lui pousser les changements. */
 @Data
 @ConfigurationProperties(prefix = "connector.discord")
 public class ConnectorDiscordProperties {

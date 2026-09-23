@@ -27,10 +27,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-/**
- * L'état voulu est fourni tel quel par un {@link PortRuleResolver} simulé : ces tests
- * ne portent que sur la comparaison avec le routeur et sur ce qui lui est envoyé.
- */
 @ExtendWith(MockitoExtension.class)
 class PortForwardingServiceTest {
 
@@ -256,8 +252,6 @@ class PortForwardingServiceTest {
 
         verify(resolver).resolve("minecraft-ftb", true);
     }
-
-    // --- fixtures ---------------------------------------------------------
 
     private void givenDesired(PortRule... rules) {
         when(redirectionRequestService.unavailableReason()).thenReturn(null);

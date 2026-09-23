@@ -30,13 +30,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Les équipes : leur création, leur effectif, et la revendication d'un membre libre.
- *
- * <p>Toutes les écritures passent par {@link PermissionEvaluator} <em>au point d'action</em>,
- * avec l'équipe comme ressource. Le contrôle grossier du BFF ne peut pas répondre à « est-ce
- * que celui-là est le capitaine de celle-ci ? » — seul le cœur le sait (plan §A.2).</p>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -52,37 +45,21 @@ public class TeamService {
     private final MemberDirectory memberDirectory;
     private final RiotIdResolver riotIdResolver;
 
-    /** La référence de portée d'une équipe. Son <em>id</em> : une équipe n'a pas de slug. */
     public static ResourceRef ref(String teamId) {
         return teamId == null ? null : new ResourceRef(ResourceType.TEAM, teamId);
     }
-
-    // --- lecture ---
 
     public Team require(String teamId) {
         return teamRepository.findById(teamId)
                 .orElseThrow(() -> new NoSuchElementException("Aucune équipe d'identifiant '" + teamId + "'"));
     }
 
-    /** Lit une équipe, ou refuse. En être membre suffit ; ne pas l'être ne suffit pas. */
     public Team requireVisible(User actor, String teamId) {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_VIEW, ref(teamId));
         return team;
     }
 
-    /**
-     * Les équipes de cet acteur — <strong>c'est ce qui les fait « apparaître sur son compte »</strong>.
-     *
-     * <p>Deux sources, dédoublonnées : celles où il figure dans l'effectif, et celles qu'il a
-     * créées. La seconde n'est pas redondante — on peut créer une équipe sans s'y mettre soi-même,
-     * et elle disparaîtrait de la vue de son propre capitaine.</p>
-     *
-     * <p>Un compte qui porte {@code TEAM_VIEW} par son rôle (aujourd'hui {@code ADMINISTRATOR} et
-     * {@code OWNER}) ne reçoit pas pour autant toutes les équipes du système ici : cette route
-     * répond « les miennes », pas « celles que j'ai le droit de voir ». Mélanger les deux
-     * donnerait à un administrateur une liste qui n'est pas la sienne, sans qu'il l'ait demandé.</p>
-     */
     public List<Team> mine(User actor) {
         if (actor == null || actor.getId() == null) {
             return List.of();
@@ -94,8 +71,6 @@ public class TeamService {
                 .sorted(Comparator.comparing(Team::getName, Comparator.nullsLast(String::compareToIgnoreCase)))
                 .toList();
     }
-
-    // --- écriture ---
 
     public Team create(User actor, String name) {
         permissionEvaluator.require(actor, Permission.TEAM_CREATE, null);
@@ -119,12 +94,6 @@ public class TeamService {
         return touch(team);
     }
 
-    /**
-     * Supprime l'équipe <strong>et ses compositions</strong>.
-     *
-     * <p>Les laisser derrière donnerait des documents qui référencent une équipe disparue :
-     * invisibles, jamais relus, et découverts un jour par une requête qui compte mal.</p>
-     */
     public void delete(User actor, String teamId) {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
@@ -135,13 +104,6 @@ public class TeamService {
         log.info("Équipe « {} » supprimée par {}", team.getName(), actor.getDiscordId());
     }
 
-    /**
-     * Ajoute quelqu'un à l'effectif, lié à un compte Schub ou libre.
-     *
-     * <p>Le membre est lié <em>d'emblée</em> si son {@code puuid} désigne déjà un compte : sans
-     * ça, une personne qui a un compte Schub devrait se déconnecter et se reconnecter pour voir
-     * apparaître une équipe qu'on vient de créer pour elle.</p>
-     */
     public Team addMember(User actor, String teamId, NewMember demande) {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
@@ -218,35 +180,6 @@ public class TeamService {
         return touch(team);
     }
 
-    /**
-     * <strong>La revendication</strong> : l'acteur récupère les places qui l'attendaient.
-     *
-     * <p>C'est le moment décrit par le plan §D.2 bis — « un membre libre devient lié le jour où
-     * la personne se connecte et revendique son Riot ID », et c'est ce qui fait apparaître
-     * l'équipe sur son compte. À appeler après la liaison de compte Riot (lot D.3) ; l'appeler
-     * deux fois ne fait rien de plus, l'opération est idempotente.</p>
-     *
-     * <p><strong>Elle resynchronise aussi les places déjà revendiquées par l'appelant</strong> :
-     * après un changement de compte Riot, une place restée sur l'ancien {@code puuid} afficherait
-     * les parties d'un compte qui n'est plus le sien. C'est pourquoi le front la rappelle après un
-     * changement accepté, et pas seulement après une première liaison.</p>
-     *
-     * <p>Deux façons de reconnaître une place : par {@code puuid} quand le membre en a un, sinon
-     * par Riot ID écrit à la main. La seconde est nécessaire parce qu'un membre peut avoir été
-     * ajouté alors que le connecteur Riot était indisponible ; elle est moins sûre — deux
-     * personnes peuvent avoir écrit le même Riot ID — mais elle ne compare que des membres
-     * <em>libres</em>, donc elle ne prend jamais la place de quelqu'un.</p>
-     *
-     * <p>La lecture est complète, et c'est assumé : une revendication arrive une fois par
-     * personne, sur un volume qui se compte en dizaines d'équipes. Un index pour ça serait payer
-     * un problème qui n'existe pas — et il ne couvrirait de toute façon que la moitié des
-     * correspondances, celles qui ont un {@code puuid}.</p>
-     *
-     * <p><strong>Aucune permission n'est exigée, et c'est volontaire</strong> : on ne revendique
-     * que sa propre identité Riot, celle qui est écrite sur son propre compte. Refuser cet appel
-     * à un {@code VISITEUR} reviendrait à lui interdire d'entrer dans une équipe où quelqu'un
-     * l'a déjà inscrit.</p>
-     */
     public List<Team> claim(User actor) {
         if (actor == null) {
             return List.of();
@@ -286,20 +219,6 @@ public class TeamService {
     }
 
 
-    /**
-     * La place d'une personne qui vient de changer de compte Riot suit le compte, pas l'inverse.
-     *
-     * <p>Sans ça, une place revendiquée reste collée à l'ancien {@code puuid} : le panneau
-     * d'équipe continuerait d'afficher les parties de l'ancien compte sous le nom de son
-     * titulaire, et personne ne verrait que c'est faux. C'est la seule conséquence d'un
-     * changement de compte que le domaine des équipes ait à traiter, et elle est traitée ici
-     * parce que l'identité n'écrit pas dans les équipes (plan §D.2).</p>
-     *
-     * <p><strong>Un {@code puuid} n'est jamais remplacé par rien.</strong> Si le nouveau Riot ID
-     * n'est pas encore résolu — connecteur éteint —, la place garde celui qu'elle a jusqu'à la
-     * prochaine revendication : perdre une clé stable pour une déclaration en attente serait
-     * échanger du sûr contre de l'incertain.</p>
-     */
     private boolean resynchronise(TeamMember member, User actor, String puuid, String teamName) {
         String gameName = trimOrNull(actor.getRiotGameName());
         String tagLine = trimOrNull(actor.getRiotTagLine());
@@ -318,8 +237,6 @@ public class TeamService {
         member.setRiotTagLine(tagLine);
         return true;
     }
-
-    // --- règles ---
 
     private boolean correspond(TeamMember member, String puuid, String riotId) {
         if (puuid != null && puuid.equals(member.getRiotPuuid())) {
@@ -340,24 +257,12 @@ public class TeamService {
         }
     }
 
-    /**
-     * Un coach n'a pas de poste. Le tolérer donnerait un TOP qui n'est pas dans le jeu, et une
-     * composition qui pourrait le retenir.
-     */
     private void refuseCoachAvecPoste(TeamMember member) {
         if (member.getStatus() == MemberStatus.COACH && !member.getRoles().isEmpty()) {
             throw new IllegalArgumentException("Un coach ne tient pas de poste : laisser la liste vide");
         }
     }
 
-    /**
-     * Les postes retenus : ceux qui existent, une fois chacun, dans l'ordre déclaré.
-     *
-     * <p>L'ordre est conservé parce qu'il porte une information — le premier est le poste
-     * habituel, et c'est lui qui range l'effectif. Le doublon est écarté en silence : il ne
-     * change rien à ce qu'un membre peut jouer, et le refuser ferait échouer un formulaire pour
-     * une répétition sans conséquence.</p>
-     */
     private static List<GameRole> postesValides(List<GameRole> roles) {
         if (roles == null) {
             return new ArrayList<>();
@@ -396,10 +301,6 @@ public class TeamService {
         return propre.isEmpty() ? null : propre;
     }
 
-    /**
-     * Ce qu'il faut pour ajouter quelqu'un. Le {@code puuid} est facultatif : fourni, il évite un
-     * appel au connecteur Riot ; absent, il est résolu au mieux.
-     */
     public record NewMember(
             String riotGameName,
             String riotTagLine,
@@ -409,7 +310,6 @@ public class TeamService {
     ) {
     }
 
-    /** Un membre existe-t-il sous cet identifiant, et peut-il être retenu dans une composition ? */
     public Optional<TeamMember> jouable(Team team, String memberId) {
         return team.findMember(memberId).filter(member -> member.getStatus() != MemberStatus.COACH);
     }

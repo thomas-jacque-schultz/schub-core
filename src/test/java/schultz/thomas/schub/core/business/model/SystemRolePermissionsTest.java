@@ -8,17 +8,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Verrouille la composition des rôles système.
- *
- * <p>Ces tests existent à cause d'une régression réelle : {@code ADMINISTRATOR} était défini par
- * {@code complementOf(ROLE_MANAGE)}, et a donc absorbé en silence les permissions d'équipe le
- * jour où elles sont apparues. Un rôle « tout sauf » accueille tout ce qu'on écrira plus tard,
- * y compris les permissions d'un domaine qui n'existe pas encore.</p>
- */
 class SystemRolePermissionsTest {
 
-    /** Les trois qui s'évaluent SUR une équipe : les accorder globalement n'a pas de sens. */
     private static final Set<Permission> PORTEES_PAR_EQUIPE =
             EnumSet.of(Permission.TEAM_VIEW, Permission.TEAM_EDIT, Permission.COMPOSITION_EDIT);
 
@@ -63,11 +54,7 @@ class SystemRolePermissionsTest {
         }
     }
 
-    /**
-     * Ce test échouera le jour où quelqu'un ajoutera une permission à l'enum. <strong>C'est son
-     * but.</strong> Il force à répondre « qui la reçoit ? » au lieu de laisser un
-     * {@code complementOf} répondre à notre place.
-     */
+    // Échoue dès qu'une permission est ajoutée à l'enum : c'est voulu.
     @Test
     @DisplayName("ajouter une permission oblige à décider qui la reçoit")
     void touteNouvellePermissionExigeUnArbitrage() {

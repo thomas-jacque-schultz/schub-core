@@ -26,17 +26,6 @@ import schultz.thomas.schub.core.team.data.model.Team;
 
 import java.util.List;
 
-/**
- * L'API des équipes.
- *
- * <p><strong>Un acteur est obligatoire sur toutes les routes</strong>, sans l'exception que se
- * permettent les serveurs de jeu : une équipe n'a pas de vue publique, et aucun service Schub
- * n'a de raison d'en lire une pour son propre compte. En-tête absent ou inconnu vaut refus.</p>
- *
- * <p>Les permissions sont évaluées au point d'action, avec l'équipe comme ressource. Appartenir à
- * une équipe y donne des droits, exactement comme figurer dans les {@code admins} d'un serveur
- * en donne sur celui-là (plan §A.1).</p>
- */
 @RestController
 @RequestMapping("/teams")
 @RequiredArgsConstructor
@@ -46,12 +35,6 @@ public class TeamController {
     private final TeamProjectionService projectionService;
     private final UserService userService;
 
-    /**
-     * Les équipes de l'appelant — celles où il figure, et celles qu'il a créées.
-     *
-     * <p>C'est la route qui réalise « les joueurs ajoutés voient l'équipe apparaître sur leur
-     * compte » : rien de plus n'est nécessaire côté front qu'appeler celle-ci.</p>
-     */
     @GetMapping
     public List<TeamSummaryDto> mine(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
         User actor = userService.requireActor(actorDiscordId);
@@ -122,12 +105,6 @@ public class TeamController {
         return projectionService.toDto(teamService.removeMember(actor, teamId, memberId), actor);
     }
 
-    /**
-     * « Ces places m'attendaient » — à appeler après la liaison du compte Riot (lot D.3).
-     *
-     * <p>Rend les équipes qui viennent de basculer, donc vides si rien n'attendait l'appelant.
-     * Idempotente : la rappeler ne relie rien de plus.</p>
-     */
     @PostMapping("/claim")
     public List<TeamSummaryDto> claim(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {

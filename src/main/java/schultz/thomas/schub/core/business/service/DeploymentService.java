@@ -13,12 +13,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Le lien entre un GameServer et le déploiement qui le réalise.
- *
- * <p>Anciennement {@code DockerService}. Le cœur ne nomme plus l'outil : il pilote un
- * <em>déploiement</em>, et c'est le connecteur qui sait que cela s'appelle une stack Portainer.</p>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -29,17 +23,7 @@ public class DeploymentService {
 
     private final PortForwardingService portForwardingService;
 
-    /**
-     * Observe le déploiement et met l'entité à jour. Rend vrai si l'état a changé.
-     *
-     * <p>Une exception — déploiement injoignable, ou lecture trop ancienne pour être crue —
-     * devient {@code UNREACHABLE} et non {@code OFFLINE} : ne pas savoir n'est pas la même
-     * chose que savoir que c'est éteint, et confondre les deux fermerait les redirections
-     * d'un serveur en marche.</p>
-     *
-     * <p>Un statut null au premier passage compte comme un changement, pour que l'état initial
-     * soit notifié.</p>
-     */
+    // Exception = UNREACHABLE, pas OFFLINE : confondre fermerait les redirections d'un serveur en marche.
     public boolean observe(GameServer gameServer) {
         GameServerStatus newStatus;
         Instant now = Instant.now();
@@ -80,17 +64,12 @@ public class DeploymentService {
         return state.isRunning() ? GameServerStatus.ONLINE : GameServerStatus.OFFLINE;
     }
 
-    /**
-     * Ouvre les redirections avant de lancer le déploiement : le jeu doit trouver son port déjà
-     * ouvert quand il finit de démarrer. Un échec d'ouverture n'empêche pas le démarrage — le
-     * serveur reste joignable en LAN et la réconciliation périodique rattrapera.
-     */
+    // Ports ouverts avant le démarrage, pour que le jeu les trouve prêts. Un échec d'ouverture ne bloque pas.
     public boolean start(GameServer gameServer) {
         portForwardingService.reconcile(gameServer.getSlug(), true);
         return containerRequestService.startContainer(gameServer.getDeploymentId());
     }
 
-    /** Referme les redirections après l'arrêt, et seulement si l'arrêt a réussi. */
     public boolean stop(GameServer gameServer) {
         boolean stopped = containerRequestService.stopContainer(gameServer.getDeploymentId());
         if (stopped) {

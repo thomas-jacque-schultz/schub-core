@@ -20,21 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * Traduit une équipe pour son lecteur — et calcule ce qu'il a le droit d'y faire.
- *
- * <h2>Pourquoi des booléens et pas la liste des ayants droit</h2>
- *
- * <p>Le front doit savoir s'il peut modifier une équipe. La réponse évidente — lui donner le
- * créateur et le laisser comparer — a déjà été jugée et écartée au §A.5 bis du plan : c'est une
- * information sur les <em>autres</em>, elle oblige le client à rejouer une règle d'autorisation,
- * et elle répond faux dès qu'un {@code OWNER} regarde. La forme retenue est un fait sur le
- * lecteur, exactement comme {@code viewerIsAdmin} sur un serveur.</p>
- *
- * <p><strong>Une seule évaluation par équipe.</strong> Les permissions effectives sont demandées
- * une fois et les trois faits en sont dérivés : trois appels séparés feraient trois lectures de
- * la même équipe, et sur une liste, trois par ligne.</p>
- */
 @Service
 @RequiredArgsConstructor
 public class TeamProjectionService {
@@ -88,8 +73,6 @@ public class TeamProjectionService {
                 droitsSur(team, actor).contains(Permission.COMPOSITION_EDIT));
     }
 
-    // --- interne ---
-
     private CompositionDto toDto(Composition composition, Team team,
                                  Map<String, MemberDirectory.MemberIdentity> identites, boolean peutEcrire) {
         List<CompositionSlotDto> slots = composition.getSlots() == null ? List.of()
@@ -130,12 +113,6 @@ public class TeamProjectionService {
                 member.getUserId() != null && member.getUserId().equals(team.getCreatedBy()));
     }
 
-    /**
-     * Le pseudo du compte quand le membre est lié, son Riot ID sinon.
-     *
-     * <p>Résolu à la lecture et jamais recopié dans l'équipe : un pseudo recopié est faux le jour
-     * où il change, et personne ne s'en aperçoit.</p>
-     */
     private String nomAffiche(TeamMember member, Map<String, MemberDirectory.MemberIdentity> identites) {
         if (member.getUserId() != null) {
             MemberDirectory.MemberIdentity identite = identites.get(member.getUserId());
@@ -146,7 +123,6 @@ public class TeamProjectionService {
         return member.riotId();
     }
 
-    /** Un seul aller-retour vers l'identité pour toute l'équipe, jamais un par membre. */
     private Map<String, MemberDirectory.MemberIdentity> resoutLesComptes(Team team) {
         if (team.getMembers() == null || team.getMembers().isEmpty()) {
             return Map.of();

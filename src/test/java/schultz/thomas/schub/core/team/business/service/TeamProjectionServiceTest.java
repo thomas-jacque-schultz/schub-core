@@ -32,14 +32,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * « Ai-je le droit sur cet objet ? » — la réponse est un fait sur le lecteur.
- *
- * <p>La forme est celle tranchée au §A.5 bis du plan pour {@code viewerIsAdmin} : exposer la
- * liste des ayants droit pour que le front compare est une information sur les <em>autres</em>,
- * et c'est la fuite qu'on refuse. Ces tests vérifient les deux moitiés — que le booléen dit vrai
- * à qui a le droit, et que la projection ne nomme personne d'autre.</p>
- */
 class TeamProjectionServiceTest {
 
     private TeamRepository teamRepository;
@@ -110,11 +102,6 @@ class TeamProjectionServiceTest {
         assertThat(dto.viewerMemberId()).isNull();
     }
 
-    /**
-     * Le test qui garde la décision dans le temps : le jour où quelqu'un ajoute {@code userId} au
-     * membre « parce que le front en a besoin », c'est ici que ça se voit — et la bonne réponse
-     * sera un booléen de plus sur le lecteur, pas un identifiant de plus sur les autres.
-     */
     @Test
     @DisplayName("la projection d'un membre ne porte aucun identifiant de compte")
     void aucuneFuiteDIdentifiant() {
@@ -154,8 +141,6 @@ class TeamProjectionServiceTest {
         assertThat(projection.toSummary(equipe(), membre).viewerCanEdit()).isFalse();
         assertThat(projection.toSummary(equipe(), membre).memberCount()).isEqualTo(3);
     }
-
-    // --- montage ---
 
     private Team equipe() {
         Team team = new Team();

@@ -16,23 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Les chiffres d'un joueur, quels qu'en soient le demandeur et l'écran.
- *
- * <h2>Pourquoi les comptes ne sont pas faits ici</h2>
- *
- * <p>Le connecteur détient les participations et les index qui vont avec ; les faire voyager pour
- * les compter dans le cœur coûterait dix mille documents par affichage. Ce qui reste ici est ce
- * que le connecteur ne peut pas savoir : à quoi comparer un chiffre, et pourquoi une colonne est
- * vide.</p>
- *
- * <h2>Ce qu'on ne compare pas</h2>
- *
- * <p>Il n'existe pas de référence mondiale accessible — ni quota, ni droit de collecte. Un taux
- * seul ne dit donc rien et n'est jamais présenté comme un jugement : chaque groupe est comparé au
- * <em>reste des parties du même joueur</em>, et le panneau d'équipe y ajoute la comparaison aux
- * coéquipiers. Les deux sont des faits vérifiables sur nos propres données.</p>
- */
 @Service
 @RequiredArgsConstructor
 public class PlayerStatsService {
@@ -45,10 +28,6 @@ public class PlayerStatsService {
     private final RiotChampionGateway championGateway;
     private final RiotConnectorService riotConnector;
 
-    /**
-     * @param total le cumul brut, gardé pour que l'appelant puisse comparer des joueurs entre eux
-     *              sans refaire une requête.
-     */
     public record Figures(
             StatsState state,
             StatsCoverageDto coverage,
@@ -135,8 +114,6 @@ public class PlayerStatsService {
         return Instant.now().minusSeconds(days * 86_400L);
     }
 
-    // --- interne ---
-
     private Map<String, Figures> indisponible(List<String> puuids) {
         Map<String, Figures> figures = new LinkedHashMap<>();
         for (String puuid : puuids) {
@@ -220,7 +197,6 @@ public class PlayerStatsService {
                 .toList();
     }
 
-    /** Les mois dans l'ordre du temps, et seulement les derniers : une évolution se lit de gauche à droite. */
     private static List<StatLineDto> lignesMois(List<RiotStatsGateway.Bucket> buckets) {
         List<StatLineDto> lignes = buckets.stream()
                 .sorted(Comparator.comparing(RiotStatsGateway.Bucket::key))

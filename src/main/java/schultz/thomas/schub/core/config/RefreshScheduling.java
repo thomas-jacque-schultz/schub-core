@@ -12,13 +12,7 @@ import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import java.time.Duration;
 
-/**
- * Programme la boucle de réconciliation.
- *
- * <p>Via un registrar plutôt que {@code @Scheduled(fixedRateString)} : cette annotation n'accepte
- * qu'un nombre de millisecondes ou de l'ISO-8601, ce qui imposerait d'écrire {@code PT60S} en
- * configuration au lieu de {@code 60s}.</p>
- */
+// Pas de @Scheduled(fixedRateString) : il n'accepte que des ms ou de l'ISO-8601 (PT60S), pas « 60s ».
 @Slf4j
 @EnableAsync
 @EnableScheduling

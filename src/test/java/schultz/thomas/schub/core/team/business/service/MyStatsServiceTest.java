@@ -22,7 +22,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Mes stats : le sujet est l'acteur, et rien d'autre ne peut l'être. */
 class MyStatsServiceTest {
 
     private static final String PUUID = "puuid-a-moi";

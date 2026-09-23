@@ -13,21 +13,10 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Dans ce dépôt, {@code @Indexed} et {@code @CompoundIndex} <strong>ne créent aucun index</strong> :
- * {@code auto-index-creation} vaut {@code false}, comme le veut le défaut de Spring Boot 3. Les
- * index se posent en ChangeUnit Mongock, où ils sont versionnés et relus.
- *
- * <p>Le piège a frappé quatre fois — V001, V002, V007, V009 — et une cinquième est passée sans être
- * vue : l'unicité protocole + port WAN des redirections n'a jamais existé jusqu'au V011.
- * L'annotation garde sa valeur de documentation ; ce test la relie à sa migration.</p>
- */
+// @Indexed et @CompoundIndex sont inertes (auto-index-creation à false) : chaque index se pose en ChangeUnit.
+// Ce test relie chaque annotation à sa migration.
 class IndexAnnotationsTest {
 
-    /**
-     * Chaque entrée est couverte par une migration. En ajouter une sans migration fait échouer ce
-     * test — c'est son but : répondre « quel ChangeUnit la pose ? » avant de croire l'annotation.
-     */
     private static final Set<String> COUVERTES = Set.of(
             "GameServer.java",          // V001 — slug unique
             "User.java",                // V002 — discordId, V007 — riotPuuid

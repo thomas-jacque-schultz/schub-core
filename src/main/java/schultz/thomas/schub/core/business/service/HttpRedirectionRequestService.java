@@ -13,17 +13,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import java.util.List;
 
-/**
- * Implémentation de {@link RedirectionRequestService} déléguant à {@code schub-connector-freebox}.
- *
- * <p>Depuis la phase 1, ce service ne parle plus à la Freebox : il parle à un connecteur qui,
- * lui, sait le faire. Le vocabulaire échangé reste {@link PortRule} de bout en bout — aucune
- * notion propre à la Freebox ne traverse plus cette frontière, et changer de routeur ne
- * demanderait pas une ligne ici.</p>
- *
- * <p>Le réconciliateur est inchangé : il ne connaît que l'interface, et ignore que
- * l'implémentation est passée d'un appel direct à un saut réseau.</p>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,10 +21,6 @@ public class HttpRedirectionRequestService implements RedirectionRequestService 
     @Qualifier("connectorFreeboxRestClient")
     private final RestClient restClient;
 
-    /**
-     * Interroge le connecteur ; un connecteur injoignable est un motif d'indisponibilité
-     * comme un autre, pas une erreur à propager. Le réconciliateur se tait et repassera.
-     */
     @Override
     public String unavailableReason() {
         try {
@@ -91,7 +76,6 @@ public class HttpRedirectionRequestService implements RedirectionRequestService 
                 .toBodilessEntity();
     }
 
-    /** Une règle sans identifiant n'existe pas encore sur le routeur : rien à modifier. */
     private String requireProviderId(PortRule rule) {
         if (rule.providerId() == null) {
             throw new IllegalArgumentException("Règle sans identifiant de routeur: " + rule.describe());

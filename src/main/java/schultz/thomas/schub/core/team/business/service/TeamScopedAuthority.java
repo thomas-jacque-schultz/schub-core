@@ -12,29 +12,9 @@ import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 import java.util.Set;
 
 /**
- * Ce qu'une équipe donne à qui lui appartient.
- *
- * <pre>
- *   créateur  ->  TEAM_VIEW, TEAM_EDIT, COMPOSITION_EDIT
- *   membre    ->  TEAM_VIEW
- *   le reste  ->  rien
- * </pre>
- *
- * <p>C'est la mécanique de portée du plan §A.1, telle quelle : appartenir à une ressource donne
- * des droits sur <em>cette</em> ressource, exactement comme figurer dans les {@code admins} d'un
- * serveur donne {@code SERVER_START} sur celui-là. Rien n'est dupliqué de
- * {@link schultz.thomas.schub.core.business.service.PermissionEvaluator} : il pose la question,
- * cette classe répond pour son domaine.</p>
- *
- * <p><strong>Un membre voit tout et n'écrit rien</strong> (plan §D.2 bis, point 2). C'est
- * délibérément plus strict que « tout le monde peut tout changer » : une équipe est un objet
- * partagé, et cinq personnes qui modifient le même roster sans règle donnent un roster que
- * personne ne reconnaît. Le créateur est le capitaine ; {@code OWNER} passe par son rôle, qui
- * porte {@code TEAM_EDIT} partout — il n'a donc pas besoin d'être traité ici.</p>
- *
- * <p><strong>Ce qui n'est pas accordé, et pourquoi</strong> : être membre ne donne pas
- * {@code TEAM_CREATE}. Cette permission est globale et sans ressource ; l'y ajouter reviendrait
- * à faire répondre oui à une question qui ne porte sur aucune équipe.</p>
+ * créateur -> TEAM_VIEW, TEAM_EDIT, COMPOSITION_EDIT
+ * membre   -> TEAM_VIEW
+ * le reste -> rien (OWNER passe par son rôle)
  */
 @Service
 @RequiredArgsConstructor

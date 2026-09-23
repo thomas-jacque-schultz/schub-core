@@ -6,33 +6,21 @@ spring:
   jackson:
     serialization:
       # Contrat HTTP : une Duration sort en ISO-8601 ("PT20M"), jamais en secondes décimales.
-      # C'est le défaut de Boot, mais un défaut ne fige rien — et un 1200.0 lu comme des
-      # minutes s'affiche en "1200 minutes" sans lever d'erreur.
       write-durations-as-timestamps: false
   data:
     mongodb:
       uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST:schub-mongo}:27017/${MONGO_DB}?authSource=${MONGO_DB}
 
-# Migrations de schéma. Le cœur possède la base `servers` et elle seule : aucune ChangeUnit
-# ne doit jamais toucher une base d'un autre service (cf. plan §3, cloisonnement Mongo).
-# Le déplacement historique `discordbot` -> `servers` n'est PAS ici : il traverse cette
-# frontière et reste une opération d'exploitation lancée en root, une fois.
 mongock:
   migration-scan-package:
     - schultz.thomas.schub.core.data.migration
-  # Le démarrage échoue plutôt que de continuer sans le verrou : mieux vaut un service mort
-  # qu'un service qui sert des données à un schéma qu'il ne comprend pas.
   throw-exception-if-cannot-obtain-lock: true
-  # Les transactions MongoDB EXIGENT un replica set. Le Mongo de Schub est autonome (un seul
-  # conteneur `mongo:7`), donc elles sont indisponibles — l'activer ferait échouer le
-  # démarrage. Conséquence à connaître : une ChangeUnit qui échoue à mi-chemin laisse son
-  # travail partiel. Les écrire idempotentes, pour qu'un redémarrage les rattrape.
+  # Transactions impossibles : Mongo autonome, sans replica set. Écrire des ChangeUnit idempotentes.
   transactional: false
 
 server:
   port: 8080
 
-# Secret partagé par tous les services Schub. Aucun appel entre services sans lui.
 schub:
   internal-secret: ${SCHUB_INTERNAL_SECRET:change-me-internal-secret}
 
@@ -46,11 +34,9 @@ management:
       probes:
         enabled: true
 
-# Boucle de réconciliation : observe chaque serveur, enregistre, notifie, réaligne les ports.
 core:
   refresh-interval: ${CORE_REFRESH_INTERVAL:60s}
 
-# Les connecteurs que le cœur pilote. Il ne connaît que leurs adresses — ni Portainer, ni la box.
 connector:
   portainer:
     base-url: ${CONNECTOR_PORTAINER_URL:http://connector-portainer:8080}
@@ -66,15 +52,11 @@ connector:
     base-url: ${CONNECTOR_DISCORD_URL:http://connector-discord:8080}
     connect-timeout: 3s
     read-timeout: 5s
-  # Le seul usage du connecteur Riot par le cœur au lot D.4 : `Pseudo#TAG` -> puuid, à l'ajout
-  # d'un membre d'équipe. Appel au mieux — s'il échoue, le membre est ajouté sans puuid, donc
-  # une indisponibilité du connecteur n'empêche jamais de constituer une équipe.
   riot:
     base-url: ${CONNECTOR_RIOT_URL:http://connector-riot:8080}
     connect-timeout: 2s
     read-timeout: 5s
 
-# Politique d'ouverture des ports. Rien ici ne dépend de la marque du routeur.
 port-forwarding:
   enabled: ${PORT_FORWARDING_ENABLED:false}
   dry-run: ${PORT_FORWARDING_DRY_RUN:true}
@@ -82,13 +64,7 @@ port-forwarding:
   prune-orphans: ${PORT_FORWARDING_PRUNE_ORPHANS:false}
   forbidden-wan-ports: [22, 23, 139, 445, 3389, 5432, 27017, 9443]
 
-# Le compte super-administrateur, désigné par son identifiant Discord et rien d'autre.
-# Semé à CHAQUE démarrage par OwnerSeeder : c'est le garde-fou qui rend impossible de se
-# verrouiller dehors par une erreur de rôle (plan §1).
-#
-# Ces deux variables vivaient dans schub-connector-discord jusqu'au 18-09, avec l'identité.
-# Valeur vide par défaut, volontairement : un cœur qui refuse de démarrer emporterait les
-# serveurs de jeu avec lui. L'absence est signalée par un log ERROR au démarrage.
+# Vide par défaut : un cœur qui refuse de démarrer emporterait les serveurs de jeu. OwnerSeeder journalise l'absence.
 discord:
   admin:
     id: ${DISCORD_ADMIN_ID:}

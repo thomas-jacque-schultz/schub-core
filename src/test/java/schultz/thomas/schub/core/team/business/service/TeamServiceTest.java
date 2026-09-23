@@ -36,14 +36,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Le domaine d'équipe branché sur le <em>vrai</em> évaluateur de permissions.
- *
- * <p>Les mocks s'arrêtent aux dépôts : l'autorisation, elle, passe par
- * {@link PermissionEvaluator} et {@link TeamScopedAuthority} pour de bon. C'est le seul montage
- * qui vérifie ce qui compte — qu'un non-capitaine se fasse refuser <em>par la chaîne réelle</em>,
- * et pas par un {@code when(...).thenReturn(false)} qui ne prouverait rien.</p>
- */
 class TeamServiceTest {
 
     private TeamRepository teamRepository;
@@ -107,8 +99,6 @@ class TeamServiceTest {
         when(memberDirectory.byRiotPuuid(anyString())).thenReturn(Optional.empty());
     }
 
-    // --- création ---
-
     @Test
     @DisplayName("un VISITEUR crée une équipe — sans ça, l'outil n'a aucun utilisateur")
     void creationParUnVisiteur() {
@@ -136,8 +126,6 @@ class TeamServiceTest {
         assertThatThrownBy(() -> teamService.create(capitaine, "   "))
                 .isInstanceOf(IllegalArgumentException.class);
     }
-
-    // --- qui écrit ---
 
     @Test
     @DisplayName("un membre ne renomme pas l'équipe de son capitaine")
@@ -208,8 +196,6 @@ class TeamServiceTest {
         verify(compositionRepository).deleteByTeamId("equipe-1");
         verify(teamRepository).delete(any(Team.class));
     }
-
-    // --- effectif : lié ou libre ---
 
     @Test
     @DisplayName("on ajoute un joueur qui n'a pas de compte Schub — il reste libre")
@@ -302,8 +288,6 @@ class TeamServiceTest {
 
         assertThat(equipe.getMembers()).hasSize(8);
     }
-
-    // --- revendication ---
 
     @Test
     @DisplayName("un membre libre devient lié quand la personne revendique son Riot ID")
@@ -400,7 +384,6 @@ class TeamServiceTest {
         List<Team> liees = teamService.claim(bibi);
 
         TeamMember apres = liees.get(0).findMember("m-bibi").orElseThrow();
-        // Sans ça, le panneau d'équipe afficherait les parties d'un compte qui n'est plus le sien.
         assertThat(apres.getRiotPuuid()).isEqualTo("nouveau-puuid");
         assertThat(apres.riotId()).isEqualTo("NouveauCompte#FR1");
         assertThat(apres.getUserId()).isEqualTo("bibi");
@@ -425,8 +408,6 @@ class TeamServiceTest {
         assertThat(equipe.findMember("m-bibi").orElseThrow().getRiotTagLine()).isEqualTo("EUW2");
     }
 
-    // --- « mes équipes » ---
-
     @Test
     @DisplayName("mes équipes : celles où je figure et celles que j'ai créées, sans doublon")
     void mesEquipes() {
@@ -446,8 +427,6 @@ class TeamServiceTest {
 
         assertThat(teamService.mine(capitaine)).containsExactly(equipe);
     }
-
-    // --- montage ---
 
     private void donneLEquipe() {
         when(teamRepository.findById("equipe-1")).thenReturn(Optional.of(equipe()));
