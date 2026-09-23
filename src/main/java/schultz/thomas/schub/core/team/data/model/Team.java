@@ -25,6 +25,8 @@ public class Team {
     private Instant createdAt;
     private Instant updatedAt;
 
+    private Instant statsRefreshedAt;
+
     public Optional<TeamMember> findMember(String memberId) {
         return members == null || memberId == null
                 ? Optional.empty()
