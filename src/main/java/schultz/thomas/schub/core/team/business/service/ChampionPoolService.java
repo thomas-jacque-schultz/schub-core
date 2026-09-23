@@ -2,6 +2,10 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
@@ -42,6 +46,7 @@ public class ChampionPoolService {
     private final RiotStatsGateway statsGateway;
     private final TeamChampionPoolRepository pools;
     private final PermissionEvaluator permissionEvaluator;
+    private final MongoTemplate mongo;
 
     public ChampionPoolDto of(User actor, String teamId, Integer plancherDemande) {
         Team team = teamService.requireVisible(actor, teamId);
@@ -94,10 +99,7 @@ public class ChampionPoolService {
             }
             retenues.add(propre);
         }
-        TeamChampionPool pool = poolDe(teamId);
-        pool.setChampionKeys(role, List.copyOf(retenues));
-        pool.setUpdatedAt(Instant.now());
-        pools.save(pool);
+        ecrit(teamId, new Update().set("championKeysByRole." + role.name(), List.copyOf(retenues)));
         log.info("Pool du poste {} de l'équipe {} : {} champion(s) retenu(s)", role, teamId, retenues.size());
         return of(actor, teamId, null);
     }
@@ -109,11 +111,14 @@ public class ChampionPoolService {
             throw new IllegalArgumentException("Un plancher de maîtrise ne peut pas être négatif");
         }
 
-        TeamChampionPool pool = poolDe(teamId);
-        pool.setMasteryFloor(masteryFloor);
-        pool.setUpdatedAt(Instant.now());
-        pools.save(pool);
+        ecrit(teamId, new Update().set("masteryFloor", masteryFloor));
         return of(actor, teamId, null);
+    }
+
+    // Un poste à la fois : deux entraîneurs sur deux postes n'écrasent plus le choix de l'autre.
+    private void ecrit(String teamId, Update update) {
+        mongo.upsert(Query.query(Criteria.where("_id").is(teamId)), update.set("updatedAt", Instant.now()),
+                TeamChampionPool.class);
     }
 
     private TeamChampionPool poolDe(String teamId) {

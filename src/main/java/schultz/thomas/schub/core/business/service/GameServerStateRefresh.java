@@ -19,7 +19,7 @@ public class GameServerStateRefresh {
         try {
             for (GameServer gameServer : gameServerService.findAll()) {
                 boolean changed = deploymentService.observe(gameServer);
-                gameServerService.persistObservedState(gameServer);
+                gameServerService.persistObservedState(gameServer, changed);
                 if (changed) {
                     log.info("{} est passé à {}", gameServer.getSlug(), gameServer.getStatus());
                     discordNotifier.gameServerChanged(gameServer.getSlug());
