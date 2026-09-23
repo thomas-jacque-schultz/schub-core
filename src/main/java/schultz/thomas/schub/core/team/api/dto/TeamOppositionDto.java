@@ -17,6 +17,7 @@ public record TeamOppositionDto(
         List<PositionOppositionDto> byPosition,
         String ceilingTier,
         int ceilingMinimumGames,
+        TeamEarlyGameDto early,
         Instant generatedAt
 ) {
 }

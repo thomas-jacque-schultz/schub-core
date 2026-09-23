@@ -276,6 +276,7 @@ public class TeamGamesStatsService {
         return new TeamGameDetailDto(team.getId(), rendue.dto(), partie.splitSides() ? List.of() : faceAFace(rendue),
                 insight != null && insight.timelineAvailable(),
                 insight == null ? null : insight.ranksObservedAt(),
+                insight == null || partie.splitSides() ? null : EarlyGames.vue(insight.early(), cote(partie), parPuuid),
                 TeamPlayerStatsService.placeDuLecteur(team, actor));
     }
 
@@ -409,8 +410,14 @@ public class TeamGamesStatsService {
     }
 
     private static At15Dto at15(RiotStatsGateway.At15 a) {
-        return new At15Dto(a.gold(), a.xp(), a.cs(), a.damageToChampions(), a.kills(), a.deaths(), a.assists(),
-                a.ganksSuffered(), a.ganksSucceeded());
+        return new At15Dto(a.gold(), a.xp(), a.cs(), a.damageToChampions(), a.kills(), a.deaths(), a.assists());
+    }
+
+    Map<String, String> noms(List<TeamMember> joueurs) {
+        Map<String, MemberDirectory.MemberIdentity> identites = identites(joueurs);
+        Map<String, String> noms = new HashMap<>();
+        joueurs.forEach(membre -> noms.put(membre.getMemberId(), nomAffiche(membre, identite(identites, membre))));
+        return noms;
     }
 
     private Map<String, MemberDirectory.MemberIdentity> identites(List<TeamMember> joueurs) {
