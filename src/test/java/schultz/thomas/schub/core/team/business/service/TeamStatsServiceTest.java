@@ -287,7 +287,7 @@ class TeamStatsServiceTest {
 
     private static RiotStatsGateway.Bucket total(String puuid, long games, long wins) {
         return new RiotStatsGateway.Bucket(puuid, "", null, games, wins, 100, 100, 100, 0, 0, 0, 0, 0,
-                0, games * 1800, QUAND, QUAND);
+                500, 400, 0, games * 1800, QUAND, QUAND);
     }
 
     private static RiotStatsGateway.SharedMatch partie(String matchId, int queueId, String queue,

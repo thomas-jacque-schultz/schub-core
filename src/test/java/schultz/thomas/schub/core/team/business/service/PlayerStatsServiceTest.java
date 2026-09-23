@@ -53,7 +53,7 @@ class PlayerStatsServiceTest {
     private static RiotStatsGateway.Bucket bucket(String key, long games, long wins, long kills,
                                                   long deaths, long assists) {
         return new RiotStatsGateway.Bucket(PUUID, key, "Jayce", games, wins, kills, deaths,
-                assists, 0, 0, 0, 0, 0, 0, games * 1800, QUAND, QUAND);
+                assists, 0, 0, 0, 0, 0, 0, 0, 0, games * 1800, QUAND, QUAND);
     }
 
     private PlayerStatsService.Figures figures() {
