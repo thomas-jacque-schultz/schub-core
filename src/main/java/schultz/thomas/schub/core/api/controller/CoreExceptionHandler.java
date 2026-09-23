@@ -1,6 +1,7 @@
 package schultz.thomas.schub.core.api.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -54,6 +55,12 @@ public class CoreExceptionHandler {
     @ExceptionHandler(RiotConnectorUnavailableException.class)
     public ResponseEntity<Map<String, String>> handleConnectorDown(RiotConnectorUnavailableException e) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, String>> handleConcurrentEdit(OptimisticLockingFailureException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error",
+                "Modifié par quelqu'un d'autre entre-temps : recharge la page avant de recommencer."));
     }
 
     @ExceptionHandler(IllegalStateException.class)

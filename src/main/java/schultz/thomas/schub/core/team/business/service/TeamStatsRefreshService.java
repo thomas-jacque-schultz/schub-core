@@ -51,7 +51,7 @@ public class TeamStatsRefreshService {
             return new StatsRefreshDto(false, 0, prochaine(team.getStatsRefreshedAt(), maintenant));
         }
 
-        int demandes = (int) team.getMembers().stream()
+        int demandes = (int) TeamPlayerStatsService.joueursDe(team).stream()
                 .map(TeamMember::getRiotPuuid)
                 .filter(Objects::nonNull)
                 .filter(puuid -> !puuid.isBlank())

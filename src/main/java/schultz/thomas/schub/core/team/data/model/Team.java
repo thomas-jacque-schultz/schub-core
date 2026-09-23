@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.team.data.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -15,6 +16,10 @@ public class Team {
 
     @Id
     private String id;
+
+    // Les écritures remplacent le document entier : sans version, deux modifications simultanées s'écrasent.
+    @Version
+    private Long version;
 
     private String name;
 

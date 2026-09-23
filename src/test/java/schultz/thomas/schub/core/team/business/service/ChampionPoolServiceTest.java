@@ -3,6 +3,10 @@ package schultz.thomas.schub.core.team.business.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.bson.Document;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.UpdateDefinition;
 import org.springframework.security.access.AccessDeniedException;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.SystemRole;
@@ -48,6 +52,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("unchecked")
 class ChampionPoolServiceTest {
 
     private static final String PUUID_TOP = "puuid-top";
@@ -94,8 +99,23 @@ class ChampionPoolServiceTest {
                 mock(TeamChampionPoolRepository.class),
                 mock(GameReviewRepository.class), evaluator, memberDirectory,
                 mock(RiotIdResolver.class));
+        MongoTemplate mongo = mock(MongoTemplate.class);
         service = new ChampionPoolService(teamService, memberDirectory, championGateway, statsGateway, pools,
-                evaluator);
+                evaluator, mongo);
+        when(mongo.upsert(any(Query.class), any(UpdateDefinition.class), eq(TeamChampionPool.class)))
+                .thenAnswer(appel -> {
+                    Document champs = appel.getArgument(1, UpdateDefinition.class).getUpdateObject()
+                            .get("$set", Document.class);
+                    champs.forEach((cle, valeur) -> {
+                        if (cle.startsWith("championKeysByRole.")) {
+                            pool.setChampionKeys(GameRole.valueOf(cle.substring("championKeysByRole.".length())),
+                                    (List<String>) valeur);
+                        } else if (cle.equals("masteryFloor")) {
+                            pool.setMasteryFloor((Integer) valeur);
+                        }
+                    });
+                    return null;
+                });
 
         capitaine = compte("user-capitaine", "discord-capitaine");
         membre = compte("user-membre", "discord-membre");

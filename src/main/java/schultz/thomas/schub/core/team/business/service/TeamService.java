@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.ResourceRef;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 public class TeamService {
 
     private static final int NOM_MAX = 60;
+    private static final int ESSAIS_REVENDICATION = 3;
 
     private final TeamRepository teamRepository;
     private final CompositionRepository compositionRepository;
@@ -180,9 +182,10 @@ public class TeamService {
         TeamMember member = team.findMember(memberId)
                 .orElseThrow(() -> new NoSuchElementException("Aucun membre d'identifiant '" + memberId + "'"));
         team.getMembers().remove(member);
+        Team enregistree = touch(team);
         reviewRepository.deleteByTeamIdAndSubjectMemberId(teamId, memberId);
         log.info("Membre {} retiré de l'équipe « {} »", member.riotId(), team.getName());
-        return touch(team);
+        return enregistree;
     }
 
     public List<Team> claim(User actor) {
@@ -198,29 +201,52 @@ public class TeamService {
 
         List<Team> liees = new ArrayList<>();
         for (Team team : teamRepository.findAll()) {
-            boolean modifiee = false;
-            for (TeamMember member : team.getMembers()) {
-                if (actor.getId().equals(member.getUserId())) {
-                    modifiee |= resynchronise(member, actor, puuid, team.getName());
-                    continue;
-                }
-                if (member.isLinked() || !correspond(member, puuid, riotId)) {
-                    continue;
-                }
-                member.setUserId(actor.getId());
-                member.setLinkedAt(Instant.now());
-                if (member.getRiotPuuid() == null) {
-                    member.setRiotPuuid(puuid);
-                }
-                modifiee = true;
-                log.info("Membre {} de l'équipe « {} » revendiqué par {}",
-                        member.riotId(), team.getName(), actor.getDiscordId());
-            }
-            if (modifiee) {
-                liees.add(touch(team));
-            }
+            revendique(team, actor, puuid, riotId).ifPresent(liees::add);
         }
         return liees;
+    }
+
+    // Lancée par un événement, en parallèle des modifications faites à la main : un conflit se relit, il n'écrase pas.
+    private Optional<Team> revendique(Team team, User actor, String puuid, String riotId) {
+        Team courante = team;
+        for (int essai = 1; ; essai++) {
+            if (!rattache(courante, actor, puuid, riotId)) {
+                return Optional.empty();
+            }
+            try {
+                return Optional.of(touch(courante));
+            } catch (OptimisticLockingFailureException conflit) {
+                if (essai == ESSAIS_REVENDICATION) {
+                    throw conflit;
+                }
+                courante = teamRepository.findById(team.getId()).orElse(null);
+                if (courante == null) {
+                    return Optional.empty();
+                }
+            }
+        }
+    }
+
+    private boolean rattache(Team team, User actor, String puuid, String riotId) {
+        boolean modifiee = false;
+        for (TeamMember member : team.getMembers()) {
+            if (actor.getId().equals(member.getUserId())) {
+                modifiee |= resynchronise(member, actor, puuid, team.getName());
+                continue;
+            }
+            if (member.isLinked() || !correspond(member, puuid, riotId)) {
+                continue;
+            }
+            member.setUserId(actor.getId());
+            member.setLinkedAt(Instant.now());
+            if (member.getRiotPuuid() == null) {
+                member.setRiotPuuid(puuid);
+            }
+            modifiee = true;
+            log.info("Membre {} de l'équipe « {} » revendiqué par {}",
+                    member.riotId(), team.getName(), actor.getDiscordId());
+        }
+        return modifiee;
     }
 
 

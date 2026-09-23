@@ -3,6 +3,7 @@ package schultz.thomas.schub.core.team.business.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.SystemRole;
@@ -320,6 +321,30 @@ class TeamServiceTest {
         assertThat(place.isLinked()).isTrue();
         assertThat(place.getUserId()).isEqualTo("bibi");
         assertThat(place.getLinkedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("une équipe modifiée pendant la revendication est relue : le membre ajouté entre-temps reste")
+    void revendicationRelitApresConflit() {
+        Team lue = equipe();
+        lue.getMembers().add(membreLibre("m-libre", "Bibi", "EUW", null));
+        Team relue = equipe();
+        relue.getMembers().add(membreLibre("m-libre", "Bibi", "EUW", null));
+        relue.getMembers().add(membreLibre("m-ajoute", "Nouveau", "EUW", null));
+        when(teamRepository.findAll()).thenReturn(List.of(lue));
+        when(teamRepository.findById(lue.getId())).thenReturn(Optional.of(relue));
+        when(teamRepository.save(lue)).thenThrow(new OptimisticLockingFailureException("version dépassée"));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotGameName("Bibi");
+        bibi.setRiotTagLine("EUW");
+
+        List<Team> liees = teamService.claim(bibi);
+
+        assertThat(liees).singleElement().satisfies(equipe -> {
+            assertThat(equipe.findMember("m-ajoute")).isPresent();
+            assertThat(equipe.findMember("m-libre").orElseThrow().getUserId()).isEqualTo("bibi");
+        });
     }
 
     @Test
