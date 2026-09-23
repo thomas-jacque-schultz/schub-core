@@ -18,6 +18,8 @@ public record StatLineDto(
         Double damagePerMinute,
         Double damageTakenPerMinute,
         Double visionPerMinute,
+        Double killParticipation,
+        Double deathShare,
         long afkGames,
         long secondsPlayed,
         Instant firstPlayedAt,

@@ -178,7 +178,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     private static Bucket toBucket(BucketResponse row) {
         return new Bucket(row.puuid(), row.key(), row.championName(), row.games(), row.wins(),
                 row.kills(), row.deaths(), row.assists(), row.minionsKilled(), row.goldEarned(),
-                row.damageToChampions(), row.damageTaken(), row.visionScore(), row.afkGames(),
+                row.damageToChampions(), row.damageTaken(), row.visionScore(), row.teamKills(),
+                row.teamDeaths(), row.afkGames(),
                 row.secondsPlayed(),
                 row.firstPlayedAt(), row.lastPlayedAt());
     }
@@ -225,7 +226,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     record BucketResponse(String puuid, String key, String championName, long games, long wins,
                           long kills, long deaths, long assists, long minionsKilled,
                           long goldEarned, long damageToChampions, long damageTaken, long visionScore,
-                          long afkGames, long secondsPlayed, Instant firstPlayedAt,
+                          long teamKills, long teamDeaths, long afkGames, long secondsPlayed, Instant firstPlayedAt,
                           Instant lastPlayedAt) {
     }
 
