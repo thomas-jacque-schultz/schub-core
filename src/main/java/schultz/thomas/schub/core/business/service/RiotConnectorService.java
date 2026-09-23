@@ -13,6 +13,10 @@ public interface RiotConnectorService {
 
     Optional<IngestLoad> load();
 
+    Optional<Crawler> crawler();
+
+    Crawler toggleCrawler(boolean enabled);
+
     List<KnownPlayer> search(String query, int limit);
 
     record PlayerIngest(long pending, long running, Instant estimatedReadyAt) {
@@ -20,6 +24,11 @@ public interface RiotConnectorService {
 
     record IngestLoad(long pending, long running, long failed, double callsPerMinute,
                       Duration estimatedDrain, Instant estimatedReadyAt, Duration throttledFor) {
+    }
+
+    record Crawler(boolean switchable, boolean enabled, boolean running, long knownAccounts,
+                   long trackedAccounts, long backgroundPending, long databaseBytes, long storageAlertBytes,
+                   boolean storageAlert, Instant lastRoundAt, int lastRoundAccounts) {
     }
 
     record KnownPlayer(String puuid, String gameName, String tagLine, String riotId,
