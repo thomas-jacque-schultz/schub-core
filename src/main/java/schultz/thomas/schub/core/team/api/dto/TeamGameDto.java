@@ -13,6 +13,11 @@ public record TeamGameDto(
         int presentPlayers,
         boolean splitSides,
         Boolean win,
-        List<TeamGamePlayerDto> players
+        List<TeamGamePlayerDto> players,
+        List<TeamGamePlayerDto> allies,
+        List<TeamGamePlayerDto> enemies,
+        SideRanksDto allyRanks,
+        SideRanksDto enemyRanks,
+        Instant ranksObservedAt
 ) {
 }

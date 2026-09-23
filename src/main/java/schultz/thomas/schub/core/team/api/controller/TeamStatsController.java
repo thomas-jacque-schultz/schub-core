@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
+import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
 import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
 import schultz.thomas.schub.core.team.business.service.TeamGamesStatsService;
+import schultz.thomas.schub.core.team.business.service.TeamOppositionService;
 import schultz.thomas.schub.core.team.business.service.TeamPlayerStatsService;
 
 @RestController
@@ -22,6 +25,7 @@ public class TeamStatsController {
 
     private final TeamPlayerStatsService playersStats;
     private final TeamGamesStatsService gamesStats;
+    private final TeamOppositionService opposition;
     private final UserService userService;
 
     @GetMapping("/players")
@@ -40,5 +44,21 @@ public class TeamStatsController {
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer limit) {
         return gamesStats.of(userService.requireActor(actorDiscordId), teamId, days, limit);
+    }
+
+    @GetMapping("/games/{matchId}")
+    public TeamGameDetailDto game(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @PathVariable String teamId,
+            @PathVariable String matchId) {
+        return gamesStats.detail(userService.requireActor(actorDiscordId), teamId, matchId);
+    }
+
+    @GetMapping("/opposition")
+    public TeamOppositionDto opposition(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @PathVariable String teamId,
+            @RequestParam(required = false) Integer days) {
+        return opposition.of(userService.requireActor(actorDiscordId), teamId, days);
     }
 }
