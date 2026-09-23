@@ -1,5 +1,7 @@
 package schultz.thomas.schub.core.team.business.service;
 
+import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,14 @@ public interface RiotStatsGateway {
                                           Integer limit);
 
     Optional<List<Standing>> rankings(String puuid);
+
+    // Le plus récent d'abord.
+    Optional<List<PatchStart>> patches(int count);
+
+    Optional<ReferenceGridDto> referenceGrid(String position, String scope, String tier, String patch);
+
+    record PatchStart(String patch, Instant startedAt) {
+    }
 
     // Parties déjà collectées seulement : ce qui manque revient absent, jamais inventé.
     Optional<List<Insight>> insights(List<String> matchIds);
@@ -90,8 +100,35 @@ public interface RiotStatsGateway {
             long afkGames,
             long secondsPlayed,
             Instant firstPlayedAt,
-            Instant lastPlayedAt
+            Instant lastPlayedAt,
+            Performance performance
     ) {
+
+        public Performance perf() {
+            return performance == null ? Performance.ZERO : performance;
+        }
+    }
+
+    // Sommes des métriques v3 du connecteur. Les écarts à 15 min ont leur propre dénominateur : laningGames.
+    record Performance(long wardsPlaced, long wardsKilled, long controlWardsPlaced, long timeDeadSeconds,
+                       long turretDamage, long turretTakedowns, long epicMonsterDamage, long teamDamageToChampions,
+                       long platesGames, long platesDiff, long laningGames, long goldDiffAt15, long csDiffAt15,
+                       long xpDiffAt15, long killsDiffAt15) {
+
+        static final Performance ZERO = new Performance(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        Performance plus(Performance autre, int signe) {
+            return new Performance(wardsPlaced + signe * autre.wardsPlaced, wardsKilled + signe * autre.wardsKilled,
+                    controlWardsPlaced + signe * autre.controlWardsPlaced,
+                    timeDeadSeconds + signe * autre.timeDeadSeconds, turretDamage + signe * autre.turretDamage,
+                    turretTakedowns + signe * autre.turretTakedowns,
+                    epicMonsterDamage + signe * autre.epicMonsterDamage,
+                    teamDamageToChampions + signe * autre.teamDamageToChampions,
+                    platesGames + signe * autre.platesGames, platesDiff + signe * autre.platesDiff,
+                    laningGames + signe * autre.laningGames, goldDiffAt15 + signe * autre.goldDiffAt15,
+                    csDiffAt15 + signe * autre.csDiffAt15, xpDiffAt15 + signe * autre.xpDiffAt15,
+                    killsDiffAt15 + signe * autre.killsDiffAt15);
+        }
     }
 
     record Coverage(
