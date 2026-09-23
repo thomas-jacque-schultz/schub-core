@@ -22,6 +22,7 @@ public enum Permission {
     USER_ROLE_ASSIGN,
 
     INGEST_VIEW,
+    INGEST_MANAGE,
 
     // TEAM_CREATE est globale ; les trois suivantes s'évaluent sur une équipe (TeamScopedAuthority).
     TEAM_CREATE,

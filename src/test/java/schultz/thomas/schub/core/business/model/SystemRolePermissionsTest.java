@@ -28,7 +28,7 @@ class SystemRolePermissionsTest {
             if (role != SystemRole.OWNER) {
                 assertThat(role.permissions())
                         .as("%s ne doit pas voir la charge de la collecte", role)
-                        .doesNotContain(Permission.INGEST_VIEW);
+                        .doesNotContain(Permission.INGEST_VIEW, Permission.INGEST_MANAGE);
             }
         }
     }
@@ -66,7 +66,7 @@ class SystemRolePermissionsTest {
                 Permission.DISCORD_CHANNEL_MANAGE,
                 Permission.USER_VIEW, Permission.USER_ROLE_ASSIGN,
                 Permission.ROLE_MANAGE,
-                Permission.INGEST_VIEW,
+                Permission.INGEST_VIEW, Permission.INGEST_MANAGE,
                 Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_EDIT,
                 Permission.COMPOSITION_EDIT);
 
