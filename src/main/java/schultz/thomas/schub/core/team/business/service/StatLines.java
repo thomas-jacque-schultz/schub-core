@@ -31,6 +31,8 @@ final class StatLines {
                 parMinute(bucket.damageToChampions(), minutes),
                 parMinute(bucket.damageTaken(), minutes),
                 parMinute(bucket.visionScore(), minutes),
+                part(bucket.kills() + bucket.assists(), bucket.teamKills()),
+                part(bucket.deaths(), bucket.teamDeaths()),
                 bucket.afkGames(),
                 bucket.secondsPlayed(),
                 bucket.firstPlayedAt(),
@@ -60,19 +62,21 @@ final class StatLines {
                 total.damageToChampions() - part.damageToChampions(),
                 total.damageTaken() - part.damageTaken(),
                 total.visionScore() - part.visionScore(),
+                total.teamKills() - part.teamKills(),
+                total.teamDeaths() - part.teamDeaths(),
                 total.afkGames() - part.afkGames(),
                 total.secondsPlayed() - part.secondsPlayed(),
                 total.firstPlayedAt(), total.lastPlayedAt());
     }
 
     static RiotStatsGateway.Bucket vide(String puuid) {
-        return new RiotStatsGateway.Bucket(puuid, "", null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        return new RiotStatsGateway.Bucket(puuid, "", null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 null, null);
     }
 
     static RiotStatsGateway.Bucket additionne(String puuid, String key, List<RiotStatsGateway.Bucket> parts) {
         RiotStatsGateway.Bucket somme = new RiotStatsGateway.Bucket(puuid, key, null, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, null, null);
+                0, 0, 0, 0, 0, 0, null, null);
         for (RiotStatsGateway.Bucket part : parts) {
             somme = new RiotStatsGateway.Bucket(puuid, key, null,
                     somme.games() + part.games(),
@@ -85,6 +89,8 @@ final class StatLines {
                     somme.damageToChampions() + part.damageToChampions(),
                     somme.damageTaken() + part.damageTaken(),
                     somme.visionScore() + part.visionScore(),
+                    somme.teamKills() + part.teamKills(),
+                    somme.teamDeaths() + part.teamDeaths(),
                     somme.afkGames() + part.afkGames(),
                     somme.secondsPlayed() + part.secondsPlayed(),
                     plusTot(somme.firstPlayedAt(), part.firstPlayedAt()),
@@ -115,6 +121,10 @@ final class StatLines {
 
     static Double parMinute(long total, double minutes) {
         return minutes <= 0 ? null : total / minutes;
+    }
+
+    static Double part(long siens, long equipe) {
+        return equipe <= 0 ? null : (double) siens / equipe;
     }
 
     static Double parPartie(long total, long games) {

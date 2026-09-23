@@ -45,7 +45,8 @@ public interface RiotStatsGateway {
                          Standing flex, At15 at15) {
     }
 
-    record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists) {
+    record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists,
+                Integer ganksSuffered) {
     }
 
     record Bucket(
@@ -62,6 +63,8 @@ public interface RiotStatsGateway {
             long damageToChampions,
             long damageTaken,
             long visionScore,
+            long teamKills,
+            long teamDeaths,
             long afkGames,
             long secondsPlayed,
             Instant firstPlayedAt,
