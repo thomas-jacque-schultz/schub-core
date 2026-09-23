@@ -39,6 +39,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -84,7 +85,7 @@ class GameReviewServiceTest {
                 mock(TeamChampionPoolRepository.class),
                 reviewRepository, evaluator, annuaire, mock(RiotIdResolver.class));
         TeamGamesStatsService parties = new TeamGamesStatsService(teamService, annuaire,
-                statsGateway, mock(RiotChampionGateway.class));
+                statsGateway, new GameViews(statsGateway, mock(RiotChampionGateway.class)));
 
         service = new GameReviewService(reviewRepository, teamService, parties, annuaire, evaluator);
 
@@ -163,7 +164,7 @@ class GameReviewServiceTest {
     @Test
     @DisplayName("connecteur muet : on refuse au lieu de deviner")
     void connecteurMuet() {
-        when(statsGateway.sharedMatches(any(), anyInt(), isNull(), anyInt()))
+        when(statsGateway.sharedMatchesAmong(any(), anyInt(), any()))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(capitaine, "equipe-1", PARTIE, "m-2", "Note"))
@@ -268,8 +269,12 @@ class GameReviewServiceTest {
                 .map(id -> new RiotStatsGateway.SharedMatch(id, Instant.now(), 1800, 440, "flex",
                         "14.18", 5, false, true, List.of(), List.of()))
                 .toList();
-        when(statsGateway.sharedMatches(any(), eq(4), isNull(), anyInt()))
-                .thenReturn(Optional.of(new RiotStatsGateway.SharedMatches(4, parties.size(), false, parties)));
+        lenient().when(statsGateway.sharedMatchesAmong(any(), eq(4), any())).thenAnswer(appel -> {
+            List<String> voulues = appel.getArgument(2);
+            List<RiotStatsGateway.SharedMatch> trouvees = parties.stream()
+                    .filter(partie -> voulues.contains(partie.matchId())).toList();
+            return Optional.of(new RiotStatsGateway.SharedMatches(4, trouvees.size(), false, trouvees));
+        });
     }
 
     private GameReview revue(String id, String subjectMemberId, String authorUserId) {

@@ -10,6 +10,8 @@ public record TeamGameDetailDto(
         boolean timelineAvailable,
         Instant ranksObservedAt,
         EarlyGameDto early,
-        String viewerMemberId
+        String viewerMemberId,
+        Integer days,
+        List<GamePlayerMetricsDto> metrics
 ) {
 }

@@ -72,8 +72,10 @@ public class TeamStatsController {
     public TeamGameDetailDto game(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @PathVariable String teamId,
-            @PathVariable String matchId) {
-        return gamesStats.detail(userService.requireActor(actorDiscordId), teamId, matchId);
+            @PathVariable String matchId,
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches) {
+        return gamesStats.detail(userService.requireActor(actorDiscordId), teamId, matchId, windows.days(days, patches));
     }
 
     @GetMapping("/opposition")

@@ -35,6 +35,19 @@ public interface RiotStatsGateway {
     Optional<SharedMatches> sharedMatches(List<String> puuids, int minimumPlayers, Instant since,
                                           Integer limit);
 
+    // Toutes les parties d'un joueur, sans rien empiler : enrichir tout un historique à chaque lecture viderait le quota.
+    Optional<SharedMatches> playerMatches(String puuid, Instant since, Integer limit);
+
+    // Les seules parties demandées, si elles sont communes : vérifier une partie sans relire tout l'historique.
+    Optional<SharedMatches> sharedMatchesAmong(List<String> puuids, int minimumPlayers, List<String> matchIds);
+
+    // Les dix joueurs d'une partie, indicateurs calculés comme la grille GAME de leur poste.
+    Optional<List<PlayerMetrics>> matchMetrics(String matchId);
+
+    record PlayerMetrics(String puuid, int side, String position, int championId, String tier, boolean tierEstimated,
+                         Map<String, Double> values) {
+    }
+
     Optional<List<Standing>> rankings(String puuid);
 
     // Le plus récent d'abord.

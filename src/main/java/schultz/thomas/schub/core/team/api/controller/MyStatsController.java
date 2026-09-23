@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.team.api.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -9,7 +10,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.team.api.dto.MyStatsDto;
+import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.business.service.MyGamesService;
 import schultz.thomas.schub.core.team.business.service.MyStatsService;
 import schultz.thomas.schub.core.team.business.service.StatsWindows;
 
@@ -20,6 +24,7 @@ import schultz.thomas.schub.core.team.business.service.StatsWindows;
 public class MyStatsController {
 
     private final MyStatsService myStatsService;
+    private final MyGamesService myGames;
     private final UserService userService;
     private final StatsWindows windows;
 
@@ -30,5 +35,23 @@ public class MyStatsController {
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer champions) {
         return myStatsService.of(userService.requireActor(actorDiscordId), windows.days(days, patches), champions);
+    }
+
+    @GetMapping("/games")
+    public MyGamesDto games(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches,
+            @RequestParam(required = false) Integer limit) {
+        return myGames.games(userService.requireActor(actorDiscordId), windows.days(days, patches), limit);
+    }
+
+    @GetMapping("/games/{matchId}")
+    public TeamGameDetailDto game(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @PathVariable String matchId,
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches) {
+        return myGames.game(userService.requireActor(actorDiscordId), matchId, windows.days(days, patches));
     }
 }
