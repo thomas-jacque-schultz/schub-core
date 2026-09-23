@@ -46,7 +46,7 @@ public interface RiotStatsGateway {
     }
 
     record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists,
-                Integer ganksSuffered) {
+                Integer ganksSuffered, Integer ganksSucceeded) {
     }
 
     record Bucket(
