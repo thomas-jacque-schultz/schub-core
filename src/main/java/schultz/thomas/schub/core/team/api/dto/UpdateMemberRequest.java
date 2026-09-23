@@ -5,5 +5,5 @@ import schultz.thomas.schub.core.team.business.model.MemberStatus;
 
 import java.util.List;
 
-public record UpdateMemberRequest(List<GameRole> roles, MemberStatus status) {
+public record UpdateMemberRequest(List<GameRole> roles, MemberStatus status, Boolean coach) {
 }

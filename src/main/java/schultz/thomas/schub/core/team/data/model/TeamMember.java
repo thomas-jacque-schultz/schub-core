@@ -23,9 +23,16 @@ public class TeamMember {
 
     private MemberStatus status;
 
+    // Cumulable avec TITULAIRE ou REMPLACANT ; le statut COACH désigne un coach qui ne joue pas.
+    private boolean coach;
+
     private Instant addedAt;
 
     private Instant linkedAt;
+
+    public boolean coaches() {
+        return coach || status == MemberStatus.COACH;
+    }
 
     public boolean isLinked() {
         return userId != null && !userId.isBlank();
