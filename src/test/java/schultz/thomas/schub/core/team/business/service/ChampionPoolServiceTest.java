@@ -38,6 +38,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -58,6 +60,7 @@ class ChampionPoolServiceTest {
 
     private TeamRepository teamRepository;
     private RiotChampionGateway championGateway;
+    private RiotStatsGateway statsGateway;
     private ChampionPoolService service;
 
     private User capitaine;
@@ -70,6 +73,7 @@ class ChampionPoolServiceTest {
     void setUp() {
         teamRepository = mock(TeamRepository.class);
         championGateway = mock(RiotChampionGateway.class);
+        statsGateway = mock(RiotStatsGateway.class);
         MemberDirectory memberDirectory = mock(MemberDirectory.class);
         TeamChampionPoolRepository pools = mock(TeamChampionPoolRepository.class);
 
@@ -90,7 +94,8 @@ class ChampionPoolServiceTest {
                 mock(TeamChampionPoolRepository.class),
                 mock(GameReviewRepository.class), evaluator, memberDirectory,
                 mock(RiotIdResolver.class));
-        service = new ChampionPoolService(teamService, memberDirectory, championGateway, pools, evaluator);
+        service = new ChampionPoolService(teamService, memberDirectory, championGateway, statsGateway, pools,
+                evaluator);
 
         capitaine = compte("user-capitaine", "discord-capitaine");
         membre = compte("user-membre", "discord-membre");
@@ -153,6 +158,20 @@ class ChampionPoolServiceTest {
         assertThat(jax.name()).isEqualTo("Jax");
         assertThat(jax.players()).extracting("memberId").containsExactly("m-top", "m-poly");
         assertThat(jax.players()).extracting("masteryPoints").containsExactly(250_000, 12_000);
+    }
+
+    @Test
+    @DisplayName("Chaque joueur porte ses parties et son taux de victoire sur le champion ; sans partie, on ne sait pas")
+    void winrateParJoueur() {
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.CHAMPION), eq(RiotStatsGateway.Scope.RIFT), isNull()))
+                .thenReturn(Optional.of(List.of(new RiotStatsGateway.Bucket(PUUID_TOP, String.valueOf(JAX), "Jax",
+                        40, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40 * 1800, null, null))));
+
+        ChampionPoolEntryDto jax = champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "Jax");
+
+        assertThat(jax.players()).extracting("games").containsExactly(40L, null);
+        assertThat(jax.players().getFirst().winRate()).isEqualTo(0.65);
+        assertThat(jax.players().get(1).winRate()).isNull();
     }
 
     @Test

@@ -39,6 +39,7 @@ public class ChampionPoolService {
     private final TeamService teamService;
     private final MemberDirectory memberDirectory;
     private final RiotChampionGateway championGateway;
+    private final RiotStatsGateway statsGateway;
     private final TeamChampionPoolRepository pools;
     private final PermissionEvaluator permissionEvaluator;
 
@@ -51,10 +52,11 @@ public class ChampionPoolService {
         List<TeamMember> joueurs = joueursDe(team);
         Map<String, Maitrises> maitrises = maitrisesDe(joueurs, catalogue.isPresent());
         Map<String, MemberDirectory.MemberIdentity> identites = resoutLesComptes(joueurs);
+        Map<String, RiotStatsGateway.Bucket> parties = partiesParChampion(joueurs);
 
         List<ChampionPoolColumnDto> colonnes = new ArrayList<>();
         for (GameRole role : GameRole.values()) {
-            colonnes.add(colonne(role, pool, joueurs, maitrises, identites, catalogue, plancher));
+            colonnes.add(colonne(role, pool, joueurs, maitrises, identites, parties, catalogue, plancher));
         }
 
         return new ChampionPoolDto(
@@ -132,6 +134,7 @@ public class ChampionPoolService {
             List<TeamMember> joueurs,
             Map<String, Maitrises> maitrises,
             Map<String, MemberDirectory.MemberIdentity> identites,
+            Map<String, RiotStatsGateway.Bucket> parties,
             Optional<RiotChampionGateway.Catalogue> catalogue,
             int plancher) {
 
@@ -139,7 +142,7 @@ public class ChampionPoolService {
 
         List<ChampionPoolMemberDto> muets = duPoste.stream()
                 .filter(membre -> etat(membre, maitrises) != PoolState.MAITRISES_CONNUES)
-                .map(membre -> projette(membre, maitrises, identites, null))
+                .map(membre -> projette(membre, maitrises, identites, null, null))
                 .toList();
 
         if (catalogue.isEmpty()) {
@@ -157,7 +160,7 @@ public class ChampionPoolService {
                 champions.add(new ChampionPoolEntryDto(0, key, null, null, List.of(), 0));
                 continue;
             }
-            ChampionPoolEntryDto entree = entree(champion, duPoste, maitrises, identites, plancher);
+            ChampionPoolEntryDto entree = entree(champion, duPoste, maitrises, identites, parties, plancher);
             if (entree.players().isEmpty() && entree.name() != null) {
                 masques++;
                 continue;
@@ -185,6 +188,7 @@ public class ChampionPoolService {
             List<TeamMember> duPoste,
             Map<String, Maitrises> maitrises,
             Map<String, MemberDirectory.MemberIdentity> identites,
+            Map<String, RiotStatsGateway.Bucket> parties,
             int plancher) {
 
         List<ChampionPoolMemberDto> retenus = new ArrayList<>();
@@ -204,7 +208,8 @@ public class ChampionPoolService {
                 ecartes++;
                 continue;
             }
-            retenus.add(projette(membre, maitrises, identites, maitrise));
+            retenus.add(projette(membre, maitrises, identites, maitrise,
+                    parties.get(cle(membre.getRiotPuuid(), champion.id()))));
         }
 
         retenus.sort(Comparator.comparingInt(
@@ -219,7 +224,8 @@ public class ChampionPoolService {
             TeamMember membre,
             Map<String, Maitrises> maitrises,
             Map<String, MemberDirectory.MemberIdentity> identites,
-            RiotChampionGateway.Mastery maitrise) {
+            RiotChampionGateway.Mastery maitrise,
+            RiotStatsGateway.Bucket joue) {
 
         Maitrises siennes = maitrises.get(membre.getMemberId());
         MemberDirectory.MemberIdentity identite =
@@ -240,8 +246,28 @@ public class ChampionPoolService {
                 etat(membre, maitrises),
                 maitrise == null ? null : maitrise.level(),
                 points,
+                joue == null ? null : joue.games(),
+                joue == null ? null : StatLines.winRate(joue),
                 maitrise == null ? null : maitrise.lastPlayedAt(),
                 siennes == null ? null : siennes.observedAt());
+    }
+
+    // Faille seulement, tout l'historique : le même périmètre que les champions de Mes stats.
+    private Map<String, RiotStatsGateway.Bucket> partiesParChampion(List<TeamMember> joueurs) {
+        List<String> puuids = joueurs.stream()
+                .map(TeamMember::getRiotPuuid)
+                .filter(puuid -> puuid != null && !puuid.isBlank())
+                .distinct()
+                .toList();
+        Map<String, RiotStatsGateway.Bucket> index = new HashMap<>();
+        statsGateway.aggregate(puuids, RiotStatsGateway.Grouping.CHAMPION, RiotStatsGateway.Scope.RIFT, null)
+                .orElseGet(List::of)
+                .forEach(bucket -> index.put(bucket.puuid() + "#" + bucket.key(), bucket));
+        return index;
+    }
+
+    private static String cle(String puuid, int championId) {
+        return puuid + "#" + championId;
     }
 
     private static PoolState etat(TeamMember membre, Map<String, Maitrises> maitrises) {
