@@ -266,7 +266,7 @@ class GameReviewServiceTest {
     private void partiesDEquipe(String... matchIds) {
         List<RiotStatsGateway.SharedMatch> parties = java.util.Arrays.stream(matchIds)
                 .map(id -> new RiotStatsGateway.SharedMatch(id, Instant.now(), 1800, 440, "flex",
-                        "14.18", 5, false, true, List.of()))
+                        "14.18", 5, false, true, List.of(), List.of()))
                 .toList();
         when(statsGateway.sharedMatches(any(), eq(4), isNull(), anyInt()))
                 .thenReturn(Optional.of(new RiotStatsGateway.SharedMatches(4, parties.size(), false, parties)));

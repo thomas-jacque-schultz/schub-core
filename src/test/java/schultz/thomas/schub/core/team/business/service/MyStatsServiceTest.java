@@ -42,7 +42,7 @@ class MyStatsServiceTest {
 
         when(championGateway.catalogue()).thenReturn(Optional.empty());
         when(riotConnector.ingestOf(anyString())).thenReturn(Optional.empty());
-        when(statsGateway.aggregate(any(), any(), any())).thenReturn(Optional.of(List.of()));
+        when(statsGateway.aggregate(any(), any(), any(), any())).thenReturn(Optional.of(List.of()));
         when(statsGateway.rankings(anyString())).thenReturn(Optional.of(List.of()));
         when(statsGateway.coverage(any())).thenReturn(Optional.of(List.of(
                 new RiotStatsGateway.Coverage(PUUID, true, 0, 0, null, null, null))));
@@ -56,7 +56,7 @@ class MyStatsServiceTest {
         assertThat(stats.state()).isEqualTo(StatsState.COMPTE_RIOT_ABSENT);
         assertThat(stats.overall()).isNull();
         assertThat(stats.champions()).isEmpty();
-        verify(statsGateway, never()).aggregate(any(), any(), any());
+        verify(statsGateway, never()).aggregate(any(), any(), any(), any());
         verify(riotConnector, never()).ingestOf(anyString());
     }
 
@@ -80,7 +80,7 @@ class MyStatsServiceTest {
 
         assertThat(stats.days()).isEqualTo(30);
         verify(statsGateway).aggregate(eq(List.of(PUUID)),
-                eq(RiotStatsGateway.Grouping.OVERALL), any(Instant.class));
+                eq(RiotStatsGateway.Grouping.OVERALL), eq(RiotStatsGateway.Scope.RIFT), any(Instant.class));
     }
 
     private static User compte(String puuid) {

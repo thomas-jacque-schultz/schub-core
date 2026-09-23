@@ -55,7 +55,7 @@ public class TeamPlayerStatsService {
         List<PlayerStatsDto> compares = comparent(colonnes);
 
         return new TeamPlayersStatsDto(team.getId(), team.getName(), days, championsMax, compares,
-                placeDuLecteur(team, actor), Instant.now());
+                playerStatsService.scale(), placeDuLecteur(team, actor), Instant.now());
     }
 
     static List<TeamMember> joueursDe(Team team) {
@@ -104,6 +104,7 @@ public class TeamPlayerStatsService {
                 chiffres == null ? List.of() : chiffres.months(),
                 state == StatsState.STATISTIQUES_CONNUES ? playerStatsService.rankings(puuid)
                         : List.of(),
+                chiffres == null ? null : chiffres.radar(),
                 null);
     }
 
@@ -137,14 +138,16 @@ public class TeamPlayerStatsService {
                 autres.size(),
                 StatLines.ecart(mien.winRate(), moyenne(autres, StatLineDto::winRate)),
                 StatLines.ecart(mien.kda(), moyenne(autres, StatLineDto::kda)),
+                StatLines.ecart(mien.csPerMinute(), moyenne(autres, StatLineDto::csPerMinute)),
                 StatLines.ecart(mien.goldPerMinute(), moyenne(autres, StatLineDto::goldPerMinute)),
                 StatLines.ecart(mien.damagePerMinute(), moyenne(autres, StatLineDto::damagePerMinute)),
+                StatLines.ecart(mien.damageTakenPerMinute(), moyenne(autres, StatLineDto::damageTakenPerMinute)),
                 StatLines.ecart(mien.visionPerMinute(), moyenne(autres, StatLineDto::visionPerMinute)));
         return new PlayerStatsDto(colonne.memberId(), colonne.displayName(), colonne.avatarUrl(),
                 colonne.riotGameName(), colonne.riotTagLine(), colonne.status(), colonne.roles(),
                 colonne.linked(), colonne.state(), colonne.coverage(), colonne.overall(),
                 colonne.champions(), colonne.positions(), colonne.queues(), colonne.months(),
-                colonne.rankings(), comparaison);
+                colonne.rankings(), colonne.radar(), comparaison);
     }
 
     private static Double moyenne(List<StatLineDto> lignes, Function<StatLineDto, Double> mesure) {

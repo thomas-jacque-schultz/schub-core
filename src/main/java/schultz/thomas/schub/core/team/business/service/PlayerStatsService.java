@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
+import schultz.thomas.schub.core.team.api.dto.MetricScaleDto;
+import schultz.thomas.schub.core.team.api.dto.RadarDto;
 import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
 import schultz.thomas.schub.core.team.api.dto.StatsCoverageDto;
@@ -23,6 +25,7 @@ public class PlayerStatsService {
     public static final int CHAMPIONS_DEFAUT = 8;
     public static final int CHAMPIONS_MAX = 30;
     private static final int MOIS_RENDUS = 12;
+    private static final int PATCHS_PAR_SERIE = 2;
 
     private final RiotStatsGateway statsGateway;
     private final RiotChampionGateway championGateway;
@@ -36,6 +39,7 @@ public class PlayerStatsService {
             List<StatLineDto> positions,
             List<StatLineDto> queues,
             List<StatLineDto> months,
+            RadarDto radar,
             RiotStatsGateway.Bucket total
     ) {
     }
@@ -45,8 +49,8 @@ public class PlayerStatsService {
         if (propres.isEmpty()) {
             return Map.of();
         }
-        Optional<List<RiotStatsGateway.Bucket>> totaux =
-                statsGateway.aggregate(propres, RiotStatsGateway.Grouping.OVERALL, since);
+        Optional<List<RiotStatsGateway.Bucket>> totaux = statsGateway.aggregate(propres,
+                RiotStatsGateway.Grouping.OVERALL, RiotStatsGateway.Scope.RIFT, since);
         if (totaux.isEmpty()) {
             return indisponible(propres);
         }
@@ -61,13 +65,16 @@ public class PlayerStatsService {
 
         Optional<RiotChampionGateway.Catalogue> catalogue = championGateway.catalogue();
         Map<String, List<RiotStatsGateway.Bucket>> champions =
-                groupe(propres, RiotStatsGateway.Grouping.CHAMPION, since);
+                groupe(propres, RiotStatsGateway.Grouping.CHAMPION, RiotStatsGateway.Scope.RIFT, since);
         Map<String, List<RiotStatsGateway.Bucket>> positions =
-                groupe(propres, RiotStatsGateway.Grouping.POSITION, since);
+                groupe(propres, RiotStatsGateway.Grouping.POSITION, RiotStatsGateway.Scope.RIFT, since);
         Map<String, List<RiotStatsGateway.Bucket>> queues =
-                groupe(propres, RiotStatsGateway.Grouping.QUEUE, since);
+                groupe(propres, RiotStatsGateway.Grouping.QUEUE, RiotStatsGateway.Scope.ALL, since);
         Map<String, List<RiotStatsGateway.Bucket>> mois =
-                groupe(propres, RiotStatsGateway.Grouping.MONTH, since);
+                groupe(propres, RiotStatsGateway.Grouping.MONTH, RiotStatsGateway.Scope.RIFT, since);
+        List<String> patchs = statsGateway.scale().map(RiotStatsGateway.Scale::recentPatches).orElseGet(List::of);
+        Map<String, List<RiotStatsGateway.Bucket>> parPatch = patchs.isEmpty() ? Map.of()
+                : groupe(propres, RiotStatsGateway.Grouping.PATCH, RiotStatsGateway.Scope.RIFT, null);
 
         Map<String, Figures> figures = new LinkedHashMap<>();
         for (String puuid : propres) {
@@ -80,11 +87,47 @@ public class PlayerStatsService {
                     lignesChampions(champions.getOrDefault(puuid, List.of()), total, catalogue,
                             championsMax),
                     lignes(positions.getOrDefault(puuid, List.of()), total),
-                    lignes(queues.getOrDefault(puuid, List.of()), total),
+                    lignes(queues.getOrDefault(puuid, List.of()), null),
                     lignesMois(mois.getOrDefault(puuid, List.of())),
+                    radar(puuid, parPatch.getOrDefault(puuid, List.of()), patchs),
                     total));
         }
         return figures;
+    }
+
+    public MetricScaleDto scale() {
+        return statsGateway.scale()
+                .filter(scale -> !scale.bounds().isEmpty())
+                .map(scale -> {
+                    Map<String, MetricScaleDto.Bound> bornes = new LinkedHashMap<>();
+                    scale.bounds().forEach((cle, borne) ->
+                            bornes.put(cle, new MetricScaleDto.Bound(borne.low(), borne.high())));
+                    return new MetricScaleDto(scale.computedAt(), scale.population(), scale.minimumGames(),
+                            bornes);
+                })
+                .orElse(null);
+    }
+
+    // Les patchs du jeu, pas ceux du joueur : un patch où il n'a pas joué reste dans sa série, à vide.
+    static RadarDto radar(String puuid, List<RiotStatsGateway.Bucket> parPatch, List<String> patchs) {
+        if (patchs.isEmpty()) {
+            return null;
+        }
+        List<String> recents = patchs.subList(0, Math.min(PATCHS_PAR_SERIE, patchs.size()));
+        List<String> precedents = patchs.subList(recents.size(),
+                Math.min(2 * PATCHS_PAR_SERIE, patchs.size()));
+        return new RadarDto(recents, precedents, serie(puuid, parPatch, recents),
+                serie(puuid, parPatch, precedents));
+    }
+
+    private static StatLineDto serie(String puuid, List<RiotStatsGateway.Bucket> parPatch, List<String> patchs) {
+        List<RiotStatsGateway.Bucket> retenus = parPatch.stream()
+                .filter(bucket -> patchs.contains(bucket.key()))
+                .toList();
+        if (retenus.isEmpty()) {
+            return null;
+        }
+        return StatLines.of(StatLines.additionne(puuid, String.join(",", patchs), retenus), null, null, null);
     }
 
     public List<RankedStandingDto> rankings(String puuid) {
@@ -120,14 +163,14 @@ public class PlayerStatsService {
             RiotStatsGateway.Bucket vide = StatLines.vide(puuid);
             figures.put(puuid, new Figures(StatsState.CONNECTEUR_INDISPONIBLE, null,
                     StatLines.of(vide, null, null, null), List.of(), List.of(), List.of(),
-                    List.of(), vide));
+                    List.of(), null, vide));
         }
         return figures;
     }
 
     private StatsState etat(RiotStatsGateway.Bucket total, RiotStatsGateway.Coverage couverture,
                             String puuid) {
-        if (total.games() > 0) {
+        if (total.games() > 0 || (couverture != null && couverture.analysedMatches() > 0)) {
             return StatsState.STATISTIQUES_CONNUES;
         }
         Optional<RiotConnectorService.PlayerIngest> ingest = riotConnector.ingestOf(puuid);
@@ -157,9 +200,10 @@ public class PlayerStatsService {
     }
 
     private Map<String, List<RiotStatsGateway.Bucket>> groupe(
-            List<String> puuids, RiotStatsGateway.Grouping groupBy, Instant since) {
+            List<String> puuids, RiotStatsGateway.Grouping groupBy, RiotStatsGateway.Scope scope,
+            Instant since) {
         Map<String, List<RiotStatsGateway.Bucket>> parPuuid = new LinkedHashMap<>();
-        statsGateway.aggregate(puuids, groupBy, since).orElseGet(List::of)
+        statsGateway.aggregate(puuids, groupBy, scope, since).orElseGet(List::of)
                 .forEach(bucket -> parPuuid
                         .computeIfAbsent(bucket.puuid(), key -> new java.util.ArrayList<>())
                         .add(bucket));
@@ -176,7 +220,8 @@ public class PlayerStatsService {
                                             RiotStatsGateway.Bucket total) {
         return buckets.stream()
                 .sorted(Comparator.comparingLong(RiotStatsGateway.Bucket::games).reversed())
-                .map(bucket -> StatLines.of(bucket, null, null, StatLines.versusRest(bucket, total)))
+                .map(bucket -> StatLines.of(bucket, null, null,
+                        total == null ? null : StatLines.versusRest(bucket, total)))
                 .toList();
     }
 

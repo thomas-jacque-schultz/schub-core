@@ -8,7 +8,9 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -32,14 +34,15 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     }
 
     @Override
-    public Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Instant since) {
+    public Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Scope scope,
+                                            Instant since) {
         if (puuids == null || puuids.isEmpty()) {
             return Optional.of(List.of());
         }
         try {
             List<BucketResponse> reponse = restClient.post()
                     .uri("/stats/aggregate")
-                    .body(new AggregateRequest(puuids, groupBy.name(), since))
+                    .body(new AggregateRequest(puuids, groupBy.name(), scope.name(), since))
                     .retrieve()
                     .body(BUCKETS);
             return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
@@ -48,6 +51,25 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
         } catch (RestClientException e) {
             log.warn("Agrégats {} non obtenus ({}) — l'écran dira pourquoi il est vide",
                     groupBy, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Scale> scale() {
+        try {
+            ScaleResponse reponse = restClient.get().uri("/stats/scale").retrieve().body(ScaleResponse.class);
+            if (reponse == null) {
+                return Optional.empty();
+            }
+            Map<String, Bound> bornes = new LinkedHashMap<>();
+            if (reponse.bounds() != null) {
+                reponse.bounds().forEach((cle, borne) -> bornes.put(cle, new Bound(borne.low(), borne.high())));
+            }
+            return Optional.of(new Scale(reponse.computedAt(), reponse.population(), reponse.minimumGames(),
+                    reponse.recentPatches() == null ? List.of() : reponse.recentPatches(), bornes));
+        } catch (RestClientException e) {
+            log.warn("Bornes des indicateurs non obtenues ({})", e.getMessage());
             return Optional.empty();
         }
     }
@@ -123,23 +145,29 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     private static Bucket toBucket(BucketResponse row) {
         return new Bucket(row.puuid(), row.key(), row.championName(), row.games(), row.wins(),
                 row.kills(), row.deaths(), row.assists(), row.minionsKilled(), row.goldEarned(),
-                row.damageToChampions(), row.visionScore(), row.afkGames(), row.secondsPlayed(),
+                row.damageToChampions(), row.damageTaken(), row.visionScore(), row.afkGames(),
+                row.secondsPlayed(),
                 row.firstPlayedAt(), row.lastPlayedAt());
     }
 
     private static SharedMatch toSharedMatch(SharedMatchResponse row) {
+        List<SharedMatchPlayerResponse> tous = row.players() == null ? List.of() : row.players();
         return new SharedMatch(row.matchId(), row.startedAt(), row.durationSeconds(), row.queueId(),
                 row.queue(), row.patch(), row.presentPlayers(), row.splitSides(), row.win(),
-                row.players() == null ? List.of() : row.players().stream()
-                        .map(player -> new SharedMatchPlayer(player.puuid(), player.championId(),
-                                player.championName(), player.position(), player.win(),
-                                player.side(), player.kills(), player.deaths(), player.assists(),
-                                player.minionsKilled(), player.goldEarned(),
-                                player.damageToChampions(), player.visionScore(), player.afk()))
-                        .toList());
+                tous.stream().filter(SharedMatchPlayerResponse::requested)
+                        .map(ConnectorRiotStatsGateway::toPlayer).toList(),
+                tous.stream().filter(player -> !player.requested())
+                        .map(ConnectorRiotStatsGateway::toPlayer).toList());
     }
 
-    record AggregateRequest(List<String> puuids, String groupBy, Instant since) {
+    private static SharedMatchPlayer toPlayer(SharedMatchPlayerResponse player) {
+        return new SharedMatchPlayer(player.puuid(), player.championId(), player.championName(),
+                player.position(), player.win(), player.side(), player.kills(), player.deaths(),
+                player.assists(), player.minionsKilled(), player.goldEarned(),
+                player.damageToChampions(), player.damageTaken(), player.visionScore(), player.afk());
+    }
+
+    record AggregateRequest(List<String> puuids, String groupBy, String scope, Instant since) {
     }
 
     record PuuidsRequest(List<String> puuids) {
@@ -151,7 +179,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
 
     record BucketResponse(String puuid, String key, String championName, long games, long wins,
                           long kills, long deaths, long assists, long minionsKilled,
-                          long goldEarned, long damageToChampions, long visionScore,
+                          long goldEarned, long damageToChampions, long damageTaken, long visionScore,
                           long afkGames, long secondsPlayed, Instant firstPlayedAt,
                           Instant lastPlayedAt) {
     }
@@ -174,7 +202,15 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     record SharedMatchPlayerResponse(String puuid, int championId, String championName,
                                      String position, boolean win, int side, int kills, int deaths,
                                      int assists, int minionsKilled, int goldEarned,
-                                     int damageToChampions, int visionScore, boolean afk) {
+                                     int damageToChampions, int damageTaken, int visionScore,
+                                     boolean afk, boolean requested) {
+    }
+
+    record ScaleResponse(Instant computedAt, int population, int minimumGames, List<String> recentPatches,
+                         Map<String, BoundResponse> bounds) {
+    }
+
+    record BoundResponse(double low, double high) {
     }
 
     record StandingResponse(String queue, String riotQueueType, String tier, String division,
