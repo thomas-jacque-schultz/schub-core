@@ -102,7 +102,7 @@ public class PlayerStatsService {
                         new RiotStatsGateway.ReferenceRequest(puuid, principal.key(), since))));
         Map<String, RadarReferencesDto> parPuuid = new LinkedHashMap<>();
         statsGateway.references(demandes).orElseGet(List::of).forEach(ref -> parPuuid.put(ref.puuid(),
-                new RadarReferencesDto(ref.position(), ref.tier(), reference(ref.league()), reference(ref.met()))));
+                new RadarReferencesDto(ref.position(), ref.tier(), reference(ref.met()))));
         return parPuuid;
     }
 
