@@ -16,6 +16,8 @@ public record ChampionPoolMemberDto(
         PoolState state,
         Integer masteryLevel,
         Integer masteryPoints,
+        Long games,
+        Double winRate,
         Instant lastPlayedAt,
         Instant observedAt
 ) {
