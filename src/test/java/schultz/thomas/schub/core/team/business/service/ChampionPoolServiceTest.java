@@ -165,7 +165,7 @@ class ChampionPoolServiceTest {
     void winrateParJoueur() {
         when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.CHAMPION), eq(RiotStatsGateway.Scope.RIFT), isNull()))
                 .thenReturn(Optional.of(List.of(new RiotStatsGateway.Bucket(PUUID_TOP, String.valueOf(JAX), "Jax",
-                        40, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40 * 1800, null, null))));
+                        40, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40 * 1800, null, null, null))));
 
         ChampionPoolEntryDto jax = champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "Jax");
 

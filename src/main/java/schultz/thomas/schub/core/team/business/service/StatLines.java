@@ -15,6 +15,7 @@ final class StatLines {
     static StatLineDto of(RiotStatsGateway.Bucket bucket, String label, String iconUrl,
                           StatComparisonDto versusRest) {
         double minutes = bucket.secondsPlayed() / 60.0;
+        RiotStatsGateway.Performance perf = bucket.perf();
         return new StatLineDto(
                 bucket.key(),
                 label,
@@ -33,6 +34,20 @@ final class StatLines {
                 parMinute(bucket.visionScore(), minutes),
                 part(bucket.kills() + bucket.assists(), bucket.teamKills()),
                 part(bucket.deaths(), bucket.teamDeaths()),
+                parMinute(perf.wardsKilled(), minutes),
+                parPartie(perf.controlWardsPlaced(), bucket.games()),
+                part(bucket.damageToChampions(), perf.teamDamageToChampions()),
+                parMinute(bucket.deaths() * 10L, minutes),
+                part(perf.timeDeadSeconds(), bucket.secondsPlayed()),
+                parMinute(perf.turretDamage(), minutes),
+                parPartie(perf.turretTakedowns(), bucket.games()),
+                parMinute(perf.epicMonsterDamage(), minutes),
+                parPartie(perf.platesDiff(), perf.platesGames()),
+                perf.laningGames(),
+                parPartie(perf.goldDiffAt15(), perf.laningGames()),
+                parPartie(perf.csDiffAt15(), perf.laningGames()),
+                parPartie(perf.xpDiffAt15(), perf.laningGames()),
+                parPartie(perf.killsDiffAt15(), perf.laningGames()),
                 bucket.afkGames(),
                 bucket.secondsPlayed(),
                 bucket.firstPlayedAt(),
@@ -66,17 +81,17 @@ final class StatLines {
                 total.teamDeaths() - part.teamDeaths(),
                 total.afkGames() - part.afkGames(),
                 total.secondsPlayed() - part.secondsPlayed(),
-                total.firstPlayedAt(), total.lastPlayedAt());
+                total.firstPlayedAt(), total.lastPlayedAt(), total.perf().plus(part.perf(), -1));
     }
 
     static RiotStatsGateway.Bucket vide(String puuid) {
         return new RiotStatsGateway.Bucket(puuid, "", null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                null, null);
+                null, null, RiotStatsGateway.Performance.ZERO);
     }
 
     static RiotStatsGateway.Bucket additionne(String puuid, String key, List<RiotStatsGateway.Bucket> parts) {
         RiotStatsGateway.Bucket somme = new RiotStatsGateway.Bucket(puuid, key, null, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, null, null);
+                0, 0, 0, 0, 0, 0, null, null, RiotStatsGateway.Performance.ZERO);
         for (RiotStatsGateway.Bucket part : parts) {
             somme = new RiotStatsGateway.Bucket(puuid, key, null,
                     somme.games() + part.games(),
@@ -94,7 +109,8 @@ final class StatLines {
                     somme.afkGames() + part.afkGames(),
                     somme.secondsPlayed() + part.secondsPlayed(),
                     plusTot(somme.firstPlayedAt(), part.firstPlayedAt()),
-                    plusTard(somme.lastPlayedAt(), part.lastPlayedAt()));
+                    plusTard(somme.lastPlayedAt(), part.lastPlayedAt()),
+                    somme.perf().plus(part.perf(), 1));
         }
         return somme;
     }

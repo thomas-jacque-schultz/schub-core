@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,9 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             new ParameterizedTypeReference<>() {
             };
     private static final ParameterizedTypeReference<List<StandingResponse>> CLASSEMENTS =
+            new ParameterizedTypeReference<>() {
+            };
+    private static final ParameterizedTypeReference<List<PatchStart>> PATCHS =
             new ParameterizedTypeReference<>() {
             };
 
@@ -72,6 +77,42 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                     .body(REFERENTIELS));
         } catch (RestClientException e) {
             log.warn("Référentiels du radar non obtenus ({})", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<List<PatchStart>> patches(int count) {
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri(uri -> uri.path("/stats/patches").queryParam("count", count).build())
+                    .retrieve()
+                    .body(PATCHS));
+        } catch (RestClientException e) {
+            log.warn("Calendrier des patchs non obtenu ({})", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    // 404 = pas encore de référence pour ce poste : « on ne sait pas », comme une panne.
+    @Override
+    public Optional<ReferenceGridDto> referenceGrid(String position, String scope, String tier, String patch) {
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri(uri -> {
+                        uri.path("/stats/references/{position}").queryParam("scope", scope);
+                        if (tier != null) {
+                            uri.queryParam("tier", tier);
+                        }
+                        if (patch != null) {
+                            uri.queryParam("patch", patch);
+                        }
+                        return uri.build(position);
+                    })
+                    .retrieve()
+                    .body(ReferenceGridDto.class));
+        } catch (RestClientException e) {
+            log.warn("Référentiel {} {} non obtenu ({})", position, scope, e.getMessage());
             return Optional.empty();
         }
     }
@@ -180,7 +221,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                 row.damageToChampions(), row.damageTaken(), row.visionScore(), row.teamKills(),
                 row.teamDeaths(), row.afkGames(),
                 row.secondsPlayed(),
-                row.firstPlayedAt(), row.lastPlayedAt());
+                row.firstPlayedAt(), row.lastPlayedAt(), row.performance());
     }
 
     private static SharedMatch toSharedMatch(SharedMatchResponse row) {
@@ -226,7 +267,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                           long kills, long deaths, long assists, long minionsKilled,
                           long goldEarned, long damageToChampions, long damageTaken, long visionScore,
                           long teamKills, long teamDeaths, long afkGames, long secondsPlayed, Instant firstPlayedAt,
-                          Instant lastPlayedAt) {
+                          Instant lastPlayedAt, Performance performance) {
     }
 
     record CoverageResponse(String puuid, boolean tracked, long knownMatches, long analysedMatches,

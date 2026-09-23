@@ -11,6 +11,7 @@ import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.team.api.dto.MyStatsDto;
 import schultz.thomas.schub.core.team.business.service.MyStatsService;
+import schultz.thomas.schub.core.team.business.service.StatsWindows;
 
 // Jamais de route portant un puuid : il suffirait d'un puuid croisé ailleurs pour sonder l'historique de n'importe qui.
 @RestController
@@ -20,12 +21,14 @@ public class MyStatsController {
 
     private final MyStatsService myStatsService;
     private final UserService userService;
+    private final StatsWindows windows;
 
     @GetMapping
     public MyStatsDto mine(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer champions) {
-        return myStatsService.of(userService.requireActor(actorDiscordId), days, champions);
+        return myStatsService.of(userService.requireActor(actorDiscordId), windows.days(days, patches), champions);
     }
 }

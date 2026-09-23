@@ -20,6 +20,7 @@ import schultz.thomas.schub.core.team.business.service.TeamGamesStatsService;
 import schultz.thomas.schub.core.team.business.service.TeamOppositionService;
 import schultz.thomas.schub.core.team.business.service.TeamPlayerStatsService;
 import schultz.thomas.schub.core.team.business.service.TeamStatsRefreshService;
+import schultz.thomas.schub.core.team.business.service.StatsWindows;
 
 @RestController
 @RequestMapping("/teams/{teamId}/stats")
@@ -31,6 +32,7 @@ public class TeamStatsController {
     private final TeamOppositionService opposition;
     private final TeamStatsRefreshService refresh;
     private final UserService userService;
+    private final StatsWindows windows;
 
     @GetMapping("/refresh")
     public StatsRefreshDto refreshStatus(
@@ -51,8 +53,9 @@ public class TeamStatsController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer champions) {
-        return playersStats.of(userService.requireActor(actorDiscordId), teamId, days, champions);
+        return playersStats.of(userService.requireActor(actorDiscordId), teamId, windows.days(days, patches), champions);
     }
 
     @GetMapping("/team")
@@ -60,8 +63,9 @@ public class TeamStatsController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer limit) {
-        return gamesStats.of(userService.requireActor(actorDiscordId), teamId, days, limit);
+        return gamesStats.of(userService.requireActor(actorDiscordId), teamId, windows.days(days, patches), limit);
     }
 
     @GetMapping("/games/{matchId}")
@@ -76,7 +80,8 @@ public class TeamStatsController {
     public TeamOppositionDto opposition(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
             @PathVariable String teamId,
-            @RequestParam(required = false) Integer days) {
-        return opposition.of(userService.requireActor(actorDiscordId), teamId, days);
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches) {
+        return opposition.of(userService.requireActor(actorDiscordId), teamId, windows.days(days, patches));
     }
 }
