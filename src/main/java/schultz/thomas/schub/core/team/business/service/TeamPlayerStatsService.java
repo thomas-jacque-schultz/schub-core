@@ -55,7 +55,7 @@ public class TeamPlayerStatsService {
         List<PlayerStatsDto> compares = comparent(colonnes);
 
         return new TeamPlayersStatsDto(team.getId(), team.getName(), days, championsMax, compares,
-                playerStatsService.scale(), placeDuLecteur(team, actor), Instant.now());
+                placeDuLecteur(team, actor), Instant.now());
     }
 
     static List<TeamMember> joueursDe(Team team) {
@@ -104,7 +104,7 @@ public class TeamPlayerStatsService {
                 chiffres == null ? List.of() : chiffres.months(),
                 state == StatsState.STATISTIQUES_CONNUES ? playerStatsService.rankings(puuid)
                         : List.of(),
-                chiffres == null ? null : chiffres.radar(),
+                chiffres == null ? null : chiffres.references(),
                 null);
     }
 
@@ -147,7 +147,7 @@ public class TeamPlayerStatsService {
                 colonne.riotGameName(), colonne.riotTagLine(), colonne.status(), colonne.roles(),
                 colonne.linked(), colonne.state(), colonne.coverage(), colonne.overall(),
                 colonne.champions(), colonne.positions(), colonne.queues(), colonne.months(),
-                colonne.rankings(), colonne.radar(), comparaison);
+                colonne.rankings(), colonne.references(), comparaison);
     }
 
     private static Double moyenne(List<StatLineDto> lignes, Function<StatLineDto, Double> mesure) {
