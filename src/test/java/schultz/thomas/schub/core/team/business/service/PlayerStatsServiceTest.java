@@ -158,15 +158,14 @@ class PlayerStatsServiceTest {
                 .thenReturn(Optional.of(List.of(bucket("TOP", 5, 2, 10, 10, 10), bucket("JUNGLE", 30, 15, 10, 10, 10))));
         when(statsGateway.references(List.of(new RiotStatsGateway.ReferenceRequest(PUUID, "JUNGLE", null))))
                 .thenReturn(Optional.of(List.of(new RiotStatsGateway.References(PUUID, "JUNGLE", "GOLD",
-                        new RiotStatsGateway.Reference("GOLD", "JUNGLE", 40, 5,
-                                Map.of("kda", new RiotStatsGateway.Bound(1.5, 3.5))), null))));
+                        new RiotStatsGateway.Reference(null, "JUNGLE", 40, 5,
+                                Map.of("kda", new RiotStatsGateway.Bound(1.5, 3.5)))))));
 
         var references = figures().references();
 
         assertThat(references.position()).isEqualTo("JUNGLE");
         assertThat(references.tier()).isEqualTo("GOLD");
-        assertThat(references.league().bounds().get("kda").low()).isEqualTo(1.5);
-        assertThat(references.met()).isNull();
+        assertThat(references.met().bounds().get("kda").low()).isEqualTo(1.5);
     }
 
     @Test

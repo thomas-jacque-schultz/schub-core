@@ -80,7 +80,7 @@ public interface RiotStatsGateway {
     record ReferenceRequest(String puuid, String position, Instant since) {
     }
 
-    record References(String puuid, String position, String tier, Reference league, Reference met) {
+    record References(String puuid, String position, String tier, Reference met) {
     }
 
     record Reference(String tier, String position, int population, int minimumGames, Map<String, Bound> bounds) {

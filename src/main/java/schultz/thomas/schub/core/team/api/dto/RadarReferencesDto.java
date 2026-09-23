@@ -1,6 +1,5 @@
 package schultz.thomas.schub.core.team.api.dto;
 
-// Le poste le plus joué sur la période : c'est à ce poste que le joueur se compare.
-public record RadarReferencesDto(String position, String tier, MetricReferenceDto league,
-                                 MetricReferenceDto met) {
+// Poste le plus joué et palier : de quoi lire la bonne grille de /lol/references. met : ses adversaires directs.
+public record RadarReferencesDto(String position, String tier, MetricReferenceDto met) {
 }
