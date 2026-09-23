@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.PositionOppositionDto;
 import schultz.thomas.schub.core.team.api.dto.TeamEarlyGameDto;
+import schultz.thomas.schub.core.team.api.dto.TeamLevelDto;
 import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
 import schultz.thomas.schub.core.team.api.dto.TeamRecordDto;
 import schultz.thomas.schub.core.team.business.model.StatsState;
@@ -60,12 +61,13 @@ public class TeamOppositionService {
         }
         Map<String, RiotStatsGateway.Insight> insights = gamesStats.insightsDe(decidees);
         return calcule(team.getId(), days, decidees, insights, parPuuid.keySet(),
-                EarlyGames.bilan(decidees, insights, parPuuid, gamesStats.noms(joueurs)));
+                EarlyGames.bilan(decidees, insights, parPuuid, gamesStats.noms(joueurs)),
+                TeamLevels.of(decidees, insights, statsGateway.teamGrid().orElse(null)));
     }
 
     static TeamOppositionDto calcule(String teamId, Integer days, List<RiotStatsGateway.SharedMatch> parties,
                                      Map<String, RiotStatsGateway.Insight> insights, Set<String> membres,
-                                     TeamEarlyGameDto early) {
+                                     TeamEarlyGameDto early, TeamLevelDto level) {
         Map<String, List<RiotStatsGateway.SharedMatch>> parPalier = new LinkedHashMap<>();
         Map<String, List<RiotStatsGateway.SharedMatch>> parEcart = new LinkedHashMap<>();
         Map<String, Poste> parPoste = new LinkedHashMap<>();
@@ -121,10 +123,10 @@ public class TeamOppositionService {
                 paliers,
                 ECARTS.stream().filter(parEcart::containsKey).map(cle -> bilan(cle, parEcart.get(cle))).toList(),
                 parPoste.entrySet().stream().map(entree -> entree.getValue().dto(entree.getKey())).toList(),
-                plafond, PLAFOND_MINIMUM, early, Instant.now());
+                plafond, PLAFOND_MINIMUM, early, level, Instant.now());
     }
 
-    private static Double moyenne(RiotStatsGateway.Insight insight, boolean notreCamp, int notreCote) {
+    static Double moyenne(RiotStatsGateway.Insight insight, boolean notreCamp, int notreCote) {
         return insight.participants().stream()
                 .filter(joueur -> (joueur.side() == notreCote) == notreCamp)
                 .map(joueur -> Rangs.reference(joueur.solo(), joueur.flex()))
@@ -171,7 +173,7 @@ public class TeamOppositionService {
 
     private TeamOppositionDto vide(Team team, Integer days, StatsState state) {
         return new TeamOppositionDto(team.getId(), days, state, 0, 0, null, List.of(), List.of(), List.of(),
-                null, PLAFOND_MINIMUM, null, Instant.now());
+                null, PLAFOND_MINIMUM, null, null, Instant.now());
     }
 
     private static final class Poste {
