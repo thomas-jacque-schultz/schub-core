@@ -1,6 +1,6 @@
 # schub-core
 
-Domaine Schub : GameServer, Deployment, politique de ports. Orchestre les connecteurs.
+Domaine Schub : identité, serveurs de jeu et politique de ports, équipes League of Legends. Orchestre les connecteurs.
 
 ## Place dans l'architecture
 
