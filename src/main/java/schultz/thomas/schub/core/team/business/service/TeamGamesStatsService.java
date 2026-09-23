@@ -410,7 +410,7 @@ public class TeamGamesStatsService {
 
     private static At15Dto at15(RiotStatsGateway.At15 a) {
         return new At15Dto(a.gold(), a.xp(), a.cs(), a.damageToChampions(), a.kills(), a.deaths(), a.assists(),
-                a.ganksSuffered());
+                a.ganksSuffered(), a.ganksSucceeded());
     }
 
     private Map<String, MemberDirectory.MemberIdentity> identites(List<TeamMember> joueurs) {
