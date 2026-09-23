@@ -323,4 +323,12 @@ class TeamStatsServiceTest {
         user.setRoleId("role-visiteur");
         return user;
     }
+
+    @Test
+    @DisplayName("Les patchs se rangent par version : 16.18 avant 16.9")
+    void patchsParVersion() {
+        assertThat(java.util.stream.Stream.of("16.9", "16.18", "15.24", "16.10")
+                .sorted(((java.util.Comparator<String>) TeamGamesStatsService::parVersion).reversed())
+                .toList()).containsExactly("16.18", "16.10", "16.9", "15.24");
+    }
 }

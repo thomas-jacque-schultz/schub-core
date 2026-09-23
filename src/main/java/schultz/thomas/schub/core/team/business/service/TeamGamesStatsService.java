@@ -1,18 +1,15 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.api.dto.At15Dto;
-import schultz.thomas.schub.core.team.api.dto.MatchupDto;
-import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
-import schultz.thomas.schub.core.team.api.dto.SideRanksDto;
-import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
-import java.util.HashMap;
-import java.util.NoSuchElementException;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 import schultz.thomas.schub.core.data.model.User;
+import schultz.thomas.schub.core.team.api.dto.At15Dto;
+import schultz.thomas.schub.core.team.api.dto.MatchupDto;
+import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
+import schultz.thomas.schub.core.team.api.dto.SideRanksDto;
+import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamePlayerDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
@@ -25,9 +22,11 @@ import schultz.thomas.schub.core.team.data.model.TeamMember;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -110,7 +109,7 @@ public class TeamGamesStatsService {
                 bilans(decidees, TeamGamesStatsService::mode, partie -> null),
                 bilans(decidees, partie -> String.valueOf(cote(partie)), partie -> null),
                 bilans(decidees, RiotStatsGateway.SharedMatch::patch, partie -> null).stream()
-                        .sorted(Comparator.comparing(TeamRecordDto::key).reversed())
+                        .sorted(Comparator.comparing(TeamRecordDto::key, TeamGamesStatsService::parVersion).reversed())
                         .limit(PATCHS_RENDUS)
                         .toList(),
                 presences(joueurs, parties, identites, couverture),
@@ -187,6 +186,22 @@ public class TeamGamesStatsService {
 
     private static String mode(RiotStatsGateway.SharedMatch partie) {
         return partie.queue() == null || partie.queue().isBlank() ? "OTHER" : partie.queue();
+    }
+
+    // « 16.9 » précède « 16.18 » : l'ordre alphabétique les inverserait.
+    static int parVersion(String a, String b) {
+        int[] x = version(a);
+        int[] y = version(b);
+        return x[0] != y[0] ? Integer.compare(x[0], y[0]) : Integer.compare(x[1], y[1]);
+    }
+
+    private static int[] version(String patch) {
+        String[] segments = patch == null ? new String[0] : patch.split("\\.");
+        try {
+            return new int[] {Integer.parseInt(segments[0]), Integer.parseInt(segments[1])};
+        } catch (RuntimeException illisible) {
+            return new int[] {-1, -1};
+        }
     }
 
     static int cote(RiotStatsGateway.SharedMatch partie) {
