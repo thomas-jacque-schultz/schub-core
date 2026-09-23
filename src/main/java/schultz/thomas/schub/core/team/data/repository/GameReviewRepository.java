@@ -7,7 +7,6 @@ import schultz.thomas.schub.core.team.data.model.GameReview;
 import java.util.List;
 import java.util.Optional;
 
-/** Comme {@link TeamRepository} : jamais injecté hors du paquet {@code …core.team}. */
 @Repository
 public interface GameReviewRepository extends MongoRepository<GameReview, String> {
 

@@ -24,13 +24,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Le nom d'affichage, et ce que {@code GET /me} rassemble.
- *
- * <p>Le piège de ce champ est le repli : tant qu'il n'est pas choisi, c'est le pseudo Discord qui
- * s'affiche, et il doit continuer de suivre ses changements. Le recopier une fois donnerait un
- * nom qui vieillit sans que personne ne s'en aperçoive.</p>
- */
 class UserServiceDisplayNameTest {
 
     private UserRepository userRepository;
@@ -132,10 +125,6 @@ class UserServiceDisplayNameTest {
         assertThat(me.displayNameChosen()).isFalse();
     }
 
-    /**
-     * L'accueil déduit ses actions de cette réponse. Sans ce booléen, il devrait comparer le nom
-     * affiché au pseudo Discord — ce qui proposerait « choisis ton nom » à qui a choisi le sien.
-     */
     @Test
     @DisplayName("GET /me distingue le nom choisi du repli sur le pseudo Discord")
     void ditSiLeNomAEteChoisi() {

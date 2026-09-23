@@ -25,13 +25,6 @@ import schultz.thomas.schub.core.team.data.model.CompositionSlot;
 
 import java.util.List;
 
-/**
- * Les compositions d'une équipe — le socle du futur préparateur de draft (lot D.6).
- *
- * <p>Sous {@code /teams/{teamId}} parce qu'une composition n'existe pas sans son équipe : c'est
- * elle qui porte les droits, et une route à plat obligerait à retrouver l'équipe pour savoir qui
- * a le droit d'écrire.</p>
- */
 @RestController
 @RequestMapping("/teams/{teamId}/compositions")
 @RequiredArgsConstructor
@@ -93,11 +86,6 @@ public class CompositionController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Traduit la demande en brouillon du domaine. Aucune validation ici : la cardinalité et la
-     * couverture des postes sont des règles de domaine, et les vérifier dans un contrôleur
-     * reviendrait à pouvoir les contourner par un autre appelant.
-     */
     private CompositionService.Draft toDraft(CompositionRequest request) {
         List<CompositionSlot> slots = request.slots() == null ? null
                 : request.slots().stream()

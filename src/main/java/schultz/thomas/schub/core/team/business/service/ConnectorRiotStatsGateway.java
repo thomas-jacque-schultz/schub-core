@@ -139,8 +139,6 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                         .toList());
     }
 
-    // --- les formes du connecteur, redéclarées : deux services ne partagent pas de classes ---
-
     record AggregateRequest(List<String> puuids, String groupBy, Instant since) {
     }
 

@@ -4,10 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Ce que le connecteur sait compter. Un {@code Optional} vide est « on ne sait pas », jamais
- * « il n'y en a pas » : les deux se lisent pareil à l'écran et n'appellent pas la même phrase.
- */
+// Optional vide = « on ne sait pas », jamais « il n'y en a pas ».
 public interface RiotStatsGateway {
 
     enum Grouping {

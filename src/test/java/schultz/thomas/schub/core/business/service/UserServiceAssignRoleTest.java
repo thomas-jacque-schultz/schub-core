@@ -23,13 +23,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * La règle anti-élévation, et les trois garde-fous qui l'accompagnent.
- *
- * <p>C'est le chemin d'élévation classique d'un modèle rôles/permissions : se fabriquer un rôle
- * « tout coché » et se l'attribuer. Il se ferme en trois lignes — encore faut-il qu'elles soient
- * là, et qu'elles y restent. D'où ces tests.</p>
- */
 class UserServiceAssignRoleTest {
 
     private UserRepository userRepository;
@@ -57,7 +50,6 @@ class UserServiceAssignRoleTest {
         when(userRepository.findById("cible")).thenReturn(Optional.of(cible));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // L'acteur est ADMINISTRATOR : tout sauf ROLE_MANAGE.
         when(permissionEvaluator.rolePermissions(acteur))
                 .thenReturn(EnumSet.copyOf(SystemRole.ADMINISTRATOR.permissions()));
     }
@@ -76,9 +68,6 @@ class UserServiceAssignRoleTest {
     @Test
     @DisplayName("refuse un rôle plus puissant que le sien — le chemin d'élévation classique")
     void refuseUnRolePlusPuissant() {
-        // L'acteur est rabaissé à MODERATOR pour isoler la règle du sous-ensemble : avec un
-        // acteur ADMINISTRATOR, tout rôle sans ROLE_MANAGE lui est déjà inférieur, et c'est
-        // l'interdit « ROLE_MANAGE jamais attribuable » qui refuserait — pas ce qu'on teste ici.
         when(permissionEvaluator.rolePermissions(acteur))
                 .thenReturn(EnumSet.copyOf(SystemRole.MODERATOR.permissions()));
         Role administrateur = role("role-admin-cible", "ADMINISTRATOR", SystemRole.ADMINISTRATOR.permissions());
@@ -141,10 +130,6 @@ class UserServiceAssignRoleTest {
     @Test
     @DisplayName("la règle du sous-ensemble couvre les permissions d'équipe sans avoir été rouverte")
     void refuseUneElevationParLesPermissionsDEquipe() {
-        // Un compte au rôle VISITEUR : il peut créer une équipe, rien de plus. Qu'il puisse
-        // distribuer TEAM_EDIT — le droit d'écrire dans l'équipe des autres — serait exactement
-        // l'élévation que la règle ferme. Le test est ici parce que la règle est générique : si
-        // quelqu'un la remplace un jour par une liste blanche, c'est ce test qui tombera.
         when(permissionEvaluator.rolePermissions(acteur))
                 .thenReturn(EnumSet.copyOf(SystemRole.VISITEUR.permissions()));
         Role capitaine = role("role-capitaine", "CAPITAINE",

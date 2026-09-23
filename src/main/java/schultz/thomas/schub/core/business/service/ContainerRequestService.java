@@ -12,6 +12,5 @@ public interface ContainerRequestService {
     boolean stopContainer(Integer stackId);
     DockerContainerState getContainerState(Integer stackId);
 
-    /** Toutes les stacks connues de Portainer, pour en choisir une sans la saisir à la main. */
     List<PortainerStack> listStacks();
 }

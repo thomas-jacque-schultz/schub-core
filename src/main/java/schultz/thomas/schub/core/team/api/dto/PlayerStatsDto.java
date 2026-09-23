@@ -6,7 +6,6 @@ import schultz.thomas.schub.core.team.business.model.StatsState;
 
 import java.util.List;
 
-/** Une colonne du panneau « joueurs » : un membre de l'effectif, ses chiffres et leur assise. */
 public record PlayerStatsDto(
         String memberId,
         String displayName,

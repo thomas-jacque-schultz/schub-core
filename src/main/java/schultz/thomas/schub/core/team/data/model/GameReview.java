@@ -8,16 +8,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 
-/**
- * Une note de débrief : ce qu'un compte a écrit sur une place de l'effectif, pour une partie.
- *
- * <p>L'index unique porte le choix de fond : une revue par auteur, par sujet et par partie. Un
- * débrief n'est pas un fil de discussion, et sans cette contrainte le même joueur empile dix
- * notes sur la même partie sans que rien ne le signale.</p>
- *
- * <p>Aucune partie n'est stockée ici, seulement son {@code matchId} : les parties vivent une
- * seule fois, dans le connecteur (plan §D.2 ter).</p>
- */
 @Data
 @Document(collection = "team_game_reviews")
 @CompoundIndex(name = "revue_unique",
@@ -32,10 +22,8 @@ public class GameReview {
 
     private String matchId;
 
-    /** La place notée dans cette équipe — jamais un identifiant de compte. */
     private String subjectMemberId;
 
-    /** L'id interne du compte qui a écrit. Sert à autoriser la retouche et à afficher l'auteur. */
     private String authorUserId;
 
     private String content;

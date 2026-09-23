@@ -13,13 +13,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Les statistiques du lecteur, et de personne d'autre.
- *
- * <p>Le sujet est l'acteur : la méthode ne prend aucun identifiant de cible, et il n'existe
- * aucune route qui en prendrait un. Un chemin portant un puuid suffirait à sonder l'historique de
- * n'importe qui à partir d'un puuid croisé ailleurs.</p>
- */
 @Service
 @RequiredArgsConstructor
 public class MyStatsService {

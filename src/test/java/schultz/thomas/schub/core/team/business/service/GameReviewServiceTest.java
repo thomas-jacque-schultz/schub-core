@@ -44,13 +44,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Ce que la revue refuse en silence si personne ne l'arrête.
- *
- * <p>Une note sur une partie qui n'est pas une partie d'équipe, une note d'un non-membre, une note
- * d'un membre sur quelqu'un d'autre : les trois s'enregistrent sans bruit et ne se découvrent que
- * bien plus tard, quand le débrief affiche des lignes que personne ne reconnaît.</p>
- */
 class GameReviewServiceTest {
 
     private static final String PARTIE = "EUW1_7001";
@@ -167,7 +160,6 @@ class GameReviewServiceTest {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
-    /** Le silence du connecteur est un refus, jamais un « non » : une note acceptée à tort reste. */
     @Test
     @DisplayName("connecteur muet : on refuse au lieu de deviner")
     void connecteurMuet() {
@@ -254,7 +246,6 @@ class GameReviewServiceTest {
                 .isInstanceOf(NoSuchElementException.class);
     }
 
-    /** Le fait sur le lecteur, pas la liste des ayants droit (plan §A.5 bis). */
     @Test
     @DisplayName("la lecture porte ce que le lecteur peut écrire, et rien sur les autres")
     void faitsSurLeLecteur() {
@@ -271,8 +262,6 @@ class GameReviewServiceTest {
         assertThat(vuParLeCapitaine.viewerCanReviewAnyone()).isTrue();
         assertThat(vuParLeCapitaine.viewerMemberId()).isNull();
     }
-
-    // --- fabriques ---
 
     private void partiesDEquipe(String... matchIds) {
         List<RiotStatsGateway.SharedMatch> parties = java.util.Arrays.stream(matchIds)

@@ -12,16 +12,7 @@ import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.team.api.dto.MyStatsDto;
 import schultz.thomas.schub.core.team.business.service.MyStatsService;
 
-/**
- * {@code GET /me/stats}, et jamais {@code /players/{puuid}/stats}.
- *
- * <p>Même règle que le reste de {@code /me} : aucun second paramètre, donc aucune cible possible.
- * Un chemin portant un puuid laisserait n'importe qui sonder l'historique de n'importe qui à
- * partir d'un puuid croisé dans une réponse d'équipe.</p>
- *
- * <p>Le contrôleur est dans le paquet {@code team} avec le reste du domaine LoL, là où la route
- * prolonge {@code /me} : le découpage suit le domaine, l'URL suit le sujet.</p>
- */
+// Jamais de route portant un puuid : il suffirait d'un puuid croisé ailleurs pour sonder l'historique de n'importe qui.
 @RestController
 @RequestMapping("/me/stats")
 @RequiredArgsConstructor

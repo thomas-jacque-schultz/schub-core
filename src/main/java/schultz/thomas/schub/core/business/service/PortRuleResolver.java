@@ -17,16 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Calcule l'ensemble des redirections voulues, à partir des règles permanentes et de l'état
- * des serveurs de jeu. Fonction pure : aucune I/O, aucun routeur, donc testable directement.
- *
- * <p>Deux sources :</p>
- * <ul>
- *   <li>les règles permanentes, toujours ouvertes tant qu'elles sont déclarées ;</li>
- *   <li>les ports portés par chaque serveur, ouverts seulement pendant qu'il tourne.</li>
- * </ul>
- */
 @Component
 @RequiredArgsConstructor
 public class PortRuleResolver {
@@ -38,19 +28,9 @@ public class PortRuleResolver {
     private final PortForwardingProperties properties;
     private final GameServerService gameServerService;
 
-    /**
-     * Les règles permanentes viennent d'un fournisseur et non des propriétés : depuis qu'elles
-     * sont modifiables depuis l'interface, elles vivent en base. Ce détour garde ce resolver
-     * pur — il consomme une liste sans savoir d'où elle sort.
-     */
     private final StaticPortRuleProvider staticPortRuleProvider;
 
-    /**
-     * @param overrideIdentifier serveur dont on force l'état au lieu de le déduire de son statut,
-     *                           ou {@code null}. Nécessaire autour d'un démarrage ou d'une extinction :
-     *                           Portainer n'a pas encore basculé le statut au moment où l'on veut que
-     *                           la redirection soit déjà dans le bon état.
-     */
+    // overrideIdentifier : serveur dont on force l'état, car autour d'un start/stop, Portainer n'a pas encore basculé le statut
     public PortRuleResolution resolve(String overrideIdentifier, boolean overrideOpen) {
         Map<PortRuleKey, PortRule> rules = new LinkedHashMap<>();
         List<String> rejected = new ArrayList<>();
@@ -67,8 +47,6 @@ public class PortRuleResolver {
 
         return new PortRuleResolution(rules, rejected);
     }
-
-    // --- collecte -----------------------------------------------------------
 
     private List<Candidate> candidates(String overrideIdentifier, boolean overrideOpen) {
         List<Candidate> candidates = new ArrayList<>();
@@ -106,9 +84,6 @@ public class PortRuleResolver {
         return STATIC_OWNER_PREFIX + name;
     }
 
-    // --- validation ---------------------------------------------------------
-
-    /** Vide si la règle est refusée ; le motif est alors ajouté à {@code rejected}. */
     private Optional<PortRule> validate(Candidate candidate, List<String> rejected) {
         Optional<Protocol> protocol = Protocol.parse(candidate.proto());
         if (protocol.isEmpty()) {
@@ -169,7 +144,6 @@ public class PortRuleResolver {
         return (fallback != null && !fallback.isBlank()) ? fallback.trim() : null;
     }
 
-    /** Une règle telle que déclarée, avant normalisation et validation. */
     private record Candidate(
             String owner,
             String proto,

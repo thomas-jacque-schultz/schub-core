@@ -21,7 +21,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/** Ce qu'un chiffre vaut, et ce qu'il vaut quand il n'y a rien à compter. */
 class PlayerStatsServiceTest {
 
     private static final String PUUID = "puuid-1";
@@ -131,7 +130,6 @@ class PlayerStatsServiceTest {
         assertThat(jayce.winRate()).isEqualTo(0.55);
         assertThat(jayce.label()).isEqualTo("Jayce");
         assertThat(jayce.versusRest().referenceGames()).isEqualTo(80);
-        // 55 % sur Jayce contre 41,25 % sur le reste : c'est l'écart qui dit quelque chose.
         assertThat(jayce.versusRest().winRateDelta()).isCloseTo(0.1375, within(1e-9));
     }
 

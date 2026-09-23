@@ -21,7 +21,6 @@ public record IngestLoadDto(
                 load.throttledFor());
     }
 
-    /** Connecteur muet : on le dit, on ne rend pas des zéros qui se liraient comme « rien à faire ». */
     public static IngestLoadDto unavailable() {
         return new IngestLoadDto(false, 0, 0, 0, 0, null, null, null);
     }

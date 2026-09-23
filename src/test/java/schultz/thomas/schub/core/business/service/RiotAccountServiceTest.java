@@ -27,14 +27,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * La liaison de compte Riot, son remplacement, et surtout leurs façons de mal tourner.
- *
- * <p>Ce qui est testé ici est ce qui échoue <em>en silence</em> : un {@code puuid} pris par
- * quelqu'un d'autre, un connecteur éteint, un compte remplacé sans que personne ne le dise,
- * une saisie qui n'est pas un Riot ID. Aucun ne lève tout seul, et tous produisent une donnée
- * fausse ou une fonctionnalité morte si on ne les traite pas.</p>
- */
 class RiotAccountServiceTest {
 
     private static final String PUUID = "puuid-de-thomas";
@@ -87,8 +79,6 @@ class RiotAccountServiceTest {
         assertThat(dto.toString()).doesNotContain(PUUID);
     }
 
-    // --- un puuid déjà pris ---
-
     @Test
     @DisplayName("Un puuid déjà lié à un autre compte est refusé — deux comptes ne sont pas le même joueur")
     void refuseUnPuuidDejaLie() {
@@ -130,8 +120,6 @@ class RiotAccountServiceTest {
         autre.setRiotGameName("J1HUIV");
         autre.setRiotTagLine("000");
         when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
-        // La casse est celle de la requête Mongo (`IgnoreCase`), pas du service : le bouchon
-        // répond donc quelle que soit la casse saisie, comme le dépôt réel le ferait.
         when(userRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(anyString(), anyString()))
                 .thenReturn(List.of(autre));
 
@@ -157,8 +145,6 @@ class RiotAccountServiceTest {
                 .as("le puuid est la clé stable : un Riot ID recopié ailleurs ne décide de rien")
                 .isEqualTo(RiotAccountState.RESOLU);
     }
-
-    // --- le connecteur injoignable ---
 
     @Test
     @DisplayName("Connecteur injoignable : la déclaration est conservée, en attente de résolution")
@@ -187,8 +173,6 @@ class RiotAccountServiceTest {
         assertThat(acteur.getRiotPuuid()).isEqualTo(PUUID);
     }
 
-    // --- saisies refusées ---
-
     @Test
     @DisplayName("Ce qui n'est pas un Riot ID est refusé en 400, pas enregistré tel quel")
     void refuseLesSaisiesQuiNeSontPasDesRiotId() {
@@ -214,8 +198,6 @@ class RiotAccountServiceTest {
         assertThat(dto.riotId()).isEqualTo("Le Joueur#EUW");
     }
 
-    // --- lecture ---
-
     @Test
     @DisplayName("Un compte sans Riot ID est ABSENT, et ne prétend rien d'autre")
     void litUnCompteSansRiotId() {
@@ -225,8 +207,6 @@ class RiotAccountServiceTest {
         assertThat(dto.riotId()).isNull();
         assertThat(dto.linkedAt()).isNull();
     }
-
-    // --- le changement de compte ---
 
     @Test
     @DisplayName("Remplacer un compte résolu par un autre est refusé tant que ce n'est pas confirmé")
@@ -315,8 +295,6 @@ class RiotAccountServiceTest {
         verify(riotConnectorService).requestIngest(PUUID);
     }
 
-    // --- le connecteur d'ingestion éteint ---
-
     @Test
     @DisplayName("Connecteur muet : l'avancement est nul et le compte se lit quand même")
     void litLeCompteSansLAvancement() {
@@ -343,8 +321,6 @@ class RiotAccountServiceTest {
         assertThat(ingest.running()).isEqualTo(1);
         assertThat(ingest.estimatedReadyAt()).isEqualTo(pret);
     }
-
-    // --- les suggestions ---
 
     @Test
     @DisplayName("Une recherche sans résultat rend une liste vide et n'interroge pas les comptes")
@@ -452,8 +428,6 @@ class RiotAccountServiceTest {
 
         assertThat(dto.state()).isEqualTo(RiotAccountState.EN_ATTENTE_DE_RESOLUTION);
     }
-
-    // --- la vérification : une saisie partielle cherche, un Riot ID complet demande à Riot ---
 
     @Test
     @DisplayName("Une saisie partielle ne dérange jamais Riot")

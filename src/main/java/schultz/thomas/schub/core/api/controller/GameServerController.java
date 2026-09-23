@@ -27,13 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * L'API du domaine. Tout ce qui concerne un serveur passe par ici — le BFF, le connecteur
- * Discord qui tire périodiquement, et rien d'autre.
- *
- * <p>Chaque route interroge le {@link PermissionEvaluator} au point d'action : le contrôle du BFF
- * est grossier et ne vaut que pour le jeton, celui d'ici est la règle (plan §A.2).</p>
- */
 @RestController
 @RequestMapping("/game-servers")
 @RequiredArgsConstructor
@@ -53,7 +46,6 @@ public class GameServerController {
         return projectionService.project(gameServerService.findAll(), actor.orElse(null));
     }
 
-    /** Vue réduite pour un affichage non authentifié : aucun détail d'infrastructure. */
     @GetMapping("/public-status")
     public List<PublicServerStatusDto> publicStatus() {
         return gameServerService.findAll().stream()
@@ -96,12 +88,6 @@ public class GameServerController {
         return ResponseEntity.ok(projectionService.toInfraDto(updated));
     }
 
-    /**
-     * 202 : démarrer un déploiement est asynchrone. La boucle d'observation constatera le
-     * passage à ONLINE et le poussera vers Discord — répondre 200 laisserait croire que c'est
-     * déjà fait.
-     *
-     */
     @PostMapping("/{slug}/start")
     public ResponseEntity<Void> start(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
@@ -122,7 +108,6 @@ public class GameServerController {
         return ResponseEntity.accepted().build();
     }
 
-    /** Les jeux connus, pour alimenter un menu déroulant sans les coder en dur côté interface. */
     @GetMapping("/games")
     public List<GameDto> games(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
         readActor(actorDiscordId).ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
@@ -131,17 +116,6 @@ public class GameServerController {
                 .toList();
     }
 
-    /**
-     * L'acteur d'une lecture, quand il y en a un.
-     *
-     * <p><strong>En-tête absent = service Schub agissant pour son compte</strong> — c'est le cas
-     * du pull périodique du connecteur Discord, qui construit les cartes d'état d'un salon sans
-     * personne derrière. Il reçoit la projection membre, jamais l'infra : un salon Discord n'est
-     * pas un endroit où publier la liste des ports ouverts.</p>
-     *
-     * <p>En-tête <em>présent mais inconnu</em>, en revanche, est un refus — sinon un identifiant
-     * inventé vaudrait mieux qu'un vrai.</p>
-     */
     private Optional<User> readActor(String actorDiscordId) {
         if (actorDiscordId == null || actorDiscordId.isBlank()) {
             return Optional.empty();

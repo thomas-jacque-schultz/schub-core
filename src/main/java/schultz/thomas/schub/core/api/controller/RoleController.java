@@ -22,15 +22,6 @@ import schultz.thomas.schub.core.data.model.User;
 
 import java.util.List;
 
-/**
- * L'écran des rôles — la fenêtre réservée.
- *
- * <p>Écriture réservée à {@code ROLE_MANAGE}, donc au seul {@code OWNER} (décision n°2 du 18-09).
- * La <em>lecture</em>, elle, est ouverte à {@code USER_VIEW} : l'écran des utilisateurs a besoin
- * de la liste des rôles pour proposer un choix et afficher un nom. Réserver aussi la lecture
- * rendrait l'écran des utilisateurs inutilisable par un {@code ADMINISTRATOR}, ce qui n'est pas
- * ce que la décision protège — elle protège la <em>composition</em> des rôles.</p>
- */
 @RestController
 @RequestMapping("/roles")
 @RequiredArgsConstructor

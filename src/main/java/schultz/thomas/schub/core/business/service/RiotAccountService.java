@@ -22,39 +22,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Le lien entre un compte Schub et un compte Riot.
- *
- * <h2>La propriété du compte n'est pas vérifiée — et c'est assumé</h2>
- *
- * <p><strong>Rien ici ne prouve que la personne possède le compte Riot qu'elle déclare.</strong>
- * Elle affirme « je suis {@code Pseudo#TAG} », le connecteur confirme seulement que ce Riot ID
- * <em>existe</em>, et on la croit. La vérification réelle s'appelle RSO (Riot Sign On) : c'est un
- * second parcours OAuth et une approbation Riot distincte de la clé d'API, donc hors périmètre de
- * cette version (plan §D, « à anticiper »).</p>
- *
- * <h2>On change de compte, on ne délie pas</h2>
- *
- * <p>La route de déliaison a été retirée : un compte délié laisse les équipes dans un état
- * incohérent — des places d'effectif rattachées à quelqu'un qui n'a plus de compte de jeu, des
- * panneaux qui se vident sans raison lisible. Le geste utile est le <em>remplacement</em>, et il
- * est explicite : voir {@link #link}.</p>
- *
- * <h2>Ce qu'il ne fait pas : toucher aux équipes</h2>
- *
- * <p>Lier ou changer son compte ne rattache personne à une place d'effectif. C'est
- * {@code POST /teams/claim} qui le fait, et c'est au front de l'appeler juste après. Écrire dans
- * les équipes depuis ici inverserait la seule dépendance permise entre les deux domaines —
- * {@code team} lit l'identité, jamais l'inverse (plan §D.2).</p>
+ * La propriété du compte Riot n'est pas vérifiée : le connecteur confirme seulement que le Riot ID existe.
+ * La vérification réelle (RSO) demande une approbation Riot séparée, hors périmètre.
+ * Ne touche jamais aux équipes : team lit l'identité, jamais l'inverse.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RiotAccountService {
 
-    /** Mesuré : Riot ne garde qu'environ mille parties par joueur. */
     private static final int PARTIES_ESTIMEES = 1_000;
 
-    /** Un appel par partie, au débit d'une clé aux limites de développement (50/min). */
     private static final Duration DUREE_ESTIMEE = Duration.ofMinutes(20);
 
     private final UserRepository userRepository;
@@ -62,36 +40,10 @@ public class RiotAccountService {
     private final RiotConnectorService riotConnectorService;
     private final ApplicationEventPublisher events;
 
-    /** Ce que l'appelant a déclaré, où en est la résolution, et où en est la collecte. */
     public RiotAccountDto of(User actor) {
         return toDto(actor).withIngest(ingestOf(actor));
     }
 
-    /**
-     * Déclare, relance, ou <strong>remplace</strong> le compte Riot de l'appelant.
-     *
-     * <p>Trois gestes derrière une seule route, parce qu'ils ne se distinguent que par l'état
-     * d'arrivée et qu'une route par geste obligerait le front à savoir lequel il fait :</p>
-     *
-     * <ul>
-     *   <li><em>déclarer</em> — rien n'était lié. Direct.</li>
-     *   <li><em>relancer</em> — même Riot ID resoumis. C'est le « réessayer » d'un écran dont la
-     *       première tentative est tombée sur un connecteur éteint, et c'est aussi ce qui
-     *       rattrape un {@code puuid} jamais résolu. Direct — et un connecteur muet ne fait rien
-     *       perdre, le {@code puuid} déjà connu est conservé.</li>
-     *   <li><em>remplacer</em> — un autre compte. <strong>Refusé en 409 tant que
-     *       {@code confirmChange} n'est pas posé</strong>, avec les conséquences dans le corps.</li>
-     * </ul>
-     *
-     * <p><strong>Changer de Riot ID n'est pas changer de compte.</strong> Un joueur renomme son
-     * Riot ID quand il veut ; si le {@code puuid} résolu est le même qu'avant, c'est le même
-     * compte et rien n'est perdu — aucune confirmation n'est demandée. Confondre les deux ferait
-     * apparaître un avertissement effrayant sur une simple mise à jour de pseudo.</p>
-     *
-     * <p>La confirmation n'est exigée que si l'ancien lien était <em>résolu</em> : sans
-     * {@code puuid}, rien n'a jamais été collecté et il n'y a rien à perdre — corriger une faute
-     * de frappe avant résolution n'a pas à être confirmé.</p>
-     */
     public RiotAccountDto link(User actor, String riotIdSaisi, boolean confirmChange) {
         RiotId riotId = RiotId.parse(riotIdSaisi);
         RiotIdResolution resolution = riotIdResolver.resolve(riotId.gameName(), riotId.tagLine());
@@ -143,44 +95,6 @@ public class RiotAccountService {
         return remplacement ? dto.withChange(changement(ancienRiotId, riotId, collecteDemandee)) : dto;
     }
 
-    /**
-     * Les comptes connus qui ressemblent à cette saisie — et, si la saisie <em>est</em> un Riot ID
-     * complet, ce que Riot en dit avant de répondre.
-     *
-     * <h2>Une saisie partielle cherche, un Riot ID complet vérifie</h2>
-     *
-     * <p>Chercher {@code Thom} est une question sur nos données : l'index y répond seul, sans un
-     * appel sortant. Écrire {@code Thomas#EUW} est autre chose — c'est nommer un compte précis, et
-     * la seule autorité sur son existence est Riot. Le cœur le fait donc résoudre d'abord ; la
-     * résolution inscrit l'observation dans l'index du connecteur, et le compte se trouve alors
-     * dans la réponse comme n'importe quel autre. <strong>C'est ce qui rend l'écran praticable
-     * quand nos données sont vides</strong> : personne n'est ingéré, on écrit son Riot ID entier,
-     * il apparaît.</p>
-     *
-     * <p>Et l'index profite à tout le monde : le compte vérifié par l'un est trouvable par les
-     * suivants sans que Riot soit redemandé.</p>
-     *
-     * <p>404 si Riot ne connaît pas ce Riot ID, 503 si le connecteur est muet. Ce sont les deux
-     * seuls cas où cette route échoue : une saisie partielle qui ne ressemble à rien rend une
-     * liste vide, ce qui n'est pas une erreur.</p>
-     *
-     * <h2>Pourquoi la recherche est dans le connecteur et le « pourquoi » ici</h2>
-     *
-     * <p>Le §4 de la migration tranche : <em>un connecteur ne sait pas pourquoi on l'appelle</em>.
-     * Trouver un pseudo dans son index est une question sur <strong>ses</strong> données — il
-     * détient les parties, les observations et leurs index. Savoir qu'un de ces comptes est
-     * <em>déjà revendiqué par un autre compte Schub</em> est une question sur l'identité, qui vit
-     * ici et dont le connecteur n'a jamais entendu parler. Chacun finit son propre travail : il
-     * cherche, le cœur qualifie.</p>
-     *
-     * <p>Marquer plutôt qu'écarter les comptes déjà liés : les retirer ferait croire à une faute
-     * de saisie, alors que le vrai message est « ce compte est pris ».</p>
-     */
-    /**
-     * Rejoue la résolution d'un lien resté en attente. Appelé à la connexion : sans ça, un compte
-     * déclaré pendant que le connecteur était muet n'a plus aucun chemin vers son puuid, et
-     * personne ne s'en aperçoit — la place d'effectif reste libre indéfiniment.
-     */
     public boolean resolvePendingLink(User actor) {
         if (actor == null || trimOrNull(actor.getRiotPuuid()) != null) {
             return false;
@@ -252,10 +166,6 @@ public class RiotAccountService {
         }).toList();
     }
 
-    /**
-     * Le geste « va demander à Riot ». Il n'écrit rien sur le {@code User} et ne lie personne :
-     * il fait exister le compte dans l'index, et c'est le clic qui reste le seul geste de liaison.
-     */
     private void verifieAupresDeRiot(RiotId riotId) {
         RiotIdResolution resolution = riotIdResolver.resolve(riotId.gameName(), riotId.tagLine());
         if (resolution.isNotFound()) {
@@ -269,35 +179,6 @@ public class RiotAccountService {
         }
     }
 
-    // --- règles ---
-
-    /**
-     * <strong>Deux comptes ne revendiquent pas le même joueur.</strong>
-     *
-     * <p>C'est le refus le plus important de ce lot : tout le reste du chantier D part du
-     * {@code puuid}, et deux comptes qui portent le même donneraient des statistiques attribuées
-     * à la mauvaise personne — une donnée fausse, jamais signalée, sur laquelle des panneaux
-     * entiers se construiraient.</p>
-     *
-     * <p><strong>Le contrôle porte sur le {@code puuid} quand on l'a, sur le Riot ID sinon</strong>,
-     * et la nuance n'est pas cosmétique :</p>
-     *
-     * <ul>
-     *   <li><em>Résolu</em> : seul le {@code puuid} est comparé. Un Riot ID identique à celui
-     *       enregistré sur un compte déjà résolu ne bloque rien, et il le faut — un joueur change
-     *       de Riot ID quand il veut, son ancien pseudo reste écrit sur son compte, et il peut
-     *       parfaitement être repris par quelqu'un d'autre. Bloquer là-dessus refuserait le vrai
-     *       propriétaire au profit d'une chaîne périmée.</li>
-     *   <li><em>Non résolu</em> : le Riot ID est tout ce qu'on a, et on ne le compare qu'aux
-     *       comptes eux-mêmes non résolus. Comparer à un compte résolu reviendrait à laisser une
-     *       chaîne périmée décider à la place de la clé stable.</li>
-     * </ul>
-     *
-     * <p>Il reste donc un cas où deux comptes portent la même chaîne : l'un résolu, l'autre en
-     * attente. Il se résorbe à la première résolution réussie du second, et il est sans danger —
-     * {@code /teams/claim} ne rapproche par Riot ID que des places <em>libres</em>, et la
-     * première revendication les rend liées. Aucun des deux ne peut prendre la place de l'autre.</p>
-     */
     private void refuseSiRevendiqueAilleurs(User actor, RiotId riotId, String puuid) {
         if (puuid != null) {
             userRepository.findByRiotPuuid(puuid)
@@ -319,12 +200,6 @@ public class RiotAccountService {
                 });
     }
 
-    /**
-     * Demande la collecte au connecteur dès qu'un {@code puuid} nouveau est connu.
-     *
-     * <p>Sans elle, un compte lié resterait sans la moindre partie jusqu'à ce que quelqu'un
-     * déclenche la collecte à la main — et personne ne le ferait, puisque rien ne le dit.</p>
-     */
     private boolean demandeLaCollecte(User acteur, String ancienPuuid, String puuid) {
         if (puuid == null || puuid.equals(ancienPuuid)) {
             return false;
@@ -373,14 +248,7 @@ public class RiotAccountService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
-    /**
-     * Un Riot ID découpé une bonne fois : {@code Pseudo#TAG} → {@code (gameName, tagLine)}.
-     *
-     * <p>Le découpage se fait sur le <strong>premier</strong> {@code #} et la partie droite ne
-     * doit pas en contenir : un {@code gameName} ne peut pas porter de {@code #} chez Riot, donc
-     * tout second {@code #} est une faute de saisie. La tolérer donnerait un {@code tagLine} qui
-     * ne résoudra jamais, et un compte bloqué en attente de résolution sans qu'on sache pourquoi.</p>
-     */
+    // Découpe sur le premier # ; un second # est une faute de saisie (un gameName Riot n'en contient pas).
     record RiotId(String gameName, String tagLine) {
 
         private static final int LONGUEUR_MAX = 64;
@@ -408,10 +276,6 @@ public class RiotAccountService {
             return new RiotId(gameName, tagLine);
         }
 
-        /**
-         * Le même découpage, mais sans refus : {@code null} veut dire « ce n'est pas un Riot ID
-         * complet », donc une saisie à chercher et non un compte à vérifier.
-         */
         static RiotId completOuNull(String saisie) {
             try {
                 return parse(saisie);

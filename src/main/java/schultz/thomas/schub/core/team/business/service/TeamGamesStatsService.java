@@ -23,29 +23,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-/**
- * <strong>Le panneau 2 — les parties d'équipe</strong> (plan §D.9).
- *
- * <p>Une partie d'équipe est une partie où <strong>au moins quatre</strong> des membres de
- * l'effectif étaient présents, <strong>toutes files confondues</strong>. Le {@code queueId} est
- * conservé et affiché — une victoire en normale draft ne vaut pas une victoire en flex — mais il
- * ne filtre rien : le critère est la présence des joueurs, pas la file.</p>
- *
- * <p>Le seuil vit ici et nulle part ailleurs : le connecteur compte des présences sans savoir ce
- * qu'est une équipe.</p>
- */
 @Service
 @RequiredArgsConstructor
 public class TeamGamesStatsService {
 
-    /** Quatre, pas trois. Le seuil définit ce qu'est une partie d'équipe et commande tout le panneau. */
     public static final int MINIMUM_MEMBRES = 4;
 
     public static final int PARTIES_DEFAUT = 100;
     public static final int PARTIES_MAX = 500;
     private static final int PATCHS_RENDUS = 6;
 
-    /** Le maximum que le connecteur rende sur une requête de parties communes. */
     private static final int PARTIES_VERIFIEES = 1000;
 
     private final TeamService teamService;
@@ -53,17 +40,7 @@ public class TeamGamesStatsService {
     private final RiotStatsGateway statsGateway;
     private final RiotChampionGateway championGateway;
 
-    /**
-     * Cette partie est-elle une partie de cette équipe ?
-     *
-     * <p>La question n'a qu'une source : le connecteur, seul à détenir les participations. Son
-     * silence lève {@link RiotConnectorUnavailableException} au lieu de répondre « non » — une
-     * note refusée se réessaie, une note acceptée sur une partie inconnue ne se rattrape pas.</p>
-     *
-     * <p>La vérification porte sur les {@value #PARTIES_VERIFIEES} parties d'équipe les plus
-     * récentes, soit le maximum que le connecteur rende et le double de ce que le panneau
-     * affiche.</p>
-     */
+    // Silence du connecteur = RiotConnectorUnavailableException, jamais « non ».
     public boolean estPartieDEquipe(Team team, String matchId) {
         if (matchId == null || matchId.isBlank()) {
             return false;
@@ -140,8 +117,6 @@ public class TeamGamesStatsService {
                 Instant.now());
     }
 
-    // --- interne ---
-
     private Map<String, RiotStatsGateway.Coverage> couverture(java.util.Collection<String> puuids) {
         if (puuids.isEmpty()) {
             return Map.of();
@@ -162,11 +137,6 @@ public class TeamGamesStatsService {
                 Instant.now());
     }
 
-    /**
-     * Sans partie commune, la question est « pourquoi ». Un effectif dont rien n'est encore
-     * analysé attend l'ingestion ; un effectif entièrement collecté qui n'a aucune partie à
-     * quatre n'en a réellement aucune, et c'est une réponse, pas une panne.
-     */
     private static StatsState etatSansPartie(Map<String, RiotStatsGateway.Coverage> couverture) {
         if (couverture.isEmpty()) {
             return StatsState.AUCUNE_PARTIE;
@@ -206,17 +176,10 @@ public class TeamGamesStatsService {
                 .toList();
     }
 
-    /**
-     * Le mode de jeu d'une partie, jamais son {@code queueId}.
-     *
-     * <p>Le connecteur le nomme à partir de la liste officielle de Riot ; « File 1700 » ne se lit
-     * pas, « Arène » se lit. Un mode absent vaut {@code OTHER}, qui est un nom, pas un trou.</p>
-     */
     private static String mode(RiotStatsGateway.SharedMatch partie) {
         return partie.queue() == null || partie.queue().isBlank() ? "OTHER" : partie.queue();
     }
 
-    /** Le côté de l'équipe dans cette partie : celui de ses membres, qui y sont tous ensemble. */
     private static int cote(RiotStatsGateway.SharedMatch partie) {
         return partie.players().isEmpty() ? 0 : partie.players().getFirst().side();
     }

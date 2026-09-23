@@ -22,30 +22,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
-/**
- * <strong>La revue par joueur</strong> (plan §D.10) : des notes attachées à une partie d'équipe
- * et à une place de l'effectif.
- *
- * <h2>Qui écrit quoi, et pourquoi c'est déjà décidé</h2>
- *
- * <pre>
- *   sur soi            -&gt;  tout membre de l'équipe
- *   sur tout le monde  -&gt;  qui a TEAM_EDIT sur cette équipe (le capitaine, et OWNER par son rôle)
- *   retoucher / effacer -&gt; l'auteur de la note, ou TEAM_EDIT
- * </pre>
- *
- * <p>Ce n'est pas une seconde mécanique d'autorisation : la lecture passe par {@code TEAM_VIEW}
- * et l'écriture élargie par {@code TEAM_EDIT}, tous deux évalués par la chaîne unique du §A.1. Le
- * seul cas qui n'interroge aucune permission est « j'écris sur ma propre place », où la ressource
- * est le lecteur lui-même — la même raison qui fait que {@code /users/me} n'exige pas
- * {@code USER_VIEW}. C'est la lecture stricte du plan §D.2 bis point 2 : « un membre voit tout et
- * n'écrit rien, sauf ses propres notes de revue ». Élargir plus tard ne casse rien ; restreindre
- * après coup effacerait des notes déjà écrites.</p>
- *
- * <p>Aucune permission nouvelle n'est créée. Une {@code REVIEW_EDIT} à portée d'équipe aurait dû
- * être accordée à tout membre, et n'aurait donc rien dit du sujet qu'il a le droit de noter —
- * c'est cette distinction-là qui porte la règle, et elle est métier.</p>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -123,8 +99,6 @@ public class GameReviewService {
         reviewRepository.delete(revue);
     }
 
-    // --- interne ---
-
     private GameReview require(String teamId, String matchId, String reviewId) {
         GameReview revue = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new NoSuchElementException(
@@ -199,10 +173,6 @@ public class GameReviewService {
                 || permissionEvaluator.can(actor, Permission.TEAM_EDIT, TeamService.ref(team.getId()));
     }
 
-    /**
-     * Les comptes à résoudre : ceux des membres notés, et ceux des auteurs — un {@code OWNER} peut
-     * avoir écrit sans être de l'équipe, et sa note porterait sinon un auteur sans nom.
-     */
     private Map<String, MemberDirectory.MemberIdentity> identites(Team team, List<GameReview> revues) {
         Set<String> ids = new HashSet<>();
         if (team.getMembers() != null) {

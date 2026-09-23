@@ -14,11 +14,6 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Vérifie que les règles permanentes déclarées dans le fichier monté sont bien celles qui
- * arrivent dans PortForwardingProperties : c'est le seul endroit où une erreur de précédence
- * entre application.yml et le fichier importé passerait inaperçue tout en laissant des ports fermés.
- */
 class PortForwardingPropertiesBindingTest {
 
     @Configuration

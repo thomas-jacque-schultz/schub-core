@@ -9,13 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
-/**
- * Client HTTP vers le connecteur Freebox, et déclaration des deux blocs de configuration
- * qui pilotent l'ouverture des ports.
- *
- * <p>Le secret interne est posé une fois pour toutes sur le client : aucun appel entre
- * services du maillage n'en est dispensé.</p>
- */
 @RequiredArgsConstructor
 @Configuration
 @EnableConfigurationProperties({ConnectorFreeboxProperties.class, PortForwardingProperties.class})

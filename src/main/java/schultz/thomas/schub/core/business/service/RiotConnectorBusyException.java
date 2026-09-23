@@ -1,11 +1,5 @@
 package schultz.thomas.schub.core.business.service;
 
-/**
- * Le connecteur Riot est occupé : il a refusé un créneau de quota, pas répondu à côté.
- *
- * <p>Distincte de {@link RiotConnectorUnavailableException} parce que la conduite l'est :
- * ici, réessayer tout de suite a des chances d'aboutir.</p>
- */
 public class RiotConnectorBusyException extends RuntimeException {
 
     public RiotConnectorBusyException() {

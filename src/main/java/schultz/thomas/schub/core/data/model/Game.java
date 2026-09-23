@@ -3,7 +3,6 @@ package schultz.thomas.schub.core.data.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-/** Jeu hébergé par un GameServer. Le libellé et l'icône servent à l'affichage. */
 @Getter
 @RequiredArgsConstructor
 public enum Game {

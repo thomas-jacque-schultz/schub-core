@@ -46,10 +46,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Les deux panneaux, branchés sur le <em>vrai</em> évaluateur de permissions : un
- * {@code thenReturn(false)} ne prouverait pas qu'un étranger est refusé.
- */
 class TeamStatsServiceTest {
 
     private static final Instant QUAND = Instant.parse("2026-09-20T18:00:00Z");
@@ -126,8 +122,6 @@ class TeamStatsServiceTest {
                 .thenReturn(Optional.of(new RiotStatsGateway.SharedMatches(4, 0, false, List.of())));
     }
 
-    // --- l'autorisation, par la chaîne réelle ---
-
     @Test
     @DisplayName("Un étranger n'obtient ni le panneau joueurs ni le panneau équipe")
     void refuseUnEtranger() {
@@ -141,8 +135,6 @@ class TeamStatsServiceTest {
         verify(statsGateway, never()).aggregate(any(), any(), any());
         verify(statsGateway, never()).sharedMatches(any(), anyInt(), any(), any());
     }
-
-    // --- panneau joueurs ---
 
     @Test
     @DisplayName("Un membre sans compte Riot ne fait pas échouer la requête : il dit pourquoi il est vide")
@@ -191,8 +183,6 @@ class TeamStatsServiceTest {
                 .isEqualTo(0.6 - (0.4 + 0.5) / 2);
         assertThat(colonne(panneau, "m-adc").versusTeammates()).isNull();
     }
-
-    // --- panneau équipe ---
 
     @Test
     @DisplayName("Moins de quatre comptes liés : aucune partie d'équipe n'est possible, et on le dit")
@@ -277,9 +267,6 @@ class TeamStatsServiceTest {
                 .isEqualTo(StatsState.CONNECTEUR_INDISPONIBLE);
     }
 
-    // --- fabriques ---
-
-    /** Mockito rejoue la réponse en place au moment du ré-emploi de {@code when} : args nuls tolérés. */
     private static Optional<List<RiotStatsGateway.Coverage>> couverture(List<String> puuids,
                                                                        long connues, long analysees) {
         if (puuids == null) {

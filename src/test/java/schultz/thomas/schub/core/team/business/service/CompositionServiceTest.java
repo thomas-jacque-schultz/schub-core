@@ -38,15 +38,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * « Une composition en désigne exactement cinq. »
- *
- * <p>C'est la seule contrainte de cardinalité du domaine, et elle ne remonte pas à l'équipe. Ce
- * qui est vérifié ici, ce sont les formes fausses qui passeraient sans bruit : quatre postes, six
- * postes, deux fois le même poste, deux fois le même joueur, un joueur qui n'est pas de l'équipe.
- * Aucune ne lève d'erreur à l'écriture si personne ne la refuse — elle dort en base jusqu'à ce
- * qu'on rouvre la composition avant une partie.</p>
- */
 class CompositionServiceTest {
 
     private CompositionRepository compositionRepository;
@@ -237,8 +228,6 @@ class CompositionServiceTest {
                 new CompositionService.Draft(" ", cinqPostes(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
-
-    // --- montage ---
 
     private List<CompositionSlot> cinqPostes() {
         return new ArrayList<>(List.of(

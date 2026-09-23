@@ -30,20 +30,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Inspection et pilotage des redirections de ports.
- * Protégé comme le reste de l'API par le filtre de secret interne.
- *
- * <p>Deux lectures complémentaires, à ne pas confondre :</p>
- * <ul>
- *   <li>{@code /rules} montre l'état <em>réel du routeur</em>, redirections manuelles comprises ;</li>
- *   <li>{@code /static-rules} montre les règles permanentes <em>que cette application détient</em>,
- *       donc celles qu'elle peut supprimer.</li>
- * </ul>
- *
- * <p>Une règle posée pour un serveur de jeu n'apparaît que dans la première : elle est dérivée
- * du serveur et se supprime en modifiant le serveur, jamais directement.</p>
- */
 @Slf4j
 @RestController
 @RequestMapping("/port-forwarding")
@@ -63,7 +49,6 @@ public class PortForwardingController {
 
     private final UserService userService;
 
-    /** État courant tel que le routeur le rapporte, redirections manuelles comprises. */
     @GetMapping("/rules")
     public ResponseEntity<List<PortRule>> listRules(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
@@ -74,7 +59,6 @@ public class PortForwardingController {
         return ResponseEntity.ok(redirectionRequestService.listRules());
     }
 
-    /** Les règles permanentes détenues par l'application — celles qui portent un bouton supprimer. */
     @GetMapping("/static-rules")
     public List<StaticPortRuleDto> listStaticRules(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
@@ -82,10 +66,6 @@ public class PortForwardingController {
         return staticPortRuleMapper.toDtos(staticPortRuleService.findAll());
     }
 
-    /**
-     * Ajoute une règle permanente, puis réaligne le routeur sans attendre le scheduler :
-     * un ajout qui ne se voit qu'à la minute suivante passerait pour un échec.
-     */
     @PostMapping("/static-rules")
     public ResponseEntity<StaticPortRuleDto> createStaticRule(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
@@ -108,7 +88,6 @@ public class PortForwardingController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Force une réconciliation immédiate et renvoie le détail de ce qui a été fait. */
     @PostMapping("/reconcile")
     public PortForwardingReport reconcile(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
@@ -116,7 +95,6 @@ public class PortForwardingController {
         return portForwardingService.reconcile();
     }
 
-    /** État de l'intégration, pour diagnostiquer sans lire les logs. */
     @GetMapping("/status")
     public Map<String, Object> status(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
@@ -131,23 +109,10 @@ public class PortForwardingController {
         );
     }
 
-    /**
-     * Ces routes exigent toujours un acteur : aucune n'est appelée par un service pour son
-     * propre compte, et la table de redirections du routeur est ce que le système a de plus
-     * exposé — une ouverture de port est visible depuis Internet.
-     *
-     * <p>{@code PORT_RULE_EDIT} reste une permission de <em>rôle</em> : être administrateur d'un
-     * serveur n'y donne pas accès. Une règle de port n'est pas locale à un serveur, elle est
-     * globale à la maison (décision n°11 du 18-09).</p>
-     */
     private void require(String actorDiscordId, Permission permission) {
         permissionEvaluator.require(userService.requireActor(actorDiscordId), permission, null);
     }
 
-    /**
-     * La règle est déjà enregistrée : si le routeur est injoignable, l'écriture reste valide et
-     * la boucle de réconciliation rattrapera. Échouer ici effacerait un enregistrement correct.
-     */
     private void reconcileQuietly(String cause) {
         try {
             portForwardingService.reconcile();

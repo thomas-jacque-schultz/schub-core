@@ -15,7 +15,6 @@ import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
 import schultz.thomas.schub.core.team.business.service.TeamGamesStatsService;
 import schultz.thomas.schub.core.team.business.service.TeamPlayerStatsService;
 
-/** Les deux panneaux statistiques d'une équipe. {@code TEAM_VIEW} sur cette équipe, pas ailleurs. */
 @RestController
 @RequestMapping("/teams/{teamId}/stats")
 @RequiredArgsConstructor

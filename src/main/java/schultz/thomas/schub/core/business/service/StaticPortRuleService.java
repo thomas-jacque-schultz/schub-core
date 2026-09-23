@@ -13,17 +13,6 @@ import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Les règles permanentes, désormais détenues en base plutôt qu'en fichier.
- *
- * <p>Elles vivaient dans {@code /etc/schub/port-forwarding.yml}, relu au démarrage. Un fichier
- * ne permet ni d'ajouter ni de supprimer depuis l'interface sans redémarrer le service : elles
- * passent donc en base, et le fichier n'est plus qu'une graine pour le premier lancement.</p>
- *
- * <p>Refuse à l'écriture ce que le routeur refuserait de toute façon — port hors bornes,
- * protocole inconnu, doublon sur le couple protocole + port WAN — plutôt que de laisser le
- * réconciliateur découvrir le problème devant la box, où le motif serait bien moins lisible.</p>
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,14 +24,6 @@ public class StaticPortRuleService implements StaticPortRuleProvider {
     private final StaticPortRuleRepository repository;
     private final PortForwardingProperties properties;
 
-    /**
-     * Reprend une seule fois les règles du fichier, si la base n'en contient aucune.
-     *
-     * <p>Sans cette reprise, un déploiement sur une installation existante perdrait
-     * silencieusement les règles déjà déclarées dans le YAML. La condition « base vide »
-     * garantit qu'une suppression faite depuis l'interface ne sera pas ressuscitée au
-     * redémarrage suivant.</p>
-     */
     @PostConstruct
     void seedFromConfigurationIfEmpty() {
         List<PortForwardingProperties.StaticRule> fromFile = properties.getStaticRules();
@@ -94,13 +75,11 @@ public class StaticPortRuleService implements StaticPortRuleProvider {
         try {
             return repository.save(rule);
         } catch (DuplicateKeyException e) {
-            // Deux créations simultanées : l'index unique tranche, on traduit son verdict.
             throw new IllegalStateException("Une règle permanente existe déjà sur "
                     + proto + "/" + rule.getWanPortStart());
         }
     }
 
-    /** @return false si la règle n'existait pas. */
     public boolean delete(String id) {
         if (!repository.existsById(id)) {
             return false;
@@ -108,8 +87,6 @@ public class StaticPortRuleService implements StaticPortRuleProvider {
         repository.deleteById(id);
         return true;
     }
-
-    // --- StaticPortRuleProvider ---------------------------------------------
 
     @Override
     public List<PortForwardingProperties.StaticRule> staticRules() {
@@ -125,8 +102,6 @@ public class StaticPortRuleService implements StaticPortRuleProvider {
             return rule;
         }).toList();
     }
-
-    // --- validation ---------------------------------------------------------
 
     private void validate(StaticPortRuleEntity rule) {
         if (rule.getName() == null || rule.getName().isBlank()) {
