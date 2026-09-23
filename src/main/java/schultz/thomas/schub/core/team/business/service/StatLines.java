@@ -3,6 +3,7 @@ package schultz.thomas.schub.core.team.business.service;
 import schultz.thomas.schub.core.team.api.dto.StatComparisonDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
 
+import java.time.Instant;
 import java.util.List;
 
 // Ratios calculés au dernier moment sur des sommes : « le reste » = total − groupe n'a de sens qu'en sommes.
@@ -28,6 +29,7 @@ final class StatLines {
                 parMinute(bucket.minionsKilled(), minutes),
                 parMinute(bucket.goldEarned(), minutes),
                 parMinute(bucket.damageToChampions(), minutes),
+                parMinute(bucket.damageTaken(), minutes),
                 parMinute(bucket.visionScore(), minutes),
                 bucket.afkGames(),
                 bucket.secondsPlayed(),
@@ -56,6 +58,7 @@ final class StatLines {
                 total.minionsKilled() - part.minionsKilled(),
                 total.goldEarned() - part.goldEarned(),
                 total.damageToChampions() - part.damageToChampions(),
+                total.damageTaken() - part.damageTaken(),
                 total.visionScore() - part.visionScore(),
                 total.afkGames() - part.afkGames(),
                 total.secondsPlayed() - part.secondsPlayed(),
@@ -63,8 +66,39 @@ final class StatLines {
     }
 
     static RiotStatsGateway.Bucket vide(String puuid) {
-        return new RiotStatsGateway.Bucket(puuid, "", null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        return new RiotStatsGateway.Bucket(puuid, "", null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 null, null);
+    }
+
+    static RiotStatsGateway.Bucket additionne(String puuid, String key, List<RiotStatsGateway.Bucket> parts) {
+        RiotStatsGateway.Bucket somme = new RiotStatsGateway.Bucket(puuid, key, null, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, null, null);
+        for (RiotStatsGateway.Bucket part : parts) {
+            somme = new RiotStatsGateway.Bucket(puuid, key, null,
+                    somme.games() + part.games(),
+                    somme.wins() + part.wins(),
+                    somme.kills() + part.kills(),
+                    somme.deaths() + part.deaths(),
+                    somme.assists() + part.assists(),
+                    somme.minionsKilled() + part.minionsKilled(),
+                    somme.goldEarned() + part.goldEarned(),
+                    somme.damageToChampions() + part.damageToChampions(),
+                    somme.damageTaken() + part.damageTaken(),
+                    somme.visionScore() + part.visionScore(),
+                    somme.afkGames() + part.afkGames(),
+                    somme.secondsPlayed() + part.secondsPlayed(),
+                    plusTot(somme.firstPlayedAt(), part.firstPlayedAt()),
+                    plusTard(somme.lastPlayedAt(), part.lastPlayedAt()));
+        }
+        return somme;
+    }
+
+    private static Instant plusTot(Instant a, Instant b) {
+        return a == null ? b : b == null ? a : a.isBefore(b) ? a : b;
+    }
+
+    private static Instant plusTard(Instant a, Instant b) {
+        return a == null ? b : b == null ? a : a.isAfter(b) ? a : b;
     }
 
     static Double winRate(RiotStatsGateway.Bucket bucket) {

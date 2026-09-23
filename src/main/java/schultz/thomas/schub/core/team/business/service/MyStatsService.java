@@ -51,6 +51,8 @@ public class MyStatsService {
                 chiffres.months(),
                 chiffres.state() == StatsState.STATISTIQUES_CONNUES
                         ? playerStatsService.rankings(puuid) : List.of(),
+                chiffres.radar(),
+                playerStatsService.scale(),
                 Instant.now());
     }
 
@@ -58,6 +60,6 @@ public class MyStatsService {
                                    RiotIngestProgressDto ingest) {
         return new MyStatsDto(actor.getDisplayName(), actor.getRiotGameName(),
                 actor.getRiotTagLine(), days, state, null, ingest, null, List.of(), List.of(),
-                List.of(), List.of(), List.of(), Instant.now());
+                List.of(), List.of(), List.of(), null, null, Instant.now());
     }
 }

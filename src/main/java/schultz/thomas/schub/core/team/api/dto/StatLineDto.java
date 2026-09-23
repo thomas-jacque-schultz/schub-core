@@ -16,6 +16,7 @@ public record StatLineDto(
         Double csPerMinute,
         Double goldPerMinute,
         Double damagePerMinute,
+        Double damageTakenPerMinute,
         Double visionPerMinute,
         long afkGames,
         long secondsPlayed,

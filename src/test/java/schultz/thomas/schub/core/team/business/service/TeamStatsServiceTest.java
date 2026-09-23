@@ -112,7 +112,7 @@ class TeamStatsServiceTest {
         when(memberDirectory.byIds(any())).thenReturn(Map.of());
         when(championGateway.catalogue()).thenReturn(Optional.empty());
         when(riotConnector.ingestOf(anyString())).thenReturn(Optional.empty());
-        when(statsGateway.aggregate(any(), any(), any())).thenReturn(Optional.of(List.of()));
+        when(statsGateway.aggregate(any(), any(), any(), any())).thenReturn(Optional.of(List.of()));
         when(statsGateway.rankings(anyString())).thenReturn(Optional.of(List.of()));
         when(statsGateway.coverage(any())).thenAnswer(invocation -> {
             List<String> puuids = invocation.getArgument(0);
@@ -132,7 +132,7 @@ class TeamStatsServiceTest {
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining(Permission.TEAM_VIEW.name());
 
-        verify(statsGateway, never()).aggregate(any(), any(), any());
+        verify(statsGateway, never()).aggregate(any(), any(), any(), any());
         verify(statsGateway, never()).sharedMatches(any(), anyInt(), any(), any());
     }
 
@@ -170,7 +170,7 @@ class TeamStatsServiceTest {
     @Test
     @DisplayName("L'écart aux coéquipiers ne compte que ceux qui ont des parties")
     void ecartAuxCoequipiers() {
-        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any()))
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any(), any()))
                 .thenReturn(Optional.of(List.of(
                         total("puuid-1", 100, 60),
                         total("puuid-2", 100, 40),
@@ -246,7 +246,7 @@ class TeamStatsServiceTest {
         RiotStatsGateway.SharedMatch separee = new RiotStatsGateway.SharedMatch("EUW1_9", QUAND,
                 1800, 440, "RANKED_FLEX", "16.18", 4, true, null, List.of(
                 joueur("puuid-1", true, 100), joueur("puuid-2", true, 100),
-                joueur("puuid-3", false, 200), joueur("puuid-4", false, 200)));
+                joueur("puuid-3", false, 200), joueur("puuid-4", false, 200)), List.of());
         when(statsGateway.sharedMatches(any(), anyInt(), any(), any())).thenReturn(Optional.of(
                 new RiotStatsGateway.SharedMatches(4, 1, false, List.of(separee))));
 
@@ -286,7 +286,7 @@ class TeamStatsServiceTest {
     }
 
     private static RiotStatsGateway.Bucket total(String puuid, long games, long wins) {
-        return new RiotStatsGateway.Bucket(puuid, "", null, games, wins, 100, 100, 100, 0, 0, 0, 0,
+        return new RiotStatsGateway.Bucket(puuid, "", null, games, wins, 100, 100, 100, 0, 0, 0, 0, 0,
                 0, games * 1800, QUAND, QUAND);
     }
 
@@ -296,12 +296,12 @@ class TeamStatsServiceTest {
                 .map(puuid -> joueur(puuid, win, 100))
                 .toList();
         return new RiotStatsGateway.SharedMatch(matchId, QUAND, 1800, queueId, queue, "16.18",
-                presents, false, win, joueurs);
+                presents, false, win, joueurs, List.of());
     }
 
     private static RiotStatsGateway.SharedMatchPlayer joueur(String puuid, boolean win, int side) {
         return new RiotStatsGateway.SharedMatchPlayer(puuid, 126, "Jayce", "MIDDLE", win, side,
-                5, 2, 3, 150, 12000, 20000, 25, false);
+                5, 2, 3, 150, 12000, 20000, 18000, 25, false);
     }
 
     private static TeamMember membre(String memberId, String userId, String puuid, GameRole role) {

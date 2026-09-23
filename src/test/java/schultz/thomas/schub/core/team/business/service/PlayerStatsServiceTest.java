@@ -41,19 +41,19 @@ class PlayerStatsServiceTest {
         when(championGateway.catalogue()).thenReturn(Optional.empty());
         when(statsGateway.coverage(any())).thenReturn(Optional.of(List.of(
                 new RiotStatsGateway.Coverage(PUUID, true, 0, 0, null, null, QUAND))));
-        when(statsGateway.aggregate(any(), any(), any())).thenReturn(Optional.of(List.of()));
+        when(statsGateway.aggregate(any(), any(), any(), any())).thenReturn(Optional.of(List.of()));
         when(riotConnector.ingestOf(anyString())).thenReturn(Optional.empty());
     }
 
     private void total(long games, long wins, long kills, long deaths, long assists) {
-        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any()))
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any(), any()))
                 .thenReturn(Optional.of(List.of(bucket("", games, wins, kills, deaths, assists))));
     }
 
     private static RiotStatsGateway.Bucket bucket(String key, long games, long wins, long kills,
                                                   long deaths, long assists) {
         return new RiotStatsGateway.Bucket(PUUID, key, "Jayce", games, wins, kills, deaths,
-                assists, 0, 0, 0, 0, 0, games * 1800, QUAND, QUAND);
+                assists, 0, 0, 0, 0, 0, 0, games * 1800, QUAND, QUAND);
     }
 
     private PlayerStatsService.Figures figures() {
@@ -65,7 +65,7 @@ class PlayerStatsServiceTest {
     @Test
     @DisplayName("Connecteur muet : on ne sait pas, et on ne dit pas « aucune partie »")
     void connecteurMuet() {
-        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any()))
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any(), any()))
                 .thenReturn(Optional.empty());
 
         assertThat(figures().state()).isEqualTo(StatsState.CONNECTEUR_INDISPONIBLE);
@@ -122,7 +122,7 @@ class PlayerStatsServiceTest {
     @DisplayName("Un champion se compare au reste du pool du même joueur, pas à une moyenne inventée")
     void ecartAuResteDuPool() {
         total(100, 44, 300, 200, 400);
-        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.CHAMPION), any()))
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.CHAMPION), any(), any()))
                 .thenReturn(Optional.of(List.of(bucket("126", 20, 11, 60, 40, 80))));
 
         StatLineDto jayce = figures().champions().getFirst();
@@ -137,7 +137,7 @@ class PlayerStatsServiceTest {
     @DisplayName("Un champion qui est tout le pool ne se compare à rien — et pas à zéro")
     void aucunResteAComparer() {
         total(20, 11, 60, 40, 80);
-        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.CHAMPION), any()))
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.CHAMPION), any(), any()))
                 .thenReturn(Optional.of(List.of(bucket("126", 20, 11, 60, 40, 80))));
 
         assertThat(figures().champions().getFirst().versusRest()).isNull();
@@ -148,5 +148,34 @@ class PlayerStatsServiceTest {
     void aucunPuuid() {
         assertThat(service.of(List.of(), null, 8)).isEmpty();
         assertThat(service.rankings("  ")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Radar : les deux derniers patchs du jeu contre les deux précédents")
+    void radarParPatchs() {
+        total(100, 50, 300, 200, 400);
+        when(statsGateway.scale()).thenReturn(Optional.of(new RiotStatsGateway.Scale(QUAND, 300, 10,
+                List.of("16.18", "16.17", "16.16", "16.15"), Map.of())));
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.PATCH), any(), any()))
+                .thenReturn(Optional.of(List.of(bucket("16.18", 6, 4, 10, 10, 10),
+                        bucket("16.17", 4, 1, 10, 10, 10), bucket("16.15", 10, 5, 10, 10, 10),
+                        bucket("16.10", 50, 25, 10, 10, 10))));
+
+        var radar = figures().radar();
+
+        assertThat(radar.recentPatches()).containsExactly("16.18", "16.17");
+        assertThat(radar.previousPatches()).containsExactly("16.16", "16.15");
+        assertThat(radar.recent().games()).isEqualTo(10);
+        assertThat(radar.recent().winRate()).isEqualTo(0.5);
+        assertThat(radar.previous().games()).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("Que de l'ARAM : les chiffres de la Faille sont vides, mais ce n'est pas « aucune partie »")
+    void seulementHorsFaille() {
+        when(statsGateway.coverage(any())).thenReturn(Optional.of(List.of(
+                new RiotStatsGateway.Coverage(PUUID, true, 40, 40, QUAND, QUAND, QUAND))));
+
+        assertThat(figures().state()).isEqualTo(StatsState.STATISTIQUES_CONNUES);
     }
 }

@@ -9,6 +9,7 @@ public record TeamPlayersStatsDto(
         Integer days,
         int championsPerPlayer,
         List<PlayerStatsDto> players,
+        MetricScaleDto scale,
         String viewerMemberId,
         Instant generatedAt
 ) {

@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 // Optional vide = « on ne sait pas », jamais « il n'y en a pas ».
@@ -17,7 +18,14 @@ public interface RiotStatsGateway {
         SIDE
     }
 
-    Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Instant since);
+    enum Scope {
+        ALL,
+        RIFT
+    }
+
+    Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Scope scope, Instant since);
+
+    Optional<Scale> scale();
 
     Optional<List<Coverage>> coverage(List<String> puuids);
 
@@ -38,6 +46,7 @@ public interface RiotStatsGateway {
             long minionsKilled,
             long goldEarned,
             long damageToChampions,
+            long damageTaken,
             long visionScore,
             long afkGames,
             long secondsPlayed,
@@ -71,7 +80,8 @@ public interface RiotStatsGateway {
             int presentPlayers,
             boolean splitSides,
             Boolean win,
-            List<SharedMatchPlayer> players
+            List<SharedMatchPlayer> players,
+            List<SharedMatchPlayer> others
     ) {
     }
 
@@ -88,9 +98,17 @@ public interface RiotStatsGateway {
             int minionsKilled,
             int goldEarned,
             int damageToChampions,
+            int damageTaken,
             int visionScore,
             boolean afk
     ) {
+    }
+
+    record Scale(Instant computedAt, int population, int minimumGames, List<String> recentPatches,
+                 Map<String, Bound> bounds) {
+    }
+
+    record Bound(double low, double high) {
     }
 
     record Standing(String queue, String riotQueueType, String tier, String division, int leaguePoints,
