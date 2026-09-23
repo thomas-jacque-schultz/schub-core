@@ -19,8 +19,7 @@ public record MyStatsDto(
         List<StatLineDto> queues,
         List<StatLineDto> months,
         List<RankedStandingDto> rankings,
-        RadarDto radar,
-        MetricScaleDto scale,
+        RadarReferencesDto references,
         Instant generatedAt
 ) {
 }

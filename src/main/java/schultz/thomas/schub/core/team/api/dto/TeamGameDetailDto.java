@@ -9,6 +9,7 @@ public record TeamGameDetailDto(
         List<MatchupDto> matchups,
         boolean timelineAvailable,
         Instant ranksObservedAt,
+        EarlyGameDto early,
         String viewerMemberId
 ) {
 }

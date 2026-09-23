@@ -25,7 +25,7 @@ public interface RiotStatsGateway {
 
     Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Scope scope, Instant since);
 
-    Optional<Scale> scale();
+    Optional<List<References>> references(List<ReferenceRequest> joueurs);
 
     Optional<List<Coverage>> coverage(List<String> puuids);
 
@@ -37,7 +37,7 @@ public interface RiotStatsGateway {
     // Parties déjà collectées seulement : ce qui manque revient absent, jamais inventé.
     Optional<List<Insight>> insights(List<String> matchIds);
 
-    record Insight(String matchId, boolean timelineAvailable, Instant ranksObservedAt,
+    record Insight(String matchId, boolean timelineAvailable, Instant ranksObservedAt, EarlyGame early,
                    List<InsightPlayer> participants) {
     }
 
@@ -45,8 +45,30 @@ public interface RiotStatsGateway {
                          Standing flex, At15 at15) {
     }
 
-    record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists,
-                Integer ganksSuffered, Integer ganksSucceeded) {
+    record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists) {
+    }
+
+    record EarlyGame(List<Gank> ganks, List<JunglePresence> junglers, List<Objectives> objectives) {
+    }
+
+    record Gank(int second, String lane, int attackerSide, String junglerPuuid, List<String> targetPuuids,
+                String outcome, int defendersLost, int attackersLost, List<String> casualtyPuuids,
+                boolean objectiveFollowUp, boolean decisive) {
+    }
+
+    record JunglePresence(String puuid, int side, int topMinutes, int midMinutes, int botMinutes) {
+    }
+
+    record Objectives(int side, int dragons, int grubs, int heralds) {
+    }
+
+    record ReferenceRequest(String puuid, String position, Instant since) {
+    }
+
+    record References(String puuid, String position, String tier, Reference league, Reference met) {
+    }
+
+    record Reference(String tier, String position, int population, int minimumGames, Map<String, Bound> bounds) {
     }
 
     record Bucket(
@@ -119,10 +141,6 @@ public interface RiotStatsGateway {
             int visionScore,
             boolean afk
     ) {
-    }
-
-    record Scale(Instant computedAt, int population, int minimumGames, List<String> recentPatches,
-                 Map<String, Bound> bounds) {
     }
 
     record Bound(double low, double high) {

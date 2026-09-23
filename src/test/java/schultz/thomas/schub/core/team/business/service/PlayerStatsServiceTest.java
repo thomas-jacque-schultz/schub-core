@@ -151,23 +151,22 @@ class PlayerStatsServiceTest {
     }
 
     @Test
-    @DisplayName("Radar : les deux derniers patchs du jeu contre les deux précédents")
-    void radarParPatchs() {
+    @DisplayName("Radar : le joueur se compare à son poste le plus joué sur la période")
+    void referentielsAuPostePrincipal() {
         total(100, 50, 300, 200, 400);
-        when(statsGateway.scale()).thenReturn(Optional.of(new RiotStatsGateway.Scale(QUAND, 300, 10,
-                List.of("16.18", "16.17", "16.16", "16.15"), Map.of())));
-        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.PATCH), any(), any()))
-                .thenReturn(Optional.of(List.of(bucket("16.18", 6, 4, 10, 10, 10),
-                        bucket("16.17", 4, 1, 10, 10, 10), bucket("16.15", 10, 5, 10, 10, 10),
-                        bucket("16.10", 50, 25, 10, 10, 10))));
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.POSITION), any(), any()))
+                .thenReturn(Optional.of(List.of(bucket("TOP", 5, 2, 10, 10, 10), bucket("JUNGLE", 30, 15, 10, 10, 10))));
+        when(statsGateway.references(List.of(new RiotStatsGateway.ReferenceRequest(PUUID, "JUNGLE", null))))
+                .thenReturn(Optional.of(List.of(new RiotStatsGateway.References(PUUID, "JUNGLE", "GOLD",
+                        new RiotStatsGateway.Reference("GOLD", "JUNGLE", 40, 5,
+                                Map.of("kda", new RiotStatsGateway.Bound(1.5, 3.5))), null))));
 
-        var radar = figures().radar();
+        var references = figures().references();
 
-        assertThat(radar.recentPatches()).containsExactly("16.18", "16.17");
-        assertThat(radar.previousPatches()).containsExactly("16.16", "16.15");
-        assertThat(radar.recent().games()).isEqualTo(10);
-        assertThat(radar.recent().winRate()).isEqualTo(0.5);
-        assertThat(radar.previous().games()).isEqualTo(10);
+        assertThat(references.position()).isEqualTo("JUNGLE");
+        assertThat(references.tier()).isEqualTo("GOLD");
+        assertThat(references.league().bounds().get("kda").low()).isEqualTo(1.5);
+        assertThat(references.met()).isNull();
     }
 
     @Test

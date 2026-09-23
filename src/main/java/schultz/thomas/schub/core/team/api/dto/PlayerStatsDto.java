@@ -23,7 +23,7 @@ public record PlayerStatsDto(
         List<StatLineDto> queues,
         List<StatLineDto> months,
         List<RankedStandingDto> rankings,
-        RadarDto radar,
+        RadarReferencesDto references,
         TeamComparisonDto versusTeammates
 ) {
 }

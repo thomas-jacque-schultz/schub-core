@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
-import schultz.thomas.schub.core.team.api.dto.MetricScaleDto;
-import schultz.thomas.schub.core.team.api.dto.RadarDto;
+import schultz.thomas.schub.core.team.api.dto.MetricReferenceDto;
+import schultz.thomas.schub.core.team.api.dto.RadarReferencesDto;
 import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
 import schultz.thomas.schub.core.team.api.dto.StatsCoverageDto;
@@ -25,7 +25,6 @@ public class PlayerStatsService {
     public static final int CHAMPIONS_DEFAUT = 8;
     public static final int CHAMPIONS_MAX = 30;
     private static final int MOIS_RENDUS = 12;
-    private static final int PATCHS_PAR_SERIE = 2;
 
     private final RiotStatsGateway statsGateway;
     private final RiotChampionGateway championGateway;
@@ -39,7 +38,7 @@ public class PlayerStatsService {
             List<StatLineDto> positions,
             List<StatLineDto> queues,
             List<StatLineDto> months,
-            RadarDto radar,
+            RadarReferencesDto references,
             RiotStatsGateway.Bucket total
     ) {
     }
@@ -72,9 +71,7 @@ public class PlayerStatsService {
                 groupe(propres, RiotStatsGateway.Grouping.QUEUE, RiotStatsGateway.Scope.ALL, since);
         Map<String, List<RiotStatsGateway.Bucket>> mois =
                 groupe(propres, RiotStatsGateway.Grouping.MONTH, RiotStatsGateway.Scope.RIFT, since);
-        List<String> patchs = statsGateway.scale().map(RiotStatsGateway.Scale::recentPatches).orElseGet(List::of);
-        Map<String, List<RiotStatsGateway.Bucket>> parPatch = patchs.isEmpty() ? Map.of()
-                : groupe(propres, RiotStatsGateway.Grouping.PATCH, RiotStatsGateway.Scope.RIFT, null);
+        Map<String, RadarReferencesDto> referentiels = referentiels(positions, since);
 
         Map<String, Figures> figures = new LinkedHashMap<>();
         for (String puuid : propres) {
@@ -89,45 +86,33 @@ public class PlayerStatsService {
                     lignes(positions.getOrDefault(puuid, List.of()), total),
                     lignes(queues.getOrDefault(puuid, List.of()), null),
                     lignesMois(mois.getOrDefault(puuid, List.of())),
-                    radar(puuid, parPatch.getOrDefault(puuid, List.of()), patchs),
+                    referentiels.get(puuid),
                     total));
         }
         return figures;
     }
 
-    public MetricScaleDto scale() {
-        return statsGateway.scale()
-                .filter(scale -> !scale.bounds().isEmpty())
-                .map(scale -> {
-                    Map<String, MetricScaleDto.Bound> bornes = new LinkedHashMap<>();
-                    scale.bounds().forEach((cle, borne) ->
-                            bornes.put(cle, new MetricScaleDto.Bound(borne.low(), borne.high())));
-                    return new MetricScaleDto(scale.computedAt(), scale.population(), scale.minimumGames(),
-                            bornes);
-                })
-                .orElse(null);
+    // Un seul appel pour tous les joueurs ; chacun se compare à son poste le plus joué sur la période.
+    private Map<String, RadarReferencesDto> referentiels(Map<String, List<RiotStatsGateway.Bucket>> positions,
+                                                         Instant since) {
+        List<RiotStatsGateway.ReferenceRequest> demandes = new java.util.ArrayList<>();
+        positions.forEach((puuid, buckets) -> buckets.stream()
+                .max(Comparator.comparingLong(RiotStatsGateway.Bucket::games))
+                .ifPresent(principal -> demandes.add(
+                        new RiotStatsGateway.ReferenceRequest(puuid, principal.key(), since))));
+        Map<String, RadarReferencesDto> parPuuid = new LinkedHashMap<>();
+        statsGateway.references(demandes).orElseGet(List::of).forEach(ref -> parPuuid.put(ref.puuid(),
+                new RadarReferencesDto(ref.position(), ref.tier(), reference(ref.league()), reference(ref.met()))));
+        return parPuuid;
     }
 
-    // Les patchs du jeu, pas ceux du joueur : un patch où il n'a pas joué reste dans sa série, à vide.
-    static RadarDto radar(String puuid, List<RiotStatsGateway.Bucket> parPatch, List<String> patchs) {
-        if (patchs.isEmpty()) {
+    private static MetricReferenceDto reference(RiotStatsGateway.Reference ref) {
+        if (ref == null) {
             return null;
         }
-        List<String> recents = patchs.subList(0, Math.min(PATCHS_PAR_SERIE, patchs.size()));
-        List<String> precedents = patchs.subList(recents.size(),
-                Math.min(2 * PATCHS_PAR_SERIE, patchs.size()));
-        return new RadarDto(recents, precedents, serie(puuid, parPatch, recents),
-                serie(puuid, parPatch, precedents));
-    }
-
-    private static StatLineDto serie(String puuid, List<RiotStatsGateway.Bucket> parPatch, List<String> patchs) {
-        List<RiotStatsGateway.Bucket> retenus = parPatch.stream()
-                .filter(bucket -> patchs.contains(bucket.key()))
-                .toList();
-        if (retenus.isEmpty()) {
-            return null;
-        }
-        return StatLines.of(StatLines.additionne(puuid, String.join(",", patchs), retenus), null, null, null);
+        Map<String, MetricReferenceDto.Bound> bornes = new LinkedHashMap<>();
+        ref.bounds().forEach((cle, borne) -> bornes.put(cle, new MetricReferenceDto.Bound(borne.low(), borne.high())));
+        return new MetricReferenceDto(ref.tier(), ref.position(), ref.population(), ref.minimumGames(), bornes);
     }
 
     public List<RankedStandingDto> rankings(String puuid) {

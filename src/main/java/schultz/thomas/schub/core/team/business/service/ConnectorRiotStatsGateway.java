@@ -8,9 +8,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -24,6 +22,9 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             new ParameterizedTypeReference<>() {
             };
     private static final ParameterizedTypeReference<List<InsightResponse>> INSIGHTS =
+            new ParameterizedTypeReference<>() {
+            };
+    private static final ParameterizedTypeReference<List<References>> REFERENTIELS =
             new ParameterizedTypeReference<>() {
             };
     private static final ParameterizedTypeReference<List<StandingResponse>> CLASSEMENTS =
@@ -59,20 +60,18 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     }
 
     @Override
-    public Optional<Scale> scale() {
+    public Optional<List<References>> references(List<ReferenceRequest> joueurs) {
+        if (joueurs == null || joueurs.isEmpty()) {
+            return Optional.of(List.of());
+        }
         try {
-            ScaleResponse reponse = restClient.get().uri("/stats/scale").retrieve().body(ScaleResponse.class);
-            if (reponse == null) {
-                return Optional.empty();
-            }
-            Map<String, Bound> bornes = new LinkedHashMap<>();
-            if (reponse.bounds() != null) {
-                reponse.bounds().forEach((cle, borne) -> bornes.put(cle, new Bound(borne.low(), borne.high())));
-            }
-            return Optional.of(new Scale(reponse.computedAt(), reponse.population(), reponse.minimumGames(),
-                    reponse.recentPatches() == null ? List.of() : reponse.recentPatches(), bornes));
+            return Optional.ofNullable(restClient.post()
+                    .uri("/stats/references")
+                    .body(new ReferencesRequest(joueurs))
+                    .retrieve()
+                    .body(REFERENTIELS));
         } catch (RestClientException e) {
-            log.warn("Bornes des indicateurs non obtenues ({})", e.getMessage());
+            log.warn("Référentiels du radar non obtenus ({})", e.getMessage());
             return Optional.empty();
         }
     }
@@ -157,7 +156,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                     .retrieve()
                     .body(INSIGHTS);
             return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
-                    .map(row -> new Insight(row.matchId(), row.timelineAvailable(), row.ranksObservedAt(),
+                    .map(row -> new Insight(row.matchId(), row.timelineAvailable(), row.ranksObservedAt(), row.early(),
                             row.participants() == null ? List.of() : row.participants().stream()
                                     .map(p -> new InsightPlayer(p.puuid(), p.side(), p.position(),
                                             p.championId(), toStanding(p.solo()), toStanding(p.flex()), p.at15()))
@@ -215,7 +214,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     record MatchIdsRequest(List<String> matchIds) {
     }
 
-    record InsightResponse(String matchId, boolean timelineAvailable, Instant ranksObservedAt,
+    record InsightResponse(String matchId, boolean timelineAvailable, Instant ranksObservedAt, EarlyGame early,
                            List<InsightPlayerResponse> participants) {
     }
 
@@ -252,11 +251,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                                      boolean afk, boolean requested) {
     }
 
-    record ScaleResponse(Instant computedAt, int population, int minimumGames, List<String> recentPatches,
-                         Map<String, BoundResponse> bounds) {
-    }
-
-    record BoundResponse(double low, double high) {
+    record ReferencesRequest(List<ReferenceRequest> players) {
     }
 
     record StandingResponse(String queue, String riotQueueType, String tier, String division,
