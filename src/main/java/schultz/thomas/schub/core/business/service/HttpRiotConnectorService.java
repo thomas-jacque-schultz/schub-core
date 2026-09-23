@@ -4,12 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -49,6 +51,28 @@ public class HttpRiotConnectorService implements RiotConnectorService {
         } catch (RestClientException indisponible) {
             log.debug("Charge de la collecte indisponible : {}", indisponible.getMessage());
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Crawler> crawler() {
+        try {
+            return Optional.ofNullable(restClient.get().uri("/ingest/crawler").retrieve().body(Crawler.class));
+        } catch (RestClientException indisponible) {
+            log.debug("Collecte de fond indisponible : {}", indisponible.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Crawler toggleCrawler(boolean enabled) {
+        try {
+            return restClient.put().uri("/ingest/crawler").body(Map.of("enabled", enabled))
+                    .retrieve().body(Crawler.class);
+        } catch (HttpClientErrorException.Conflict verrouillee) {
+            throw new IllegalStateException("La collecte de fond ne se bascule pas dans cet environnement");
+        } catch (RestClientException indisponible) {
+            throw new RiotConnectorUnavailableException();
         }
     }
 
