@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
 import schultz.thomas.schub.core.team.business.service.RiotStatsGateway;
 
@@ -26,6 +27,17 @@ public class ReferenceController {
 
     private final RiotStatsGateway statsGateway;
     private final UserService userService;
+
+    @GetMapping("/champions/{championId}")
+    public ResponseEntity<ChampionGridDto> champion(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @PathVariable int championId,
+            @RequestParam String tier) {
+        userService.requireActor(actorDiscordId);
+        return statsGateway.championGrid(championId, tier)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
 
     @GetMapping("/{position}")
     public ResponseEntity<ReferenceGridDto> grid(

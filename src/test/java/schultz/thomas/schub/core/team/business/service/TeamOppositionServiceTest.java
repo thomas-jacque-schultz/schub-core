@@ -73,7 +73,7 @@ class TeamOppositionServiceTest {
         }
         parties.add(partie("sans-rangs", true));
 
-        TeamOppositionDto dto = TeamOppositionService.calcule("equipe-1", null, parties, insights, MEMBRES, null);
+        TeamOppositionDto dto = TeamOppositionService.calcule("equipe-1", null, parties, insights, MEMBRES, null, null);
 
         assertThat(dto.games()).isEqualTo(12);
         assertThat(dto.gamesWithRanks()).isEqualTo(11);

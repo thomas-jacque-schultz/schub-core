@@ -18,6 +18,7 @@ public record TeamOppositionDto(
         String ceilingTier,
         int ceilingMinimumGames,
         TeamEarlyGameDto early,
+        TeamLevelDto level,
         Instant generatedAt
 ) {
 }

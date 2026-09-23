@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.team.business.service;
 
+import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
 
 import java.time.Instant;
@@ -40,6 +41,10 @@ public interface RiotStatsGateway {
     Optional<List<PatchStart>> patches(int count);
 
     Optional<ReferenceGridDto> referenceGrid(String position, String scope, String tier, String patch);
+
+    Optional<ChampionGridDto> championGrid(int championId, String tier);
+
+    Optional<ReferenceGridDto> teamGrid();
 
     record PatchStart(String patch, Instant startedAt) {
     }

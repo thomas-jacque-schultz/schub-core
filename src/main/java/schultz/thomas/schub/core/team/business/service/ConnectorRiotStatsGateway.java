@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
 
 import java.time.Instant;
@@ -113,6 +114,33 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                     .body(ReferenceGridDto.class));
         } catch (RestClientException e) {
             log.warn("Référentiel {} {} non obtenu ({})", position, scope, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<ChampionGridDto> championGrid(int championId, String tier) {
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri(uri -> uri.path("/stats/references/champions/{championId}").queryParam("tier", tier)
+                            .build(championId))
+                    .retrieve()
+                    .body(ChampionGridDto.class));
+        } catch (RestClientException e) {
+            log.debug("Référentiel du champion {} non obtenu ({})", championId, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<ReferenceGridDto> teamGrid() {
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri("/stats/references/team")
+                    .retrieve()
+                    .body(ReferenceGridDto.class));
+        } catch (RestClientException e) {
+            log.warn("Référentiel d'équipe non obtenu ({})", e.getMessage());
             return Optional.empty();
         }
     }
