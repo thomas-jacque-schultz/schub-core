@@ -36,6 +36,9 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     private static final ParameterizedTypeReference<List<PatchStart>> PATCHS =
             new ParameterizedTypeReference<>() {
             };
+    private static final ParameterizedTypeReference<List<PlayerMetrics>> METRIQUES =
+            new ParameterizedTypeReference<>() {
+            };
 
     private final RestClient restClient;
 
@@ -170,13 +173,48 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     @Override
     public Optional<SharedMatches> sharedMatches(List<String> puuids, int minimumPlayers,
                                                  Instant since, Integer limit) {
+        return communes(puuids, minimumPlayers, new SharedMatchesRequest(puuids, minimumPlayers, since, limit, true,
+                null));
+    }
+
+    @Override
+    public Optional<SharedMatches> playerMatches(String puuid, Instant since, Integer limit) {
+        if (puuid == null || puuid.isBlank()) {
+            return Optional.of(new SharedMatches(1, 0, false, List.of()));
+        }
+        return communes(List.of(puuid), 1, new SharedMatchesRequest(List.of(puuid), 1, since, limit, false, null));
+    }
+
+    @Override
+    public Optional<SharedMatches> sharedMatchesAmong(List<String> puuids, int minimumPlayers, List<String> matchIds) {
+        if (matchIds == null || matchIds.isEmpty()) {
+            return Optional.of(new SharedMatches(minimumPlayers, 0, false, List.of()));
+        }
+        return communes(puuids, minimumPlayers, new SharedMatchesRequest(puuids, minimumPlayers, null,
+                matchIds.size(), true, matchIds));
+    }
+
+    @Override
+    public Optional<List<PlayerMetrics>> matchMetrics(String matchId) {
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri("/stats/matches/{matchId}/metrics", matchId)
+                    .retrieve()
+                    .body(METRIQUES));
+        } catch (RestClientException e) {
+            log.warn("Indicateurs de la partie {} non obtenus ({})", matchId, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private Optional<SharedMatches> communes(List<String> puuids, int minimumPlayers, SharedMatchesRequest demande) {
         if (puuids == null || puuids.size() < minimumPlayers) {
             return Optional.of(new SharedMatches(minimumPlayers, 0, false, List.of()));
         }
         try {
             SharedMatchesResponse reponse = restClient.post()
                     .uri("/stats/shared-matches")
-                    .body(new SharedMatchesRequest(puuids, minimumPlayers, since, limit, true))
+                    .body(demande)
                     .retrieve()
                     .body(SharedMatchesResponse.class);
             if (reponse == null || reponse.matches() == null) {
@@ -277,7 +315,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
 
     // enrich : toute partie partagée d'ici est une partie d'équipe, dont on veut timeline et rangs.
     record SharedMatchesRequest(List<String> puuids, int minimumPlayers, Instant since,
-                                Integer limit, boolean enrich) {
+                                Integer limit, boolean enrich, List<String> matchIds) {
     }
 
     record MatchIdsRequest(List<String> matchIds) {

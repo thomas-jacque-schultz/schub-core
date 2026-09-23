@@ -92,7 +92,7 @@ class TeamStatsServiceTest {
                 new PlayerStatsService(statsGateway, championGateway, riotConnector);
         joueurs = new TeamPlayerStatsService(teamService, memberDirectory, playerStats);
         parties = new TeamGamesStatsService(teamService, memberDirectory, statsGateway,
-                championGateway);
+                new GameViews(statsGateway, championGateway));
 
         capitaine = compte("user-capitaine", "discord-capitaine");
         etranger = compte("user-etranger", "discord-etranger");
