@@ -23,6 +23,8 @@ public class Composition {
 
     private List<CompositionSlot> slots = new ArrayList<>();
 
+    private List<String> bans = new ArrayList<>();
+
     private String patch;
 
     private String notes;

@@ -83,13 +83,15 @@ public class TeamProjectionService {
                         slot.getMemberId(),
                         team.findMember(slot.getMemberId())
                                 .map(member -> nomAffiche(member, identites))
-                                .orElse(null)))
+                                .orElse(null),
+                        slot.getAlternatives()))
                 .toList();
         return new CompositionDto(
                 composition.getId(),
                 composition.getTeamId(),
                 composition.getName(),
                 slots,
+                composition.getBans(),
                 composition.getPatch(),
                 composition.getNotes(),
                 composition.getCreatedAt(),

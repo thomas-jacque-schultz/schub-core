@@ -26,6 +26,8 @@ import java.util.Set;
 public class CompositionService {
 
     private static final int NOM_MAX = 60;
+    private static final int BANS_MAX = 5;
+    private static final int REMPLACANTS_MAX = 5;
 
     private final CompositionRepository compositionRepository;
     private final TeamService teamService;
@@ -87,13 +89,24 @@ public class CompositionService {
 
     private void applique(Composition composition, Team team, Draft draft) {
         composition.setName(nomValide(draft.name()));
-        composition.setSlots(valide(team, draft.slots()));
+        List<String> bans = bansValides(draft.bans());
+        composition.setSlots(valide(team, draft.slots(), bans));
+        composition.setBans(bans);
         composition.setPatch(trimOrNull(draft.patch()));
         composition.setNotes(trimOrNull(draft.notes()));
         composition.setUpdatedAt(Instant.now());
     }
 
-    List<CompositionSlot> valide(Team team, List<CompositionSlot> slots) {
+    private List<String> bansValides(List<String> bans) {
+        List<String> propres = champions(bans, "banni");
+        if (propres.size() > BANS_MAX) {
+            throw new IllegalArgumentException("Une équipe bannit " + BANS_MAX + " champions au plus, pas "
+                    + propres.size());
+        }
+        return propres;
+    }
+
+    List<CompositionSlot> valide(Team team, List<CompositionSlot> slots, List<String> bans) {
         if (slots == null || slots.size() != GameRole.values().length) {
             throw new IllegalArgumentException("Une composition désigne exactement "
                     + GameRole.values().length + " postes, pas " + (slots == null ? 0 : slots.size()));
@@ -101,6 +114,7 @@ public class CompositionService {
 
         Set<GameRole> postes = EnumSet.noneOf(GameRole.class);
         Set<String> joueurs = new HashSet<>();
+        Set<String> champions = new HashSet<>();
         List<CompositionSlot> propres = new ArrayList<>();
 
         for (CompositionSlot slot : slots) {
@@ -114,6 +128,14 @@ public class CompositionService {
             if (champion == null) {
                 throw new IllegalArgumentException("Le poste " + slot.getRole() + " est sans champion");
             }
+            if (bans.contains(champion)) {
+                throw new IllegalArgumentException(champion + " est banni : il ne peut pas tenir le poste "
+                        + slot.getRole());
+            }
+            if (!champions.add(champion)) {
+                throw new IllegalArgumentException(champion + " est choisi à deux postes");
+            }
+            List<String> alternatives = alternativesValides(slot, champion, bans);
             String memberId = trimOrNull(slot.getMemberId());
             if (memberId != null) {
                 teamService.jouable(team, memberId).orElseThrow(() -> new IllegalArgumentException(
@@ -123,7 +145,41 @@ public class CompositionService {
                     throw new IllegalArgumentException("Un même joueur est désigné à deux postes");
                 }
             }
-            propres.add(new CompositionSlot(slot.getRole(), champion, memberId));
+            propres.add(new CompositionSlot(slot.getRole(), champion, memberId, alternatives));
+        }
+        return propres;
+    }
+
+    private List<String> alternativesValides(CompositionSlot slot, String champion, List<String> bans) {
+        List<String> alternatives = champions(slot.getAlternatives(), "remplaçant");
+        if (alternatives.size() > REMPLACANTS_MAX) {
+            throw new IllegalArgumentException("Le poste " + slot.getRole() + " propose " + REMPLACANTS_MAX
+                    + " remplaçants au plus");
+        }
+        if (alternatives.contains(champion)) {
+            throw new IllegalArgumentException(champion + " ne remplace pas lui-même au poste " + slot.getRole());
+        }
+        alternatives.stream().filter(bans::contains).findFirst().ifPresent(banni -> {
+            throw new IllegalArgumentException(banni + " est banni : il ne peut pas remplacer au poste "
+                    + slot.getRole());
+        });
+        return alternatives;
+    }
+
+    private static List<String> champions(List<String> saisis, String nature) {
+        if (saisis == null) {
+            return new ArrayList<>();
+        }
+        List<String> propres = new ArrayList<>();
+        for (String saisi : saisis) {
+            String champion = trimOrNull(saisi);
+            if (champion == null) {
+                throw new IllegalArgumentException("Un champion " + nature + " est vide");
+            }
+            if (propres.contains(champion)) {
+                throw new IllegalArgumentException(champion + " est " + nature + " deux fois");
+            }
+            propres.add(champion);
         }
         return propres;
     }
@@ -147,6 +203,6 @@ public class CompositionService {
         return propre.isEmpty() ? null : propre;
     }
 
-    public record Draft(String name, List<CompositionSlot> slots, String patch, String notes) {
+    public record Draft(String name, List<CompositionSlot> slots, List<String> bans, String patch, String notes) {
     }
 }
