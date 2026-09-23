@@ -203,7 +203,7 @@ class TeamServiceTest {
         donneLEquipe();
 
         Team equipe = teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), MemberStatus.TITULAIRE));
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), MemberStatus.TITULAIRE, false));
 
         TeamMember ajoute = equipe.getMembers().get(equipe.getMembers().size() - 1);
         assertThat(ajoute.isLinked()).isFalse();
@@ -221,7 +221,7 @@ class TeamServiceTest {
                 new MemberDirectory.MemberIdentity("bibi", "Bibi", null, "puuid-bibi", "Bibi", "EUW")));
 
         Team equipe = teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null));
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null, false));
 
         TeamMember ajoute = equipe.getMembers().get(equipe.getMembers().size() - 1);
         assertThat(ajoute.isLinked()).isTrue();
@@ -235,7 +235,7 @@ class TeamServiceTest {
         donneLEquipe();
 
         teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("Bibi", "EUW", "puuid-bibi", List.of(GameRole.ADC), null));
+                new TeamService.NewMember("Bibi", "EUW", "puuid-bibi", List.of(GameRole.ADC), null, false));
 
         verify(riotIdResolver, never()).resolve(anyString(), anyString());
     }
@@ -246,7 +246,7 @@ class TeamServiceTest {
         donneLEquipe();
 
         assertThatThrownBy(() -> teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("Bibi", "  ", null, List.of(GameRole.TOP), null)))
+                new TeamService.NewMember("Bibi", "  ", null, List.of(GameRole.TOP), null, false)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Riot ID");
     }
@@ -256,10 +256,10 @@ class TeamServiceTest {
     void refuseUnDoublon() {
         donneLEquipe();
         teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null));
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null, false));
 
         assertThatThrownBy(() -> teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("bibi", "euw", null, List.of(GameRole.TOP), null)))
+                new TeamService.NewMember("bibi", "euw", null, List.of(GameRole.TOP), null, false)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("déjà");
     }
@@ -270,7 +270,7 @@ class TeamServiceTest {
         donneLEquipe();
 
         assertThatThrownBy(() -> teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("Coach", "EUW", null, List.of(GameRole.SUP), MemberStatus.COACH)))
+                new TeamService.NewMember("Coach", "EUW", null, List.of(GameRole.SUP), MemberStatus.COACH, false)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("coach");
     }
@@ -281,12 +281,25 @@ class TeamServiceTest {
         donneLEquipe();
         for (int i = 0; i < 6; i++) {
             teamService.addMember(capitaine, "equipe-1",
-                    new TeamService.NewMember("Joueur" + i, "EUW", null, null, MemberStatus.REMPLACANT));
+                    new TeamService.NewMember("Joueur" + i, "EUW", null, null, MemberStatus.REMPLACANT, false));
         }
         Team equipe = teamService.addMember(capitaine, "equipe-1",
-                new TeamService.NewMember("Coach", "EUW", null, List.of(), MemberStatus.COACH));
+                new TeamService.NewMember("Coach", "EUW", null, List.of(), MemberStatus.COACH, false));
 
         assertThat(equipe.getMembers()).hasSize(8);
+    }
+
+    @Test
+    @DisplayName("Remplaçant et coach se cumulent, et un remplaçant-coach garde ses postes")
+    void remplacantCoach() {
+        donneLEquipe();
+        Team equipe = teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Mentor", "EUW", null, List.of(GameRole.JGL), MemberStatus.REMPLACANT, true));
+
+        TeamMember mentor = equipe.getMembers().getLast();
+        assertThat(mentor.coaches()).isTrue();
+        assertThat(mentor.getStatus()).isEqualTo(MemberStatus.REMPLACANT);
+        assertThat(mentor.getRoles()).containsExactly(GameRole.JGL);
     }
 
     @Test

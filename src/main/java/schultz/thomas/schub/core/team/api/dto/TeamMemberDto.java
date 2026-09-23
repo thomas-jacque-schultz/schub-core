@@ -14,6 +14,7 @@ public record TeamMemberDto(
         String riotTagLine,
         List<GameRole> roles,
         MemberStatus status,
+        boolean coach,
         boolean linked,
         boolean captain
 ) {

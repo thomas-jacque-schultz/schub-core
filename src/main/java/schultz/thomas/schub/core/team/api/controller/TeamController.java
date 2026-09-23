@@ -81,7 +81,7 @@ public class TeamController {
         User actor = userService.requireActor(actorDiscordId);
         Team team = teamService.addMember(actor, teamId, new TeamService.NewMember(
                 request.riotGameName(), request.riotTagLine(), request.riotPuuid(),
-                request.roles(), request.status()));
+                request.roles(), request.status(), Boolean.TRUE.equals(request.coach())));
         return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toDto(team, actor));
     }
 
@@ -93,7 +93,8 @@ public class TeamController {
             @RequestBody UpdateMemberRequest request) {
         User actor = userService.requireActor(actorDiscordId);
         return projectionService.toDto(
-                teamService.updateMember(actor, teamId, memberId, request.roles(), request.status()), actor);
+                teamService.updateMember(actor, teamId, memberId, request.roles(), request.status(),
+                        request.coach()), actor);
     }
 
     @DeleteMapping("/{teamId}/members/{memberId}")

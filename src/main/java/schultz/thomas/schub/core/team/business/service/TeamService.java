@@ -134,6 +134,7 @@ public class TeamService {
         member.setRiotPuuid(puuid);
         member.setRoles(postesValides(demande.roles()));
         member.setStatus(demande.status() == null ? MemberStatus.TITULAIRE : demande.status());
+        member.setCoach(demande.coach() || member.getStatus() == MemberStatus.COACH);
         member.setAddedAt(Instant.now());
 
         if (puuid != null) {
@@ -154,7 +155,7 @@ public class TeamService {
     }
 
     public Team updateMember(User actor, String teamId, String memberId, List<GameRole> roles,
-                             MemberStatus status) {
+                             MemberStatus status, Boolean coach) {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
 
@@ -164,6 +165,10 @@ public class TeamService {
         if (status != null) {
             member.setStatus(status);
         }
+        if (coach != null) {
+            member.setCoach(coach);
+        }
+        member.setCoach(member.coaches());
         refuseCoachAvecPoste(member);
         return touch(team);
     }
@@ -306,7 +311,8 @@ public class TeamService {
             String riotTagLine,
             String riotPuuid,
             List<GameRole> roles,
-            MemberStatus status
+            MemberStatus status,
+            boolean coach
     ) {
     }
 

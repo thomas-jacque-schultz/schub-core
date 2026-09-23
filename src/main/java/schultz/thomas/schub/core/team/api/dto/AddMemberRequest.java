@@ -10,6 +10,7 @@ public record AddMemberRequest(
         String riotTagLine,
         String riotPuuid,
         List<GameRole> roles,
-        MemberStatus status
+        MemberStatus status,
+        Boolean coach
 ) {
 }

@@ -109,6 +109,7 @@ public class TeamProjectionService {
                 member.getRiotTagLine(),
                 member.getRoles(),
                 member.getStatus(),
+                member.coaches(),
                 member.isLinked(),
                 member.getUserId() != null && member.getUserId().equals(team.getCreatedBy()));
     }
