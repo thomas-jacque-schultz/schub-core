@@ -12,6 +12,14 @@ public record TeamGamePlayerDto(
         int kills,
         int deaths,
         int assists,
-        boolean afk
+        int goldEarned,
+        int damageToChampions,
+        int damageTaken,
+        int minionsKilled,
+        int visionScore,
+        boolean afk,
+        RankedStandingDto soloRank,
+        RankedStandingDto flexRank,
+        At15Dto at15
 ) {
 }

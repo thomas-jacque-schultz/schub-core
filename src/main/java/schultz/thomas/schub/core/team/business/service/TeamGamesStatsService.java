@@ -1,5 +1,13 @@
 package schultz.thomas.schub.core.team.business.service;
 
+import schultz.thomas.schub.core.team.api.dto.At15Dto;
+import schultz.thomas.schub.core.team.api.dto.MatchupDto;
+import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
+import schultz.thomas.schub.core.team.api.dto.SideRanksDto;
+import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import java.util.HashMap;
+import java.util.NoSuchElementException;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -82,8 +90,9 @@ public class TeamGamesStatsService {
 
         Optional<RiotChampionGateway.Catalogue> catalogue = championGateway.catalogue();
         Map<String, MemberDirectory.MemberIdentity> identites = identites(joueurs);
+        Map<String, RiotStatsGateway.Insight> insights = insightsDe(parties);
         List<TeamGameDto> rendues = parties.stream()
-                .map(partie -> toGame(partie, parPuuid, identites, catalogue))
+                .map(partie -> toGame(partie, parPuuid, identites, catalogue, insights.get(partie.matchId())).dto())
                 .toList();
 
         List<RiotStatsGateway.SharedMatch> decidees = parties.stream()
@@ -180,7 +189,7 @@ public class TeamGamesStatsService {
         return partie.queue() == null || partie.queue().isBlank() ? "OTHER" : partie.queue();
     }
 
-    private static int cote(RiotStatsGateway.SharedMatch partie) {
+    static int cote(RiotStatsGateway.SharedMatch partie) {
         return partie.players().isEmpty() ? 0 : partie.players().getFirst().side();
     }
 
@@ -232,34 +241,160 @@ public class TeamGamesStatsService {
                 : StatsState.AUCUNE_PARTIE;
     }
 
-    private TeamGameDto toGame(RiotStatsGateway.SharedMatch partie,
-                               Map<String, TeamMember> parPuuid,
-                               Map<String, MemberDirectory.MemberIdentity> identites,
-                               Optional<RiotChampionGateway.Catalogue> catalogue) {
-        List<TeamGamePlayerDto> joueurs = partie.players().stream()
-                .map(joueur -> {
-                    TeamMember membre = parPuuid.get(joueur.puuid());
-                    RiotChampionGateway.Champion champion = catalogue
-                            .map(cat -> cat.parId().get(joueur.championId()))
-                            .orElse(null);
-                    return new TeamGamePlayerDto(
-                            membre == null ? null : membre.getMemberId(),
-                            membre == null ? null : nomAffiche(membre, identite(identites, membre)),
-                            joueur.championId(),
-                            champion != null ? champion.name() : joueur.championName(),
-                            champion == null ? null : champion.iconUrl(),
-                            joueur.position(),
-                            joueur.side(),
-                            joueur.win(),
-                            joueur.kills(),
-                            joueur.deaths(),
-                            joueur.assists(),
-                            joueur.afk());
-                })
-                .toList();
-        return new TeamGameDto(partie.matchId(), partie.startedAt(), partie.durationSeconds(),
+    public TeamGameDetailDto detail(User actor, String teamId, String matchId) {
+        Team team = teamService.requireVisible(actor, teamId);
+        List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
+        Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
+        if (parPuuid.size() < MINIMUM_MEMBRES) {
+            throw new NoSuchElementException("Cette équipe n'a pas assez de comptes Riot pour avoir des parties d'équipe");
+        }
+        RiotStatsGateway.SharedMatch partie = statsGateway
+                .sharedMatches(List.copyOf(parPuuid.keySet()), MINIMUM_MEMBRES, null, PARTIES_VERIFIEES)
+                .orElseThrow(RiotConnectorUnavailableException::new)
+                .matches().stream()
+                .filter(candidate -> candidate.matchId().equals(matchId))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Aucune partie d'équipe « " + matchId + " »"));
+
+        RiotStatsGateway.Insight insight = insightsDe(List.of(partie)).get(matchId);
+        Partie rendue = toGame(partie, parPuuid, identites(joueurs), championGateway.catalogue(), insight);
+        return new TeamGameDetailDto(team.getId(), rendue.dto(), partie.splitSides() ? List.of() : faceAFace(rendue),
+                insight != null && insight.timelineAvailable(),
+                insight == null ? null : insight.ranksObservedAt(),
+                TeamPlayerStatsService.placeDuLecteur(team, actor));
+    }
+
+    static final List<String> POSTES = List.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
+
+    private static List<MatchupDto> faceAFace(Partie partie) {
+        List<MatchupDto> lignes = new ArrayList<>();
+        for (String poste : POSTES) {
+            Optional<Joueur> allie = partie.notreCamp().stream().filter(j -> poste.equals(j.source().position())).findFirst();
+            Optional<Joueur> adverse = partie.adverses().stream().filter(j -> poste.equals(j.source().position())).findFirst();
+            if (allie.isEmpty() && adverse.isEmpty()) {
+                continue;
+            }
+            lignes.add(new MatchupDto(poste,
+                    allie.map(Joueur::dto).orElse(null),
+                    adverse.map(Joueur::dto).orElse(null),
+                    allie.isPresent() && adverse.isPresent() ? ecart(allie.get(), adverse.get()) : null));
+        }
+        return lignes;
+    }
+
+    static Double ecart(Joueur allie, Joueur adverse) {
+        Double nous = allie.rang();
+        Double eux = adverse.rang();
+        return nous == null || eux == null ? null : nous - eux;
+    }
+
+    Map<String, RiotStatsGateway.Insight> insightsDe(List<RiotStatsGateway.SharedMatch> parties) {
+        Map<String, RiotStatsGateway.Insight> index = new HashMap<>();
+        statsGateway.insights(parties.stream().map(RiotStatsGateway.SharedMatch::matchId).toList())
+                .orElseGet(List::of)
+                .forEach(insight -> index.put(insight.matchId(), insight));
+        return index;
+    }
+
+    record Joueur(RiotStatsGateway.SharedMatchPlayer source, RiotStatsGateway.InsightPlayer insight,
+                  TeamGamePlayerDto dto) {
+
+        Double rang() {
+            return insight == null ? null : Rangs.reference(insight.solo(), insight.flex());
+        }
+    }
+
+    record Partie(TeamGameDto dto, List<Joueur> membres, List<Joueur> allies, List<Joueur> adverses) {
+
+        List<Joueur> notreCamp() {
+            List<Joueur> camp = new ArrayList<>(membres);
+            camp.addAll(allies);
+            return camp;
+        }
+    }
+
+    Partie toGame(RiotStatsGateway.SharedMatch partie,
+                  Map<String, TeamMember> parPuuid,
+                  Map<String, MemberDirectory.MemberIdentity> identites,
+                  Optional<RiotChampionGateway.Catalogue> catalogue,
+                  RiotStatsGateway.Insight insight) {
+        Map<String, RiotStatsGateway.InsightPlayer> parJoueur = new HashMap<>();
+        if (insight != null) {
+            insight.participants().forEach(p -> parJoueur.put(p.puuid(), p));
+        }
+        int notreCote = cote(partie);
+        Function<RiotStatsGateway.SharedMatchPlayer, Joueur> projette = joueur ->
+                joueur(joueur, parPuuid, identites, catalogue, parJoueur.get(joueur.puuid()));
+
+        List<Joueur> membres = partie.players().stream().map(projette).toList();
+        List<Joueur> allies = partie.others().stream().filter(j -> j.side() == notreCote).map(projette).toList();
+        List<Joueur> adverses = partie.others().stream().filter(j -> j.side() != notreCote).map(projette).toList();
+
+        List<RiotStatsGateway.InsightPlayer> nous = new ArrayList<>();
+        List<RiotStatsGateway.InsightPlayer> eux = new ArrayList<>();
+        if (insight != null && insight.ranksObservedAt() != null) {
+            insight.participants().forEach(p -> (p.side() == notreCote ? nous : eux).add(p));
+        }
+
+        TeamGameDto dto = new TeamGameDto(partie.matchId(), partie.startedAt(), partie.durationSeconds(),
                 partie.queueId(), partie.queue(), partie.patch(), partie.presentPlayers(),
-                partie.splitSides(), partie.win(), joueurs);
+                partie.splitSides(), partie.win(),
+                membres.stream().map(Joueur::dto).toList(),
+                allies.stream().map(Joueur::dto).toList(),
+                adverses.stream().map(Joueur::dto).toList(),
+                rangs(nous), rangs(eux),
+                insight == null ? null : insight.ranksObservedAt());
+        return new Partie(dto, membres, allies, adverses);
+    }
+
+    private static SideRanksDto rangs(List<RiotStatsGateway.InsightPlayer> camp) {
+        if (camp.isEmpty()) {
+            return null;
+        }
+        return new SideRanksDto(
+                Rangs.moyenne(camp.stream().map(RiotStatsGateway.InsightPlayer::solo).toList()),
+                Rangs.moyenne(camp.stream().map(RiotStatsGateway.InsightPlayer::flex).toList()));
+    }
+
+    private static Joueur joueur(RiotStatsGateway.SharedMatchPlayer joueur,
+                                 Map<String, TeamMember> parPuuid,
+                                 Map<String, MemberDirectory.MemberIdentity> identites,
+                                 Optional<RiotChampionGateway.Catalogue> catalogue,
+                                 RiotStatsGateway.InsightPlayer insight) {
+        TeamMember membre = parPuuid.get(joueur.puuid());
+        RiotChampionGateway.Champion champion = catalogue
+                .map(cat -> cat.parId().get(joueur.championId()))
+                .orElse(null);
+        return new Joueur(joueur, insight, new TeamGamePlayerDto(
+                membre == null ? null : membre.getMemberId(),
+                membre == null ? null : nomAffiche(membre, identite(identites, membre)),
+                joueur.championId(),
+                champion != null ? champion.name() : joueur.championName(),
+                champion == null ? null : champion.iconUrl(),
+                joueur.position(),
+                joueur.side(),
+                joueur.win(),
+                joueur.kills(),
+                joueur.deaths(),
+                joueur.assists(),
+                joueur.goldEarned(),
+                joueur.damageToChampions(),
+                joueur.damageTaken(),
+                joueur.minionsKilled(),
+                joueur.visionScore(),
+                joueur.afk(),
+                insight == null ? null : standing(insight.solo()),
+                insight == null ? null : standing(insight.flex()),
+                insight == null || insight.at15() == null ? null : at15(insight.at15())));
+    }
+
+    private static RankedStandingDto standing(RiotStatsGateway.Standing s) {
+        return s == null ? null : new RankedStandingDto(s.queue(), s.riotQueueType(), s.tier(), s.division(),
+                s.leaguePoints(), s.wins(), s.losses(), s.hotStreak(), s.inactive(), s.observedAt());
+    }
+
+    private static At15Dto at15(RiotStatsGateway.At15 a) {
+        return new At15Dto(a.gold(), a.xp(), a.cs(), a.damageToChampions(), a.kills(), a.deaths(), a.assists());
     }
 
     private Map<String, MemberDirectory.MemberIdentity> identites(List<TeamMember> joueurs) {

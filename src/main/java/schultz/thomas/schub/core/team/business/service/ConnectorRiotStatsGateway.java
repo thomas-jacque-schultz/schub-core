@@ -23,6 +23,9 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     private static final ParameterizedTypeReference<List<CoverageResponse>> COUVERTURE =
             new ParameterizedTypeReference<>() {
             };
+    private static final ParameterizedTypeReference<List<InsightResponse>> INSIGHTS =
+            new ParameterizedTypeReference<>() {
+            };
     private static final ParameterizedTypeReference<List<StandingResponse>> CLASSEMENTS =
             new ParameterizedTypeReference<>() {
             };
@@ -105,7 +108,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
         try {
             SharedMatchesResponse reponse = restClient.post()
                     .uri("/stats/shared-matches")
-                    .body(new SharedMatchesRequest(puuids, minimumPlayers, since, limit))
+                    .body(new SharedMatchesRequest(puuids, minimumPlayers, since, limit, true))
                     .retrieve()
                     .body(SharedMatchesResponse.class);
             if (reponse == null || reponse.matches() == null) {
@@ -142,6 +145,36 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
         }
     }
 
+    @Override
+    public Optional<List<Insight>> insights(List<String> matchIds) {
+        if (matchIds == null || matchIds.isEmpty()) {
+            return Optional.of(List.of());
+        }
+        try {
+            List<InsightResponse> reponse = restClient.post()
+                    .uri("/stats/match-insights")
+                    .body(new MatchIdsRequest(matchIds))
+                    .retrieve()
+                    .body(INSIGHTS);
+            return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
+                    .map(row -> new Insight(row.matchId(), row.timelineAvailable(), row.ranksObservedAt(),
+                            row.participants() == null ? List.of() : row.participants().stream()
+                                    .map(p -> new InsightPlayer(p.puuid(), p.side(), p.position(),
+                                            p.championId(), toStanding(p.solo()), toStanding(p.flex()), p.at15()))
+                                    .toList()))
+                    .toList());
+        } catch (RestClientException e) {
+            log.warn("Rangs et chiffres à 15 minutes non obtenus ({})", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private static Standing toStanding(StandingResponse row) {
+        return row == null ? null : new Standing(row.queue(), row.riotQueueType(), row.tier(),
+                row.division(), row.leaguePoints(), row.wins(), row.losses(), row.hotStreak(),
+                row.inactive(), row.observedAt());
+    }
+
     private static Bucket toBucket(BucketResponse row) {
         return new Bucket(row.puuid(), row.key(), row.championName(), row.games(), row.wins(),
                 row.kills(), row.deaths(), row.assists(), row.minionsKilled(), row.goldEarned(),
@@ -173,8 +206,20 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     record PuuidsRequest(List<String> puuids) {
     }
 
+    // enrich : toute partie partagée d'ici est une partie d'équipe, dont on veut timeline et rangs.
     record SharedMatchesRequest(List<String> puuids, int minimumPlayers, Instant since,
-                                Integer limit) {
+                                Integer limit, boolean enrich) {
+    }
+
+    record MatchIdsRequest(List<String> matchIds) {
+    }
+
+    record InsightResponse(String matchId, boolean timelineAvailable, Instant ranksObservedAt,
+                           List<InsightPlayerResponse> participants) {
+    }
+
+    record InsightPlayerResponse(String puuid, int side, String position, int championId,
+                                 StandingResponse solo, StandingResponse flex, At15 at15) {
     }
 
     record BucketResponse(String puuid, String key, String championName, long games, long wins,

@@ -34,6 +34,20 @@ public interface RiotStatsGateway {
 
     Optional<List<Standing>> rankings(String puuid);
 
+    // Parties déjà collectées seulement : ce qui manque revient absent, jamais inventé.
+    Optional<List<Insight>> insights(List<String> matchIds);
+
+    record Insight(String matchId, boolean timelineAvailable, Instant ranksObservedAt,
+                   List<InsightPlayer> participants) {
+    }
+
+    record InsightPlayer(String puuid, int side, String position, int championId, Standing solo,
+                         Standing flex, At15 at15) {
+    }
+
+    record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists) {
+    }
+
     record Bucket(
             String puuid,
             String key,
