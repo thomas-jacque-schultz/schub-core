@@ -90,8 +90,9 @@ public class CompositionController {
         List<CompositionSlot> slots = request.slots() == null ? null
                 : request.slots().stream()
                 .map(slot -> slot == null ? null
-                        : new CompositionSlot(slot.role(), slot.championId(), slot.memberId()))
+                        : new CompositionSlot(slot.role(), slot.championId(), slot.memberId(),
+                                slot.alternatives()))
                 .toList();
-        return new CompositionService.Draft(request.name(), slots, request.patch(), request.notes());
+        return new CompositionService.Draft(request.name(), slots, request.bans(), request.patch(), request.notes());
     }
 }

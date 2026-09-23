@@ -8,6 +8,7 @@ public record CompositionDto(
         String teamId,
         String name,
         List<CompositionSlotDto> slots,
+        List<String> bans,
         String patch,
         String notes,
         Instant createdAt,

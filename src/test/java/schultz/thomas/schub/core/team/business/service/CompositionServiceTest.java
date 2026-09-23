@@ -84,7 +84,7 @@ class CompositionServiceTest {
     @DisplayName("cinq postes distincts, chacun avec son champion : c'est une composition")
     void compositionValide() {
         Composition composition = compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Contre poke", cinqPostes(), "14.18.1", "Prio bot"));
+                new CompositionService.Draft("Contre poke", cinqPostes(), List.of(), "14.18.1", "Prio bot"));
 
         assertThat(composition.getSlots()).hasSize(5);
         assertThat(composition.getPatch()).isEqualTo("14.18.1");
@@ -98,7 +98,7 @@ class CompositionServiceTest {
         quatre.remove(4);
 
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Bancale", quatre, "14.18.1", null)))
+                new CompositionService.Draft("Bancale", quatre, List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("exactement 5");
         verify(compositionRepository, never()).save(any(Composition.class));
@@ -111,7 +111,7 @@ class CompositionServiceTest {
         six.add(new CompositionSlot(GameRole.MID, "Zed", null));
 
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Trop", six, "14.18.1", null)))
+                new CompositionService.Draft("Trop", six, List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("exactement 5");
     }
@@ -123,7 +123,7 @@ class CompositionServiceTest {
         doublon.set(4, new CompositionSlot(GameRole.MID, "Zed", null));
 
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Deux mids", doublon, "14.18.1", null)))
+                new CompositionService.Draft("Deux mids", doublon, List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("deux fois");
     }
@@ -135,7 +135,7 @@ class CompositionServiceTest {
         troue.set(2, new CompositionSlot(GameRole.MID, "  ", null));
 
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Trouée", troue, "14.18.1", null)))
+                new CompositionService.Draft("Trouée", troue, List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("sans champion");
     }
@@ -148,7 +148,7 @@ class CompositionServiceTest {
         slots.set(1, new CompositionSlot(GameRole.JGL, "Sejuani", "m-1"));
 
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Dédoublé", slots, "14.18.1", null)))
+                new CompositionService.Draft("Dédoublé", slots, List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("deux postes");
     }
@@ -160,7 +160,7 @@ class CompositionServiceTest {
         slots.set(0, new CompositionSlot(GameRole.TOP, "Ornn", "m-inconnu"));
 
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Invité", slots, "14.18.1", null)))
+                new CompositionService.Draft("Invité", slots, List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("n'est pas un joueur de cette équipe");
     }
@@ -172,7 +172,7 @@ class CompositionServiceTest {
         slots.set(0, new CompositionSlot(GameRole.TOP, "Ornn", "m-coach"));
 
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Coach au top", slots, "14.18.1", null)))
+                new CompositionService.Draft("Coach au top", slots, List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("n'est pas un joueur de cette équipe");
     }
@@ -184,7 +184,7 @@ class CompositionServiceTest {
         slots.set(0, new CompositionSlot(GameRole.TOP, "Ornn", "m-1"));
 
         Composition composition = compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft("Brouillon", slots, "14.18.1", null));
+                new CompositionService.Draft("Brouillon", slots, List.of(), "14.18.1", null));
 
         assertThat(composition.getSlots()).extracting(CompositionSlot::getMemberId)
                 .containsExactly("m-1", null, null, null, null);
@@ -194,7 +194,7 @@ class CompositionServiceTest {
     @DisplayName("un membre ne peut pas écrire de composition — il voit tout et n'écrit rien")
     void unMembreNEcritPas() {
         assertThatThrownBy(() -> compositionService.create(membre, "equipe-1",
-                new CompositionService.Draft("La mienne", cinqPostes(), "14.18.1", null)))
+                new CompositionService.Draft("La mienne", cinqPostes(), List.of(), "14.18.1", null)))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("COMPOSITION_EDIT");
         verify(compositionRepository, never()).save(any(Composition.class));
@@ -222,10 +222,75 @@ class CompositionServiceTest {
     }
 
     @Test
+    @DisplayName("les bans et les remplaçants sont conservés, nettoyés des espaces")
+    void conserveBansEtRemplacants() {
+        List<CompositionSlot> slots = new ArrayList<>(cinqPostes());
+        slots.set(0, new CompositionSlot(GameRole.TOP, "Ornn", null, List.of(" Sion ", "KSante")));
+
+        Composition composition = compositionService.create(capitaine, "equipe-1",
+                new CompositionService.Draft("Tanks", slots, List.of("Zed ", "Yasuo"), null, null));
+
+        assertThat(composition.getBans()).containsExactly("Zed", "Yasuo");
+        assertThat(composition.getSlots().get(0).getAlternatives()).containsExactly("Sion", "KSante");
+        assertThat(composition.getSlots().get(1).getAlternatives()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("six bans, c'est un de trop")
+    void refuseSixBans() {
+        List<String> six = List.of("Zed", "Yasuo", "Yone", "Akali", "Katarina", "Fizz");
+
+        assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
+                new CompositionService.Draft("Peur des assassins", cinqPostes(), six, null, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("5 champions au plus");
+    }
+
+    @Test
+    @DisplayName("un champion banni ne se joue pas, ni en titulaire ni en remplaçant")
+    void refuseUnChampionBanni() {
+        assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
+                new CompositionService.Draft("Contradiction", cinqPostes(), List.of("Jinx"), null, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Jinx est banni");
+
+        List<CompositionSlot> slots = new ArrayList<>(cinqPostes());
+        slots.set(2, new CompositionSlot(GameRole.MID, "Orianna", null, List.of("Zed")));
+        assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
+                new CompositionService.Draft("Contradiction", slots, List.of("Zed"), null, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Zed est banni");
+    }
+
+    @Test
+    @DisplayName("un champion ne se choisit qu'une fois par équipe")
+    void refuseUnChampionADeuxPostes() {
+        List<CompositionSlot> slots = new ArrayList<>(cinqPostes());
+        slots.set(0, new CompositionSlot(GameRole.TOP, "Jinx", null));
+
+        assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
+                new CompositionService.Draft("Deux Jinx", slots, List.of(), null, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("choisi à deux postes");
+    }
+
+    @Test
+    @DisplayName("un champion n'est pas son propre remplaçant")
+    void refuseUnRemplacantIdentique() {
+        List<CompositionSlot> slots = new ArrayList<>(cinqPostes());
+        slots.set(0, new CompositionSlot(GameRole.TOP, "Ornn", null, List.of("Ornn")));
+
+        assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
+                new CompositionService.Draft("Miroir", slots, List.of(), null, null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ne remplace pas lui-même");
+    }
+
+    @Test
     @DisplayName("une composition a un nom")
     void nomObligatoire() {
         assertThatThrownBy(() -> compositionService.create(capitaine, "equipe-1",
-                new CompositionService.Draft(" ", cinqPostes(), "14.18.1", null)))
+                new CompositionService.Draft(" ", cinqPostes(), List.of(), "14.18.1", null)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
