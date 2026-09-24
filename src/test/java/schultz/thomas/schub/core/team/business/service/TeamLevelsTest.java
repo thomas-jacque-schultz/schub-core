@@ -21,16 +21,16 @@ class TeamLevelsTest {
             "RANKED_SOLO_5x5", "GOLD", "II", 50, 10, 10, false, false, Instant.EPOCH);
 
     @Test
-    @DisplayName("chaque partie se situe dans les parties de son palier ; la moyenne prend le palier de la médiane la plus proche")
+    @DisplayName("chaque partie se situe dans les parties de son palier ; la moyenne prend le palier le plus proche")
     void moyenneDesPercentiles() {
-        Map<String, Double> medianes = new LinkedHashMap<>();
-        medianes.put("IRON", -900.0);
-        medianes.put("GOLD", 100.0);
-        medianes.put("DIAMOND", 900.0);
+        Map<String, Double> moyennes = new LinkedHashMap<>();
+        moyennes.put("IRON", -900.0);
+        moyennes.put("GOLD", 100.0);
+        moyennes.put("DIAMOND", 900.0);
         ReferenceGridDto grille = new ReferenceGridDto(List.of("16.18"), "TEAM", "TEAM", Instant.EPOCH, P,
                 Map.of("goldDiffAt15", new ReferenceGridDto.Metric("HIGHER",
                                 Map.of("GOLD", new ReferenceGridDto.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
-                                medianes, List.of()),
+                                moyennes, List.of()),
                         "xpDiffAt15", new ReferenceGridDto.Metric("HIGHER",
                                 Map.of("GOLD", new ReferenceGridDto.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
                                 null, List.of())));

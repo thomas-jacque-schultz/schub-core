@@ -30,12 +30,12 @@ final class Notes {
         return p == null ? null : "LOWER".equals(polarity) ? 1 - p : p;
     }
 
-    // Le palier dont la médiane est la plus proche ; sans médianes, la métrique ne suit pas le rang.
-    static String niveau(Double valeur, Map<String, Double> medianes) {
-        if (valeur == null || medianes == null) {
+    // Le palier dont la moyenne est la plus proche ; sans moyennes, la métrique ne suit pas le rang.
+    static String niveau(Double valeur, Map<String, Double> moyennes) {
+        if (valeur == null || moyennes == null) {
             return null;
         }
-        return medianes.entrySet().stream()
+        return moyennes.entrySet().stream()
                 .min(Comparator.comparingDouble(palier -> Math.abs(palier.getValue() - valeur)))
                 .map(Map.Entry::getKey)
                 .orElse(null);
