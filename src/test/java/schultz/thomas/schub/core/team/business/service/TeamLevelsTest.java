@@ -7,6 +7,7 @@ import schultz.thomas.schub.core.team.api.dto.TeamLevelDto;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,13 +21,19 @@ class TeamLevelsTest {
             "RANKED_SOLO_5x5", "GOLD", "II", 50, 10, 10, false, false, Instant.EPOCH);
 
     @Test
-    @DisplayName("chaque partie se situe dans les parties de son palier, et l'on moyenne les percentiles")
+    @DisplayName("chaque partie se situe dans les parties de son palier ; la moyenne prend le palier de la médiane la plus proche")
     void moyenneDesPercentiles() {
-        ReferenceGridDto grille = new ReferenceGridDto(List.of("16.18"), "TEAM", "TEAM", Instant.EPOCH, "test", P,
-                List.of(new ReferenceGridDto.Level("IRON", 0), new ReferenceGridDto.Level("GOLD", 0.5)),
+        Map<String, Double> medianes = new LinkedHashMap<>();
+        medianes.put("IRON", -900.0);
+        medianes.put("GOLD", 100.0);
+        medianes.put("DIAMOND", 900.0);
+        ReferenceGridDto grille = new ReferenceGridDto(List.of("16.18"), "TEAM", "TEAM", Instant.EPOCH, P,
                 Map.of("goldDiffAt15", new ReferenceGridDto.Metric("HIGHER",
-                        Map.of("GOLD", new ReferenceGridDto.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
-                        List.of(-2000.0, 0.0, 2000.0), List.of())));
+                                Map.of("GOLD", new ReferenceGridDto.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
+                                medianes, List.of()),
+                        "xpDiffAt15", new ReferenceGridDto.Metric("HIGHER",
+                                Map.of("GOLD", new ReferenceGridDto.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
+                                null, List.of())));
 
         TeamLevelDto niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
                 Map.of("a", insight("a", 5200), "b", insight("b", 4800)), grille);
@@ -38,6 +45,8 @@ class TeamLevelsTest {
         assertThat(or.inTier()).isCloseTo(0.5, within(1e-9));
         assertThat(or.level()).isEqualTo("GOLD");
         assertThat(niveau.tier()).isEqualTo("GOLD");
+        assertThat(niveau.metrics()).filteredOn(m -> m.key().equals("xpDiffAt15")).singleElement()
+                .satisfies(xp -> assertThat(xp.level()).isNull());
     }
 
     @Test

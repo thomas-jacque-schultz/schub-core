@@ -10,16 +10,13 @@ public record ReferenceGridDto(
         String scope,
         String position,
         Instant computedAt,
-        String distribution,
         List<Double> percentiles,
-        List<Level> levels,
         Map<String, Metric> metrics
 ) {
 
-    public record Level(String tier, double fromPercentile) {
-    }
-
-    public record Metric(String polarity, Map<String, Tier> tiers, List<Double> ladder, List<String> missingTiers) {
+    // rankMedians : médiane par partie de chaque palier, du plus bas au plus haut ; absente si la métrique ne suit pas le rang.
+    public record Metric(String polarity, Map<String, Tier> tiers, Map<String, Double> rankMedians,
+                         List<String> missingTiers) {
     }
 
     public record Tier(long count, List<Double> values) {
