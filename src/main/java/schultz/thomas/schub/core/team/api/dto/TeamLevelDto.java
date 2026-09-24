@@ -12,7 +12,7 @@ public record TeamLevelDto(int games, String tier, List<String> patches, List<Me
             Double mean,
             // De 0 à 1, « plus haut = mieux » quel que soit le sens de la métrique.
             Double inTier,
-            // Palier dont la médiane est la plus proche de la moyenne, quand la métrique suit le rang : l'icône.
+            // Palier dont la moyenne par partie est la plus proche de celle de l'équipe, quand la métrique suit le rang : l'icône.
             String level
     ) {
     }
