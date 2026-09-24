@@ -105,7 +105,7 @@ final class TeamLevels {
             Double moyenne = parties == 0 ? null : somme / parties;
             return new TeamLevelDto.Metric(cle, metrique == null ? null : metrique.polarity(), parties, moyenne,
                     notees == 0 ? null : sommeDansPalier / notees,
-                    metrique == null ? null : Notes.niveau(moyenne, metrique.rankMedians()));
+                    metrique == null ? null : Notes.niveau(moyenne, metrique.rankMeans()));
         }
     }
 }

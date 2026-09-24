@@ -14,8 +14,8 @@ public record ReferenceGridDto(
         Map<String, Metric> metrics
 ) {
 
-    // rankMedians : médiane par partie de chaque palier, du plus bas au plus haut ; absente si la métrique ne suit pas le rang.
-    public record Metric(String polarity, Map<String, Tier> tiers, Map<String, Double> rankMedians,
+    // rankMeans : moyenne par partie de chaque palier, du plus bas au plus haut ; absente si la métrique ne suit pas le rang.
+    public record Metric(String polarity, Map<String, Tier> tiers, Map<String, Double> rankMeans,
                          List<String> missingTiers) {
     }
 
