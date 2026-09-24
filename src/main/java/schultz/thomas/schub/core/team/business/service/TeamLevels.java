@@ -84,8 +84,6 @@ final class TeamLevels {
         private double somme;
         private int notees;
         private double sommeDansPalier;
-        private int noteesLadder;
-        private double sommeLadder;
 
         void ajoute(int valeur, String cle, String palier, ReferenceGridDto grille) {
             parties++;
@@ -100,21 +98,14 @@ final class TeamLevels {
                 sommeDansPalier += Notes.sens(Notes.repartition(grille.percentiles(), sien.values(), valeur),
                         metrique.polarity());
             }
-            if (metrique.ladder() != null) {
-                noteesLadder++;
-                sommeLadder += Notes.sens(Notes.repartition(grille.percentiles(), metrique.ladder(), valeur),
-                        metrique.polarity());
-            }
         }
 
         TeamLevelDto.Metric dto(String cle, ReferenceGridDto grille) {
             ReferenceGridDto.Metric metrique = grille == null ? null : grille.metrics().get(cle);
-            Double ladder = noteesLadder == 0 ? null : sommeLadder / noteesLadder;
-            return new TeamLevelDto.Metric(cle, metrique == null ? null : metrique.polarity(), parties,
-                    parties == 0 ? null : somme / parties,
+            Double moyenne = parties == 0 ? null : somme / parties;
+            return new TeamLevelDto.Metric(cle, metrique == null ? null : metrique.polarity(), parties, moyenne,
                     notees == 0 ? null : sommeDansPalier / notees,
-                    ladder,
-                    grille == null ? null : Notes.niveau(ladder, grille.levels()));
+                    metrique == null ? null : Notes.niveau(moyenne, metrique.rankMedians()));
         }
     }
 }

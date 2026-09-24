@@ -1,8 +1,8 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
-
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 // Même interpolation que le connecteur et le front : sur un palier plat, la part des valeurs inférieures ou égales.
 final class Notes {
@@ -30,17 +30,15 @@ final class Notes {
         return p == null ? null : "LOWER".equals(polarity) ? 1 - p : p;
     }
 
-    static String niveau(Double ladder, List<ReferenceGridDto.Level> niveaux) {
-        if (ladder == null) {
+    // Le palier dont la médiane est la plus proche ; sans médianes, la métrique ne suit pas le rang.
+    static String niveau(Double valeur, Map<String, Double> medianes) {
+        if (valeur == null || medianes == null) {
             return null;
         }
-        String niveau = null;
-        for (ReferenceGridDto.Level palier : niveaux) {
-            if (ladder >= palier.fromPercentile()) {
-                niveau = palier.tier();
-            }
-        }
-        return niveau;
+        return medianes.entrySet().stream()
+                .min(Comparator.comparingDouble(palier -> Math.abs(palier.getValue() - valeur)))
+                .map(Map.Entry::getKey)
+                .orElse(null);
     }
 
     static String groupe(String tier) {
