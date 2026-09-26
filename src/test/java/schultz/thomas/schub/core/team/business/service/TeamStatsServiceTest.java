@@ -17,6 +17,7 @@ import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 import schultz.thomas.schub.core.team.api.dto.PlayerStatsDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
+import schultz.thomas.schub.core.team.api.dto.TeamMemberPresenceDto;
 import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
 import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
@@ -195,6 +196,18 @@ class TeamStatsServiceTest {
         assertThat(panneau.state()).isEqualTo(StatsState.EFFECTIF_INCOMPLET);
         assertThat(panneau.minimumPlayers()).isEqualTo(4);
         verify(statsGateway, never()).sharedMatches(any(), anyInt(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Aucun membre n'a de compte Riot : l'effectif est incomplet, sans erreur")
+    void aucunCompteRiot() {
+        equipe.getMembers().forEach(membre -> membre.setRiotPuuid(null));
+
+        TeamGamesStatsDto panneau = parties.of(capitaine, "equipe-1", null, null);
+
+        assertThat(panneau.state()).isEqualTo(StatsState.EFFECTIF_INCOMPLET);
+        assertThat(panneau.presence()).extracting(TeamMemberPresenceDto::state)
+                .containsOnly(StatsState.COMPTE_RIOT_ABSENT);
     }
 
     @Test
