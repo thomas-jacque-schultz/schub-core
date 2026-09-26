@@ -243,7 +243,7 @@ public class TeamGamesStatsService {
                     wins,
                     games == 0 ? null : (double) wins / games,
                     parties.isEmpty() ? null : (double) games / parties.size(),
-                    etat(puuid, couverture.get(puuid))));
+                    etat(puuid, puuid == null ? null : couverture.get(puuid))));
         }
         return presences;
     }
