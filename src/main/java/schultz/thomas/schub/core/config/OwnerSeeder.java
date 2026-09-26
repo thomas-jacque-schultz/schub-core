@@ -58,8 +58,10 @@ public class OwnerSeeder implements CommandLineRunner {
             user.setDiscordUsername(adminDiscordUsername);
         }
         if (!owner.getId().equals(user.getRoleId())) {
-            log.warn("Le compte {} n'était pas {} — rôle rétabli au démarrage",
-                    adminDiscordId, SystemRole.OWNER.roleName());
+            if (user.getId() != null) {
+                log.warn("Le compte {} n'était pas {} — rôle rétabli au démarrage",
+                        adminDiscordId, SystemRole.OWNER.roleName());
+            }
             user.setRoleId(owner.getId());
         }
         userRepository.save(user);
