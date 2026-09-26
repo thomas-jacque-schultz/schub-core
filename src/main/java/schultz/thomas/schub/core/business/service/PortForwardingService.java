@@ -31,6 +31,8 @@ public class PortForwardingService {
 
     private final ReentrantLock lock = new ReentrantLock();
 
+    private boolean failing;
+
     public PortForwardingReport reconcile() {
         return reconcile(null, false);
     }
@@ -44,9 +46,19 @@ public class PortForwardingService {
 
         lock.lock();
         try {
-            return doReconcile(overrideIdentifier, overrideOpen);
+            PortForwardingReport report = doReconcile(overrideIdentifier, overrideOpen);
+            if (failing) {
+                failing = false;
+                log.info("Réconciliation des redirections rétablie");
+            }
+            return report;
         } catch (Exception e) {
-            log.error("Réconciliation des redirections en échec", e);
+            if (failing) {
+                log.warn("Réconciliation des redirections toujours en échec: {}", e.getMessage());
+            } else {
+                failing = true;
+                log.error("Réconciliation des redirections en échec", e);
+            }
             return PortForwardingReport.skipped("erreur: " + e.getMessage());
         } finally {
             lock.unlock();
