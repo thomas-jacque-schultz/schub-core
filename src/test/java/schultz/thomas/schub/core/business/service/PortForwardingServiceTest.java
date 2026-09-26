@@ -15,6 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -27,7 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class PortForwardingServiceTest {
 
     private static final String LAN_IP = "192.168.1.202";
@@ -238,6 +240,24 @@ class PortForwardingServiceTest {
 
         assertThat(report.applied()).isFalse();
         assertThat(report.skippedReason()).contains("box injoignable");
+    }
+
+    @Test
+    @DisplayName("une panne qui dure : une pile au début, une ligne par passage, un message au retour")
+    void logsFailureOnlyOnStateChange(CapturedOutput sortie) {
+        when(redirectionRequestService.unavailableReason()).thenReturn(null);
+        when(resolver.resolve(null, false)).thenReturn(new PortRuleResolution(Map.of(), List.of()));
+        when(redirectionRequestService.listRules())
+                .thenThrow(new IllegalStateException("box injoignable"))
+                .thenThrow(new IllegalStateException("box injoignable"))
+                .thenReturn(List.of());
+
+        service.reconcile();
+        service.reconcile();
+        service.reconcile();
+
+        assertThat(sortie.getOut().split("java.lang.IllegalStateException: box injoignable", -1)).hasSize(2);
+        assertThat(sortie.getOut()).contains("toujours en échec: box injoignable", "Réconciliation des redirections rétablie");
     }
 
     @Test
