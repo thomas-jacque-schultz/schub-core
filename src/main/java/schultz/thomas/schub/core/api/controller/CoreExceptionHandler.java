@@ -3,10 +3,13 @@ package schultz.thomas.schub.core.api.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 import schultz.thomas.schub.core.business.service.RiotAccountChangeNotConfirmedException;
 import schultz.thomas.schub.core.business.service.RiotConnectorBusyException;
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
@@ -66,5 +69,25 @@ public class CoreExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleConflict(IllegalStateException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(RestClientException.class)
+    public ResponseEntity<Map<String, String>> handleConnectorFailure(RestClientException e) {
+        log.warn("Appel à un connecteur en échec : {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", connectorFailure(e)));
+    }
+
+    private static String connectorFailure(RestClientException e) {
+        if (e instanceof RestClientResponseException response) {
+            try {
+                ProblemDetail problem = response.getResponseBodyAs(ProblemDetail.class);
+                if (problem != null && problem.getDetail() != null) {
+                    return problem.getDetail();
+                }
+            } catch (RuntimeException unreadable) {
+                // corps absent ou non JSON : message générique
+            }
+        }
+        return "Un service interne n'a pas répondu. Réessaie dans un instant.";
     }
 }
