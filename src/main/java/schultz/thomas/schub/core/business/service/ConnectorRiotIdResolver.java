@@ -34,7 +34,8 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
                     .retrieve()
                     .body(PlayerIdentityResponse.class);
             String puuid = identity == null ? null : identity.puuid();
-            return puuid == null ? RiotIdResolution.notFound() : RiotIdResolution.resolved(puuid);
+            return puuid == null ? RiotIdResolution.notFound()
+                    : RiotIdResolution.resolved(puuid, identity.gameName(), identity.tagLine());
         } catch (HttpClientErrorException.NotFound e) {
             return RiotIdResolution.notFound();
         } catch (HttpClientErrorException.TooManyRequests e) {

@@ -102,6 +102,20 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     @Override
+    public boolean requestPreview(String puuid, boolean slow) {
+        try {
+            restClient.post()
+                    .uri(uri -> uri.path("/players/{puuid}/preview").queryParam("slow", slow).build(puuid))
+                    .retrieve()
+                    .toBodilessEntity();
+            return true;
+        } catch (RestClientException indisponible) {
+            log.warn("Aperçu non demandé pour un joueur recherché ({})", indisponible.getMessage());
+            return false;
+        }
+    }
+
+    @Override
     public List<KnownPlayer> search(String query, int limit) {
         if (query == null || query.isBlank()) {
             return List.of();
