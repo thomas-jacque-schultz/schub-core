@@ -78,7 +78,7 @@ public class SearchedPlayerService {
         return new PlayerCollectDto(rapide ? PlayerCollectDto.Lane.FAST : PlayerCollectDto.Lane.SLOW);
     }
 
-    PlayerRef resolve(String slug) {
+    public PlayerRef resolve(String slug) {
         int separateur = slug == null ? -1 : slug.lastIndexOf('-');
         if (separateur <= 0 || separateur == slug.length() - 1) {
             throw new IllegalArgumentException("Un Riot ID s'écrit Nom-TAG");
