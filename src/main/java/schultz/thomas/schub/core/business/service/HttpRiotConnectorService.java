@@ -55,6 +55,16 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     @Override
+    public Optional<IngestSummary> summary() {
+        try {
+            return Optional.ofNullable(restClient.get().uri("/ingest/summary").retrieve().body(IngestSummary.class));
+        } catch (RestClientException indisponible) {
+            log.debug("Bilan de la collecte indisponible : {}", indisponible.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public Optional<Crawler> crawler() {
         try {
             return Optional.ofNullable(restClient.get().uri("/ingest/crawler").retrieve().body(Crawler.class));
