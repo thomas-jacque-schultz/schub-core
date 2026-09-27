@@ -8,6 +8,7 @@ import schultz.thomas.schub.core.augur.business.engine.Signals;
 import schultz.thomas.schub.core.augur.business.service.Sensors;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
+import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,6 +30,7 @@ public class LolSensors implements Sensors {
 
     private final RiotStatsGateway statsGateway;
     private final ObjectMapper objectMapper;
+    private final TeamSynergyService synergy;
     private final Map<String, Cached> grilles = new ConcurrentHashMap<>();
 
     private record Cached(Optional<ReferenceGridDto> grille, Instant lu) {
@@ -75,6 +77,35 @@ public class LolSensors implements Sensors {
                         centile(grille, String.valueOf(cle), palier, nombre.doubleValue()));
             }
         });
+        return Optional.of(signaux);
+    }
+
+    // Au moins cinq parties de chaque côté du seuil pour qu'un écart de taux de victoire dise quelque chose.
+    private static final int PARTIES_PAR_COTE = 5;
+
+    @Override
+    public Optional<Signals> team(String teamId, Instant since) {
+        Integer jours = since == null ? null : (int) Duration.between(since, Instant.now()).toDays();
+        TeamSynergyDto equipe = synergy.of(teamId, jours);
+        if (equipe.games() == 0) {
+            return Optional.empty();
+        }
+        Signals signaux = new Signals().put("games", equipe.games(), null);
+        equipe.duos().stream().filter(d -> d.delta() != null)
+                .max(Comparator.comparingDouble(TeamSynergyDto.Duo::delta))
+                .ifPresent(d -> signaux.put("bestDuoDelta", d.delta(), null).context("bestDuo", d.nameA() + " & " + d.nameB()));
+        equipe.duos().stream().filter(d -> d.delta() != null)
+                .min(Comparator.comparingDouble(TeamSynergyDto.Duo::delta))
+                .ifPresent(d -> signaux.put("worstDuoDelta", d.delta(), null).context("worstDuo", d.nameA() + " & " + d.nameB()));
+        equipe.resources().stream().filter(r -> r.conversion() != null)
+                .min(Comparator.comparingDouble(TeamSynergyDto.Resource::conversion))
+                .ifPresent(r -> signaux.put("worstConversion", r.conversion(), null).context("position", r.position()));
+        equipe.resources().stream()
+                .filter(r -> r.winRateAbove() != null && r.winRateBelow() != null
+                        && r.gamesAbove() >= PARTIES_PAR_COTE && r.gamesBelow() >= PARTIES_PAR_COTE)
+                .max(Comparator.comparingDouble(r -> r.winRateAbove() - r.winRateBelow()))
+                .ifPresent(r -> signaux.put("bestResourceGap", r.winRateAbove() - r.winRateBelow(), null)
+                        .context("resourcePosition", r.position()));
         return Optional.of(signaux);
     }
 

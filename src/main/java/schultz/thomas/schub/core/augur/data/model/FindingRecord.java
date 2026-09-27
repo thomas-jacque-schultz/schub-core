@@ -37,6 +37,10 @@ public record FindingRecord(
         return "game:" + matchId + ":" + puuid;
     }
 
+    public static String teamSubject(String teamId, Integer days) {
+        return "team:" + teamId + ":" + (days == null ? "all" : days);
+    }
+
     public static String habitSubject(String puuid, Integer days) {
         return "habit:" + puuid + ":" + (days == null ? "all" : days);
     }

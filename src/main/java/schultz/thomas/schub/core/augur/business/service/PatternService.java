@@ -112,9 +112,11 @@ public class PatternService {
         List<ImpactDto.Example> exemples = new ArrayList<>();
         Map<String, Map<String, Signals>> parties = new LinkedHashMap<>();
         for (FindingRecord sujet : sujets) {
-            Optional<Signals> signaux = candidat.getScope() == PatternVersion.Scope.GAME
-                    ? Optional.ofNullable(parties.computeIfAbsent(sujet.matchId(), sensors::game).get(sujet.puuid()))
-                    : sensors.habit(sujet.puuid(), null);
+            Optional<Signals> signaux = switch (candidat.getScope()) {
+                case GAME -> Optional.ofNullable(parties.computeIfAbsent(sujet.matchId(), sensors::game).get(sujet.puuid()));
+                case HABIT -> sensors.habit(sujet.puuid(), null);
+                case TEAM -> sensors.team(sujet.matchId(), null);
+            };
             if (signaux.isEmpty()) {
                 continue;
             }

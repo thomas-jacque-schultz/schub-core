@@ -29,7 +29,15 @@ public class TeamSynergyService {
     private final TeamGamesStatsService gamesStats;
 
     public TeamSynergyDto of(User actor, String teamId, Integer days) {
-        Team team = teamService.requireVisible(actor, teamId);
+        return of(teamService.requireVisible(actor, teamId), days);
+    }
+
+    // Sans contrôle d'accès : pour les capteurs du moteur, appelés derrière une route qui l'a fait.
+    public TeamSynergyDto of(String teamId, Integer days) {
+        return of(teamService.require(teamId), days);
+    }
+
+    private TeamSynergyDto of(Team team, Integer days) {
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
         if (parPuuid.size() < TeamGamesStatsService.MINIMUM_MEMBRES) {

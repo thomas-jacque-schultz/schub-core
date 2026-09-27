@@ -67,6 +67,21 @@ public class AugurService {
         return vues(findings.findBySubjectIn(List.of(sujet)), actifs, visibility);
     }
 
+    public List<FindingDto> team(String teamId, Integer days) {
+        List<PatternVersion> actifs = actifs(PatternVersion.Scope.TEAM);
+        String sujet = FindingRecord.teamSubject(teamId, days);
+        List<FindingRecord> connus = findings.findBySubjectIn(List.of(sujet));
+        if (aJour(connus, actifs, FRAICHEUR_HABITUDE)) {
+            return vues(connus, actifs, Visibility.ALL);
+        }
+        Optional<Signals> signaux = sensors.team(teamId, depuis(days));
+        if (signaux.isEmpty()) {
+            return vues(connus, actifs, Visibility.ALL);
+        }
+        enregistre(sujet, PatternVersion.Scope.TEAM, null, teamId, actifs, signaux.get());
+        return vues(findings.findBySubjectIn(List.of(sujet)), actifs, Visibility.ALL);
+    }
+
     // La trace complète, émis ou non : pour régler les seuils (section « Débogage des calculs »).
     public List<Evaluator.Evaluation> trace(PatternVersion.Scope scope, String puuid, String matchId, Integer days) {
         Optional<Signals> signaux = scope == PatternVersion.Scope.GAME
@@ -90,6 +105,8 @@ public class AugurService {
             try {
                 if (perime.scope() == PatternVersion.Scope.GAME) {
                     game(perime.matchId(), perime.puuid(), Visibility.ALL);
+                } else if (perime.scope() == PatternVersion.Scope.TEAM) {
+                    team(perime.matchId(), jours(perime.subject()));
                 } else {
                     habit(perime.puuid(), jours(perime.subject()), Visibility.ALL);
                 }

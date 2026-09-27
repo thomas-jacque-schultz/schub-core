@@ -19,8 +19,8 @@ public class PatternVersion {
 
     public enum Status { DRAFT, ACTIVE, RETIRED }
 
-    // GAME : une partie d'un joueur. HABIT : ses moyennes sur la période.
-    public enum Scope { GAME, HABIT }
+    // GAME : une partie d'un joueur. HABIT : ses moyennes sur la période. TEAM : une équipe sur la période.
+    public enum Scope { GAME, HABIT, TEAM }
 
     public enum Polarity { STRENGTH, WEAKNESS, NEUTRAL }
 
