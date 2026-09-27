@@ -33,6 +33,9 @@ public enum Permission {
 
     COMPOSITION_EDIT,
 
+    // Éditer les règles du moteur de constats : des connaissances de coaching, réservées à l'OWNER au départ.
+    AUGUR_PATTERN_EDIT,
+
     // Jamais attribuable : réservée au rôle système OWNER.
     ROLE_MANAGE
 }
