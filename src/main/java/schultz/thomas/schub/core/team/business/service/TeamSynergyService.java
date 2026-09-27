@@ -23,6 +23,8 @@ public class TeamSynergyService {
     static final int DUO_MINIMUM = 10;
     // Sous ce nombre de parties sans le partenaire, l'attendu n'a pas de sens.
     static final int ATTENDU_MINIMUM = 3;
+    // Les parties hors Faille (ARAM, Arène) n'ont pas de poste : elles n'entrent pas dans la répartition.
+    static final Set<String> POSTES = Set.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
 
     private final TeamService teamService;
     private final RiotStatsGateway statsGateway;
@@ -118,7 +120,7 @@ public class TeamSynergyService {
                 continue;
             }
             for (RiotStatsGateway.SharedMatchPlayer joueur : partie.players()) {
-                if (joueur.position() == null || joueur.position().isBlank()) {
+                if (!POSTES.contains(joueur.position())) {
                     continue;
                 }
                 parPoste.computeIfAbsent(joueur.position(), p -> new ArrayList<>()).add(new Part(joueur.position(),
