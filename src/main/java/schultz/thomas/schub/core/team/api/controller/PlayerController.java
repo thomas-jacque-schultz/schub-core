@@ -30,8 +30,9 @@ public class PlayerController {
     public SearchedPlayerDto page(@PathVariable String riotId,
                                   @RequestParam(required = false) Integer days,
                                   @RequestParam(required = false) Integer patches,
-                                  @RequestParam(required = false) Integer champions) {
-        return players.page(riotId, windows.days(days, patches), champions);
+                                  @RequestParam(required = false) Integer champions,
+                                  @RequestParam(defaultValue = "false") boolean light) {
+        return players.page(riotId, windows.days(days, patches), champions, light);
     }
 
     @GetMapping("/games")
