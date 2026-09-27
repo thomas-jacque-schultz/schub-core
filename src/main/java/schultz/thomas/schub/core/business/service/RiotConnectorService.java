@@ -24,6 +24,9 @@ public interface RiotConnectorService {
 
     List<KnownPlayer> search(String query, int limit);
 
+    // Les joueurs dont l'historique a été relevé, en Nom#TAG : ceux qui ont une page publique.
+    List<String> trackedRiotIds(int limit);
+
     // priorityPending : tâches demandées pour ce joueur (aperçu d'un joueur recherché) encore en file.
     record PlayerIngest(long pending, long running, Instant estimatedReadyAt, long priorityPending) {
 
