@@ -35,7 +35,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
                     .retrieve()
                     .body(IngestResponse.class);
             return Optional.ofNullable(response)
-                    .map(body -> new PlayerIngest(body.pending(), body.running(), body.estimatedReadyAt()));
+                    .map(body -> new PlayerIngest(body.pending(), body.running(), body.estimatedReadyAt(),
+                            body.priorityPending()));
         } catch (RestClientException indisponible) {
             log.debug("État d'ingestion indisponible pour {} : {}", puuid, indisponible.getMessage());
             return Optional.empty();
@@ -135,7 +136,7 @@ public class HttpRiotConnectorService implements RiotConnectorService {
         }
     }
 
-    record IngestResponse(long pending, long running, Instant estimatedReadyAt) {
+    record IngestResponse(long pending, long running, Instant estimatedReadyAt, long priorityPending) {
     }
 
     record LoadResponse(long pending, long running, long failed, double callsPerMinute,
