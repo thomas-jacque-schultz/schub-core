@@ -40,7 +40,7 @@ class SearchedPlayerServiceTest {
         budget = mock(VisitorBudget.class);
         service = new SearchedPlayerService(resolver, stats, mock(RiotChampionGateway.class), connector,
                 mock(PlayerStatsService.class), mock(MyStatsService.class), mock(MyGamesService.class), budget);
-        when(resolver.resolve("Le Nom-Composé", "EUW")).thenReturn(RiotIdResolution.resolved("p1", "le nom-composé", "euw"));
+        when(resolver.resolveRecent("Le Nom-Composé", "EUW")).thenReturn(RiotIdResolution.resolved("p1", "le nom-composé", "euw"));
         when(connector.requestPreview(anyString(), anyBoolean())).thenReturn(true);
     }
 
@@ -58,7 +58,7 @@ class SearchedPlayerServiceTest {
     @Test
     @DisplayName("un Riot ID inconnu de Riot : 404 clair")
     void inconnu() {
-        when(resolver.resolve("Personne", "000")).thenReturn(RiotIdResolution.notFound());
+        when(resolver.resolveRecent("Personne", "000")).thenReturn(RiotIdResolution.notFound());
 
         assertThatThrownBy(() -> service.resolve("Personne-000")).isInstanceOf(UnknownRiotAccountException.class);
     }

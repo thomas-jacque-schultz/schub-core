@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+
+import java.time.Duration;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
@@ -20,8 +22,19 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
         this.restClient = restClient;
     }
 
+    private static final Duration RECENTE = Duration.ofHours(1);
+
     @Override
     public RiotIdResolution resolve(String gameName, String tagLine) {
+        return resolve(gameName, tagLine, null);
+    }
+
+    @Override
+    public RiotIdResolution resolveRecent(String gameName, String tagLine) {
+        return resolve(gameName, tagLine, RECENTE);
+    }
+
+    private RiotIdResolution resolve(String gameName, String tagLine, Duration maxAge) {
         if (gameName == null || gameName.isBlank() || tagLine == null || tagLine.isBlank()) {
             return RiotIdResolution.unavailable();
         }
@@ -30,6 +43,7 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
                     .uri(uri -> uri.path("/players")
                             .queryParam("gameName", gameName)
                             .queryParam("tagLine", tagLine)
+                            .queryParamIfPresent("maxAge", java.util.Optional.ofNullable(maxAge))
                             .build())
                     .retrieve()
                     .body(PlayerIdentityResponse.class);
