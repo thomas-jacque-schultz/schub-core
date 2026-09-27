@@ -136,6 +136,24 @@ public class HttpRiotConnectorService implements RiotConnectorService {
         }
     }
 
+    @Override
+    public List<String> trackedRiotIds(int limit) {
+        try {
+            List<TrackedResponse> found = restClient.get()
+                    .uri(uri -> uri.path("/players/tracked").queryParam("limit", limit).build())
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<List<TrackedResponse>>() { });
+            return found == null ? List.of()
+                    : found.stream().map(joueur -> joueur.gameName() + "#" + joueur.tagLine()).toList();
+        } catch (RestClientException indisponible) {
+            log.warn("Liste des joueurs relevés indisponible ({})", indisponible.getMessage());
+            return List.of();
+        }
+    }
+
+    record TrackedResponse(String gameName, String tagLine) {
+    }
+
     record IngestResponse(long pending, long running, Instant estimatedReadyAt, long priorityPending) {
     }
 

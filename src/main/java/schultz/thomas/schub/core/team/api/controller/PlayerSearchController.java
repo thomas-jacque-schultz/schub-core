@@ -21,6 +21,12 @@ public class PlayerSearchController {
 
     private final RiotConnectorService riotConnector;
 
+    // Pour le plan du site : des Riot ID, jamais de puuid.
+    @GetMapping("/tracked")
+    public List<String> tracked(@RequestParam(defaultValue = "50000") int limit) {
+        return riotConnector.trackedRiotIds(Math.clamp(limit, 1, 50_000));
+    }
+
     @GetMapping("/search")
     public List<PlayerSuggestionDto> search(@RequestParam String q,
                                             @RequestParam(defaultValue = "8") int limit) {
