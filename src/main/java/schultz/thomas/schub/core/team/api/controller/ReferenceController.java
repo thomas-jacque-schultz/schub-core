@@ -30,10 +30,10 @@ public class ReferenceController {
 
     @GetMapping("/champions/{championId}")
     public ResponseEntity<ChampionGridDto> champion(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable int championId,
             @RequestParam String tier) {
-        userService.requireActor(actorDiscordId);
+        userService.requireActor(actorId);
         return statsGateway.championGrid(championId, tier)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
@@ -41,12 +41,12 @@ public class ReferenceController {
 
     @GetMapping("/{position}")
     public ResponseEntity<ReferenceGridDto> grid(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String position,
             @RequestParam(defaultValue = "MEAN") String scope,
             @RequestParam(required = false) String tier,
             @RequestParam(required = false) String patch) {
-        userService.requireActor(actorDiscordId);
+        userService.requireActor(actorId);
         if (!POSTES.contains(position) || !PORTEES.contains(scope)) {
             return ResponseEntity.badRequest().build();
         }

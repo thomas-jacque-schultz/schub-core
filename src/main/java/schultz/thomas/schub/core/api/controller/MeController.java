@@ -20,15 +20,15 @@ public class MeController {
     private final UserService userService;
 
     @GetMapping
-    public MeDto me(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        return userService.toMeDto(userService.requireActor(actorDiscordId));
+    public MeDto me(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        return userService.toMeDto(userService.requireActor(actorId));
     }
 
     @PutMapping("/display-name")
     public MeDto changeDisplayName(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody DisplayNameRequest request) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return userService.toMeDto(userService.changeDisplayName(actor, request.displayName()));
     }
 }

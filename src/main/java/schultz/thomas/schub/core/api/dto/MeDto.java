@@ -10,7 +10,8 @@ public record MeDto(
         String displayName,
         boolean displayNameChosen,
         RoleSummaryDto role,
-        RiotAccountDto riot
+        RiotAccountDto riot,
+        AccountLinksDto links
 ) {
 
     public record DiscordIdentityDto(String id, String username, String avatarUrl) {

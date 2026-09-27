@@ -38,7 +38,7 @@ public class PermissionEvaluator {
     public void require(User actor, Permission permission, ResourceRef resource) {
         if (!can(actor, permission, resource)) {
             log.warn("Refus : {} n'a pas {} sur {}",
-                    actor != null ? actor.getDiscordId() : "(acteur absent)", permission, resource);
+                    actor != null ? actor.getId() : "(acteur absent)", permission, resource);
             throw new AccessDeniedException("Permission " + permission + " requise");
         }
     }
@@ -54,7 +54,7 @@ public class PermissionEvaluator {
                         : EnumSet.copyOf(permissions))
                 .orElseGet(() -> {
                     log.warn("L'utilisateur {} porte un rôle inconnu ({}) — traité comme sans droits",
-                            actor.getDiscordId(), actor.getRoleId());
+                            actor.getId(), actor.getRoleId());
                     return EnumSet.noneOf(Permission.class);
                 });
     }

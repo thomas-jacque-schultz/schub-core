@@ -27,28 +27,28 @@ public class ChampionPoolController {
 
     @GetMapping
     public ChampionPoolDto byTeam(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestParam(required = false) Integer masteryFloor) {
-        return championPoolService.of(userService.requireActor(actorDiscordId), teamId, masteryFloor);
+        return championPoolService.of(userService.requireActor(actorId), teamId, masteryFloor);
     }
 
     @PutMapping("/roles/{role}")
     public ChampionPoolDto setChampions(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable GameRole role,
             @RequestBody PoolChampionsRequest request) {
-        return championPoolService.setChampions(userService.requireActor(actorDiscordId), teamId, role,
+        return championPoolService.setChampions(userService.requireActor(actorId), teamId, role,
                 request == null ? null : request.championKeys());
     }
 
     @PutMapping("/mastery-floor")
     public ChampionPoolDto setMasteryFloor(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestBody PoolMasteryFloorRequest request) {
-        return championPoolService.setMasteryFloor(userService.requireActor(actorDiscordId), teamId,
+        return championPoolService.setMasteryFloor(userService.requireActor(actorId), teamId,
                 request == null ? 0 : request.masteryFloor());
     }
 }

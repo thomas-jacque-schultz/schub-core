@@ -30,28 +30,28 @@ public class MyStatsController {
 
     @GetMapping
     public MyStatsDto mine(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer champions) {
-        return myStatsService.of(userService.requireActor(actorDiscordId), windows.days(days, patches), champions);
+        return myStatsService.of(userService.requireActor(actorId), windows.days(days, patches), champions);
     }
 
     @GetMapping("/games")
     public MyGamesDto games(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer limit) {
-        return myGames.games(userService.requireActor(actorDiscordId), windows.days(days, patches), limit);
+        return myGames.games(userService.requireActor(actorId), windows.days(days, patches), limit);
     }
 
     @GetMapping("/games/{matchId}")
     public TeamGameDetailDto game(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String matchId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return myGames.game(userService.requireActor(actorDiscordId), matchId, windows.days(days, patches));
+        return myGames.game(userService.requireActor(actorId), matchId, windows.days(days, patches));
     }
 }

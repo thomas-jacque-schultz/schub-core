@@ -36,49 +36,49 @@ public class TeamController {
     private final UserService userService;
 
     @GetMapping
-    public List<TeamSummaryDto> mine(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        User actor = userService.requireActor(actorDiscordId);
+    public List<TeamSummaryDto> mine(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        User actor = userService.requireActor(actorId);
         return projectionService.toSummaries(teamService.mine(actor), actor);
     }
 
     @GetMapping("/{teamId}")
-    public TeamDto byId(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+    public TeamDto byId(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                         @PathVariable String teamId) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return projectionService.toDto(teamService.requireVisible(actor, teamId), actor);
     }
 
     @PostMapping
     public ResponseEntity<TeamDto> create(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody TeamNameRequest request) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         Team created = teamService.create(actor, request.name());
         return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toDto(created, actor));
     }
 
     @PutMapping("/{teamId}")
-    public TeamDto rename(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+    public TeamDto rename(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                           @PathVariable String teamId,
                           @RequestBody TeamNameRequest request) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return projectionService.toDto(teamService.rename(actor, teamId, request.name()), actor);
     }
 
     @DeleteMapping("/{teamId}")
     public ResponseEntity<Void> delete(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId) {
-        teamService.delete(userService.requireActor(actorDiscordId), teamId);
+        teamService.delete(userService.requireActor(actorId), teamId);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{teamId}/members")
     public ResponseEntity<TeamDto> addMember(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestBody AddMemberRequest request) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         Team team = teamService.addMember(actor, teamId, new TeamService.NewMember(
                 request.riotGameName(), request.riotTagLine(), request.riotPuuid(),
                 request.roles(), request.status(), Boolean.TRUE.equals(request.coach())));
@@ -87,11 +87,11 @@ public class TeamController {
 
     @PutMapping("/{teamId}/members/{memberId}")
     public TeamDto updateMember(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String memberId,
             @RequestBody UpdateMemberRequest request) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return projectionService.toDto(
                 teamService.updateMember(actor, teamId, memberId, request.roles(), request.status(),
                         request.coach()), actor);
@@ -99,17 +99,17 @@ public class TeamController {
 
     @DeleteMapping("/{teamId}/members/{memberId}")
     public TeamDto removeMember(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String memberId) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return projectionService.toDto(teamService.removeMember(actor, teamId, memberId), actor);
     }
 
     @PostMapping("/claim")
     public List<TeamSummaryDto> claim(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        User actor = userService.requireActor(actorDiscordId);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        User actor = userService.requireActor(actorId);
         return projectionService.toSummaries(teamService.claim(actor), actor);
     }
 }

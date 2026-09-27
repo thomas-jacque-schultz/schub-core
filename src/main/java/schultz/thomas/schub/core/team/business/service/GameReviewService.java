@@ -76,7 +76,7 @@ public class GameReviewService {
 
         GameReview creee = reviewRepository.save(revue);
         log.info("Note de revue écrite sur la partie {} de l'équipe « {} » par {}",
-                matchId, team.getName(), actor.getDiscordId());
+                matchId, team.getName(), actor.getId());
         return projette(creee, team, actor, identites(team, List.of(creee)));
     }
 

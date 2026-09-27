@@ -51,8 +51,8 @@ public class PortForwardingController {
 
     @GetMapping("/rules")
     public ResponseEntity<List<PortRule>> listRules(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        require(actorDiscordId, Permission.PORT_VIEW);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        require(actorId, Permission.PORT_VIEW);
         if (!portForwardingProperties.isEnabled()) {
             return ResponseEntity.status(503).build();
         }
@@ -61,16 +61,16 @@ public class PortForwardingController {
 
     @GetMapping("/static-rules")
     public List<StaticPortRuleDto> listStaticRules(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        require(actorDiscordId, Permission.PORT_VIEW);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        require(actorId, Permission.PORT_VIEW);
         return staticPortRuleMapper.toDtos(staticPortRuleService.findAll());
     }
 
     @PostMapping("/static-rules")
     public ResponseEntity<StaticPortRuleDto> createStaticRule(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody StaticPortRuleRequest request) {
-        require(actorDiscordId, Permission.PORT_RULE_EDIT);
+        require(actorId, Permission.PORT_RULE_EDIT);
         StaticPortRuleEntity created = staticPortRuleService.create(staticPortRuleMapper.toEntity(request));
         reconcileQuietly("ajout de " + created.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(staticPortRuleMapper.toDto(created));
@@ -78,9 +78,9 @@ public class PortForwardingController {
 
     @DeleteMapping("/static-rules/{id}")
     public ResponseEntity<Void> deleteStaticRule(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String id) {
-        require(actorDiscordId, Permission.PORT_RULE_EDIT);
+        require(actorId, Permission.PORT_RULE_EDIT);
         if (!staticPortRuleService.delete(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -90,15 +90,15 @@ public class PortForwardingController {
 
     @PostMapping("/reconcile")
     public PortForwardingReport reconcile(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        require(actorDiscordId, Permission.PORT_RULE_EDIT);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        require(actorId, Permission.PORT_RULE_EDIT);
         return portForwardingService.reconcile();
     }
 
     @GetMapping("/status")
     public Map<String, Object> status(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        require(actorDiscordId, Permission.PORT_VIEW);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        require(actorId, Permission.PORT_VIEW);
         return Map.of(
                 "enabled", portForwardingProperties.isEnabled(),
                 "dryRun", portForwardingProperties.isDryRun(),
@@ -109,8 +109,8 @@ public class PortForwardingController {
         );
     }
 
-    private void require(String actorDiscordId, Permission permission) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), permission, null);
+    private void require(String actorId, Permission permission) {
+        permissionEvaluator.require(userService.requireActor(actorId), permission, null);
     }
 
     private void reconcileQuietly(String cause) {

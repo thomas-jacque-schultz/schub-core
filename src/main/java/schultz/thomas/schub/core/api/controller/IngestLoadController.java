@@ -28,8 +28,8 @@ public class IngestLoadController {
 
     @GetMapping("/load")
     public ResponseEntity<IngestLoadDto> load(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.INGEST_VIEW, null);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_VIEW, null);
 
         return ResponseEntity.ok(riotConnector.load()
                 .map(IngestLoadDto::from)
@@ -38,8 +38,8 @@ public class IngestLoadController {
 
     @GetMapping("/summary")
     public ResponseEntity<IngestSummaryDto> summary(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.INGEST_MANAGE, null);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
         return ResponseEntity.ok(riotConnector.summary()
                 .map(IngestSummaryDto::from)
@@ -48,8 +48,8 @@ public class IngestLoadController {
 
     @GetMapping("/crawler")
     public ResponseEntity<CrawlerDto> crawler(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.INGEST_VIEW, null);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_VIEW, null);
 
         return ResponseEntity.ok(riotConnector.crawler()
                 .map(CrawlerDto::from)
@@ -58,9 +58,9 @@ public class IngestLoadController {
 
     @PutMapping("/crawler")
     public ResponseEntity<CrawlerDto> toggleCrawler(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody CrawlerToggleRequest request) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.INGEST_MANAGE, null);
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
         return ResponseEntity.ok(CrawlerDto.from(riotConnector.toggleCrawler(request.enabled())));
     }

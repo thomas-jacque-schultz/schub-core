@@ -85,7 +85,7 @@ public class TeamService {
         team.setUpdatedAt(team.getCreatedAt());
 
         Team created = teamRepository.save(team);
-        log.info("Équipe « {} » créée par {}", created.getName(), actor.getDiscordId());
+        log.info("Équipe « {} » créée par {}", created.getName(), actor.getId());
         return created;
     }
 
@@ -103,7 +103,7 @@ public class TeamService {
         championPoolRepository.deleteById(teamId);
         reviewRepository.deleteByTeamId(teamId);
         teamRepository.delete(team);
-        log.info("Équipe « {} » supprimée par {}", team.getName(), actor.getDiscordId());
+        log.info("Équipe « {} » supprimée par {}", team.getName(), actor.getId());
     }
 
     public Team addMember(User actor, String teamId, NewMember demande) {
@@ -244,7 +244,7 @@ public class TeamService {
             }
             modifiee = true;
             log.info("Membre {} de l'équipe « {} » revendiqué par {}",
-                    member.riotId(), team.getName(), actor.getDiscordId());
+                    member.riotId(), team.getName(), actor.getId());
         }
         return modifiee;
     }
@@ -260,7 +260,7 @@ public class TeamService {
             return false;
         }
         log.info("Place de {} dans l'équipe « {} » resynchronisée sur son compte Riot courant : {} devient {}",
-                actor.getDiscordId(), teamName, member.riotId(), riotIdDe(gameName, tagLine));
+                actor.getId(), teamName, member.riotId(), riotIdDe(gameName, tagLine));
         if (puuid != null) {
             member.setRiotPuuid(puuid);
         }
