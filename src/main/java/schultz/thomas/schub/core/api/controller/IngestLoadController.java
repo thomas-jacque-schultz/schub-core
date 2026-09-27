@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.dto.CrawlerDto;
 import schultz.thomas.schub.core.api.dto.CrawlerToggleRequest;
 import schultz.thomas.schub.core.api.dto.IngestLoadDto;
+import schultz.thomas.schub.core.api.dto.IngestSummaryDto;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
@@ -33,6 +34,16 @@ public class IngestLoadController {
         return ResponseEntity.ok(riotConnector.load()
                 .map(IngestLoadDto::from)
                 .orElseGet(IngestLoadDto::unavailable));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<IngestSummaryDto> summary(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
+        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.INGEST_MANAGE, null);
+
+        return ResponseEntity.ok(riotConnector.summary()
+                .map(IngestSummaryDto::from)
+                .orElseGet(IngestSummaryDto::unavailable));
     }
 
     @GetMapping("/crawler")

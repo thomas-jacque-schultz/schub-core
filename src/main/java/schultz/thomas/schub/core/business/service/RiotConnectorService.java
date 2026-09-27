@@ -13,6 +13,8 @@ public interface RiotConnectorService {
 
     Optional<IngestLoad> load();
 
+    Optional<IngestSummary> summary();
+
     Optional<Crawler> crawler();
 
     Crawler toggleCrawler(boolean enabled);
@@ -20,6 +22,12 @@ public interface RiotConnectorService {
     List<KnownPlayer> search(String query, int limit);
 
     record PlayerIngest(long pending, long running, Instant estimatedReadyAt) {
+    }
+
+    record IngestSummary(Counts matches, Counts profiles) {
+
+        public record Counts(long retrieved, long analysed, long pending) {
+        }
     }
 
     record IngestLoad(long pending, long running, long failed, double callsPerMinute,
