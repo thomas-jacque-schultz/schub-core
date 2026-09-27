@@ -29,41 +29,41 @@ public class GameReviewController {
 
     @GetMapping
     public GameReviewsDto ofGame(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String matchId) {
-        return reviewService.ofGame(userService.requireActor(actorDiscordId), teamId, matchId);
+        return reviewService.ofGame(userService.requireActor(actorId), teamId, matchId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public GameReviewDto create(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String matchId,
             @RequestBody GameReviewRequest request) {
-        return reviewService.create(userService.requireActor(actorDiscordId), teamId, matchId,
+        return reviewService.create(userService.requireActor(actorId), teamId, matchId,
                 request.subjectMemberId(), request.content());
     }
 
     @PutMapping("/{reviewId}")
     public GameReviewDto update(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String matchId,
             @PathVariable String reviewId,
             @RequestBody GameReviewRequest request) {
-        return reviewService.update(userService.requireActor(actorDiscordId), teamId, matchId,
+        return reviewService.update(userService.requireActor(actorId), teamId, matchId,
                 reviewId, request.content());
     }
 
     @DeleteMapping("/{reviewId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String matchId,
             @PathVariable String reviewId) {
-        reviewService.delete(userService.requireActor(actorDiscordId), teamId, matchId, reviewId);
+        reviewService.delete(userService.requireActor(actorId), teamId, matchId, reviewId);
     }
 }

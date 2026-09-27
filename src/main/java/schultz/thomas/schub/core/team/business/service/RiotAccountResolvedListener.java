@@ -18,7 +18,6 @@ public class RiotAccountResolvedListener {
     public void onResolved(RiotAccountResolved event) {
         User porteur = new User();
         porteur.setId(event.userId());
-        porteur.setDiscordId(event.discordId());
         porteur.setRiotPuuid(event.puuid());
         porteur.setRiotGameName(event.gameName());
         porteur.setRiotTagLine(event.tagLine());

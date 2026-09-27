@@ -36,54 +36,54 @@ public class TeamStatsController {
 
     @GetMapping("/refresh")
     public StatsRefreshDto refreshStatus(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId) {
-        return refresh.status(userService.requireActor(actorDiscordId), teamId);
+        return refresh.status(userService.requireActor(actorId), teamId);
     }
 
     @PostMapping("/refresh")
     public StatsRefreshDto refresh(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId) {
-        return refresh.refresh(userService.requireActor(actorDiscordId), teamId);
+        return refresh.refresh(userService.requireActor(actorId), teamId);
     }
 
     @GetMapping("/players")
     public TeamPlayersStatsDto players(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer champions) {
-        return playersStats.of(userService.requireActor(actorDiscordId), teamId, windows.days(days, patches), champions);
+        return playersStats.of(userService.requireActor(actorId), teamId, windows.days(days, patches), champions);
     }
 
     @GetMapping("/team")
     public TeamGamesStatsDto team(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer limit) {
-        return gamesStats.of(userService.requireActor(actorDiscordId), teamId, windows.days(days, patches), limit);
+        return gamesStats.of(userService.requireActor(actorId), teamId, windows.days(days, patches), limit);
     }
 
     @GetMapping("/games/{matchId}")
     public TeamGameDetailDto game(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String matchId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return gamesStats.detail(userService.requireActor(actorDiscordId), teamId, matchId, windows.days(days, patches));
+        return gamesStats.detail(userService.requireActor(actorId), teamId, matchId, windows.days(days, patches));
     }
 
     @GetMapping("/opposition")
     public TeamOppositionDto opposition(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return opposition.of(userService.requireActor(actorDiscordId), teamId, windows.days(days, patches));
+        return opposition.of(userService.requireActor(actorId), teamId, windows.days(days, patches));
     }
 }

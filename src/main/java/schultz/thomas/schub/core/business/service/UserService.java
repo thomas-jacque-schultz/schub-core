@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.api.dto.AccountLinksDto;
 import schultz.thomas.schub.core.api.dto.MeDto;
 import schultz.thomas.schub.core.api.dto.UserDto;
 import schultz.thomas.schub.core.api.dto.UserIdentityDto;
@@ -41,6 +42,10 @@ public class UserService {
                 : userRepository.findByDiscordId(discordId);
     }
 
+    public Optional<User> findById(String id) {
+        return id == null || id.isBlank() ? Optional.empty() : userRepository.findById(id);
+    }
+
     public Optional<User> findByRiotPuuid(String riotPuuid) {
         return riotPuuid == null || riotPuuid.isBlank()
                 ? Optional.empty()
@@ -48,8 +53,8 @@ public class UserService {
     }
 
     // En-tête absent = service Schub agissant pour son compte. En-tête présent mais inconnu = refus.
-    public User requireActor(String actorDiscordId) {
-        return findByDiscordId(actorDiscordId)
+    public User requireActor(String actorId) {
+        return findById(actorId)
                 .orElseThrow(() -> new AccessDeniedException(
                         "Acteur inconnu ou absent — en-tête X-Actor-Id requis"));
     }
@@ -88,7 +93,7 @@ public class UserService {
         String propre = displayName == null ? null : displayName.trim();
         if (propre == null || propre.isEmpty()) {
             actor.setDisplayName(null);
-            log.info("Nom d'affichage de {} rendu au pseudo Discord", actor.getDiscordId());
+            log.info("Nom d'affichage de {} rendu au pseudo Discord", actor.getId());
             return userRepository.save(actor);
         }
         if (propre.length() > DISPLAY_NAME_MAX) {
@@ -112,7 +117,8 @@ public class UserService {
                 user.getDisplayName() != null && !user.getDisplayName().isBlank(),
                 new MeDto.RoleSummaryDto(role == null ? null : role.getName(),
                         permissionEvaluator.rolePermissions(user)),
-                riotAccountService.of(user));
+                riotAccountService.of(user),
+                AccountLinksDto.of(user));
     }
 
     public List<User> findAll() {
@@ -152,7 +158,7 @@ public class UserService {
         }
 
         target.setRoleId(candidate.getId());
-        log.info("Rôle de {} changé en {} par {}", target.getDiscordId(), candidate.getName(), actor.getDiscordId());
+        log.info("Rôle de {} changé en {} par {}", target.getId(), candidate.getName(), actor.getId());
         return userRepository.save(target);
     }
 
@@ -192,7 +198,8 @@ public class UserService {
                 user.getRiotGameName(),
                 user.getRiotTagLine(),
                 user.getCreatedAt(),
-                user.getLastLoginAt());
+                user.getLastLoginAt(),
+                AccountLinksDto.of(user));
     }
 
     public Map<String, User> byIds(Set<String> ids) {

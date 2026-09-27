@@ -37,29 +37,29 @@ public class CompositionController {
 
     @GetMapping
     public List<CompositionDto> all(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return projectionService.toDtos(
                 compositionService.ofTeam(actor, teamId), teamService.require(teamId), actor);
     }
 
     @GetMapping("/{compositionId}")
     public CompositionDto byId(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String compositionId) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return projectionService.toDto(
                 compositionService.require(actor, teamId, compositionId), teamService.require(teamId), actor);
     }
 
     @PostMapping
     public ResponseEntity<CompositionDto> create(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestBody CompositionRequest request) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         CompositionDto dto = projectionService.toDto(
                 compositionService.create(actor, teamId, toDraft(request)), teamService.require(teamId), actor);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
@@ -67,11 +67,11 @@ public class CompositionController {
 
     @PutMapping("/{compositionId}")
     public CompositionDto update(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String compositionId,
             @RequestBody CompositionRequest request) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         return projectionService.toDto(
                 compositionService.update(actor, teamId, compositionId, toDraft(request)),
                 teamService.require(teamId), actor);
@@ -79,10 +79,10 @@ public class CompositionController {
 
     @DeleteMapping("/{compositionId}")
     public ResponseEntity<Void> delete(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @PathVariable String compositionId) {
-        compositionService.delete(userService.requireActor(actorDiscordId), teamId, compositionId);
+        compositionService.delete(userService.requireActor(actorId), teamId, compositionId);
         return ResponseEntity.noContent().build();
     }
 

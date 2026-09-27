@@ -32,8 +32,8 @@ public class RoleController {
     private final PermissionEvaluator permissionEvaluator;
 
     @GetMapping
-    public List<RoleDto> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        User actor = userService.requireActor(actorDiscordId);
+    public List<RoleDto> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        User actor = userService.requireActor(actorId);
         if (!permissionEvaluator.can(actor, Permission.USER_VIEW, null)
                 && !permissionEvaluator.can(actor, Permission.ROLE_MANAGE, null)) {
             throw new AccessDeniedException("Permission USER_VIEW ou ROLE_MANAGE requise");
@@ -43,30 +43,30 @@ public class RoleController {
 
     @PostMapping
     public ResponseEntity<RoleDto> create(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody RoleDto body) {
-        requireRoleManage(actorDiscordId);
+        requireRoleManage(actorId);
         return ResponseEntity.status(HttpStatus.CREATED).body(roleService.toDto(roleService.create(body)));
     }
 
     @PutMapping("/{id}")
-    public RoleDto update(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+    public RoleDto update(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                           @PathVariable String id,
                           @RequestBody RoleDto body) {
-        requireRoleManage(actorDiscordId);
+        requireRoleManage(actorId);
         return roleService.toDto(roleService.update(id, body));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String id) {
-        requireRoleManage(actorDiscordId);
+        requireRoleManage(actorId);
         roleService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    private void requireRoleManage(String actorDiscordId) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.ROLE_MANAGE, null);
+    private void requireRoleManage(String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.ROLE_MANAGE, null);
     }
 }

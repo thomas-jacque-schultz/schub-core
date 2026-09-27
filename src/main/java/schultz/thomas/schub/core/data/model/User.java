@@ -14,13 +14,14 @@ public class User {
     @Id
     private String id;
 
-    @Indexed(unique = true)
+    // Absent pour un compte créé sans Discord : unique quand il est présent.
+    @Indexed(unique = true, sparse = true)
     private String discordId;
 
     private String discordUsername;
     private String avatarUrl;
 
-    // null tant que non choisi, pour que le pseudo Discord continue de suivre. Pas unique : discordId est la seule clé.
+    // null tant que non choisi, pour que le pseudo Discord continue de suivre. Pas unique.
     private String displayName;
 
     private String roleId;

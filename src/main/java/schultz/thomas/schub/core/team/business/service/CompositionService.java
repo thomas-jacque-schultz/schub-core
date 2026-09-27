@@ -62,7 +62,7 @@ public class CompositionService {
 
         Composition created = compositionRepository.save(composition);
         log.info("Composition « {} » créée pour l'équipe « {} » par {}",
-                created.getName(), team.getName(), actor.getDiscordId());
+                created.getName(), team.getName(), actor.getId());
         return created;
     }
 

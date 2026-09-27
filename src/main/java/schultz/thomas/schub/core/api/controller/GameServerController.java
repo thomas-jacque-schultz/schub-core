@@ -40,8 +40,8 @@ public class GameServerController {
     private final GameServerMapper mapper;
 
     @GetMapping
-    public List<?> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        Optional<User> actor = readActor(actorDiscordId);
+    public List<?> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        Optional<User> actor = readActor(actorId);
         actor.ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
         return projectionService.project(gameServerService.findAll(), actor.orElse(null));
     }
@@ -57,9 +57,9 @@ public class GameServerController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> byId(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+    public ResponseEntity<?> byId(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                   @PathVariable String id) {
-        Optional<User> actor = readActor(actorDiscordId);
+        Optional<User> actor = readActor(actorId);
         actor.ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
         return gameServerService.findById(id)
                 .map(server -> projectionService.project(server, actor.orElse(null)))
@@ -69,9 +69,9 @@ public class GameServerController {
 
     @PostMapping
     public ResponseEntity<GameServerDto> create(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody GameServerDto dto) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.SERVER_CREATE, null);
         GameServer created = gameServerService.create(mapper.toEntity(dto));
         return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created));
@@ -79,10 +79,10 @@ public class GameServerController {
 
     @PutMapping("/{id}")
     public ResponseEntity<GameServerDto> update(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String id,
             @RequestBody GameServerDto dto) {
-        User actor = userService.requireActor(actorDiscordId);
+        User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.SERVER_EDIT, null);
         GameServer updated = gameServerService.update(id, mapper.toEntity(dto));
         return ResponseEntity.ok(projectionService.toInfraDto(updated));
@@ -90,9 +90,9 @@ public class GameServerController {
 
     @PostMapping("/{slug}/start")
     public ResponseEntity<Void> start(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String slug) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId),
+        permissionEvaluator.require(userService.requireActor(actorId),
                 Permission.SERVER_START, null);
         deploymentService.start(gameServerService.requireBySlug(slug));
         return ResponseEntity.accepted().build();
@@ -100,27 +100,27 @@ public class GameServerController {
 
     @PostMapping("/{slug}/stop")
     public ResponseEntity<Void> stop(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId,
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String slug) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId),
+        permissionEvaluator.require(userService.requireActor(actorId),
                 Permission.SERVER_STOP, null);
         deploymentService.stop(gameServerService.requireBySlug(slug));
         return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/games")
-    public List<GameDto> games(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        readActor(actorDiscordId).ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
+    public List<GameDto> games(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        readActor(actorId).ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
         return java.util.Arrays.stream(Game.values())
                 .map(game -> new GameDto(game.name(), game.getLabel(), game.getIconUrl()))
                 .toList();
     }
 
-    private Optional<User> readActor(String actorDiscordId) {
-        if (actorDiscordId == null || actorDiscordId.isBlank()) {
+    private Optional<User> readActor(String actorId) {
+        if (actorId == null || actorId.isBlank()) {
             return Optional.empty();
         }
-        return Optional.of(userService.requireActor(actorDiscordId));
+        return Optional.of(userService.requireActor(actorId));
     }
 
     public record GameDto(String name, String label, String iconUrl) {

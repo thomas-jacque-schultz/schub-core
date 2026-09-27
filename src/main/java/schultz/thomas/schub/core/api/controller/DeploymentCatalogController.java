@@ -28,8 +28,8 @@ public class DeploymentCatalogController {
 
     @GetMapping
     public List<PortainerStack> all(
-            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorDiscordId) {
-        permissionEvaluator.require(userService.requireActor(actorDiscordId), Permission.SERVER_INFRA_VIEW, null);
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.SERVER_INFRA_VIEW, null);
         return containerRequestService.listStacks();
     }
 }

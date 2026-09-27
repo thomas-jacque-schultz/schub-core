@@ -75,20 +75,20 @@ public class RiotAccountService {
         User enregistre = userRepository.save(actor);
         boolean collecteDemandee = demandeLaCollecte(enregistre, ancienPuuid, puuid);
         if (puuid != null && !puuid.equals(ancienPuuid)) {
-            events.publishEvent(new RiotAccountResolved(enregistre.getId(), enregistre.getDiscordId(),
+            events.publishEvent(new RiotAccountResolved(enregistre.getId(),
                 enregistre.getRiotPuuid(), enregistre.getRiotGameName(), enregistre.getRiotTagLine()));
         }
 
         if (puuid == null) {
             log.warn("Riot ID {} déclaré par {} sans puuid — le connecteur Riot n'a pas répondu, "
                             + "la déclaration est conservée et sera résolue à la prochaine tentative",
-                    riotId.riotId(), actor.getDiscordId());
+                    riotId.riotId(), actor.getId());
         } else if (remplacement) {
             log.info("Compte Riot de {} remplacé : {} devient {}",
-                    actor.getDiscordId(), ancienRiotId == null ? "(inconnu)" : ancienRiotId.riotId(),
+                    actor.getId(), ancienRiotId == null ? "(inconnu)" : ancienRiotId.riotId(),
                     riotId.riotId());
         } else {
-            log.info("Riot ID {} lié au compte {}", riotId.riotId(), actor.getDiscordId());
+            log.info("Riot ID {} lié au compte {}", riotId.riotId(), actor.getId());
         }
 
         RiotAccountDto dto = toDto(enregistre).withIngest(ingestOf(enregistre));
@@ -112,17 +112,17 @@ public class RiotAccountService {
         if (userRepository.findByRiotPuuid(resolution.puuid())
                 .filter(autre -> !autre.getId().equals(actor.getId())).isPresent()) {
             log.warn("Lien en attente de {} non résolu : le puuid est déjà revendiqué ailleurs",
-                    actor.getDiscordId());
+                    actor.getId());
             return false;
         }
 
         actor.setRiotPuuid(resolution.puuid());
         User enregistre = userRepository.save(actor);
         demandeLaCollecte(enregistre, null, resolution.puuid());
-        events.publishEvent(new RiotAccountResolved(enregistre.getId(), enregistre.getDiscordId(),
+        events.publishEvent(new RiotAccountResolved(enregistre.getId(),
                 enregistre.getRiotPuuid(), enregistre.getRiotGameName(), enregistre.getRiotTagLine()));
         log.info("Lien en attente de {} résolu à la connexion : {}#{}",
-                actor.getDiscordId(), gameName, tagLine);
+                actor.getId(), gameName, tagLine);
         return true;
     }
 
@@ -206,7 +206,7 @@ public class RiotAccountService {
         }
         boolean demandee = riotConnectorService.requestIngest(puuid);
         if (demandee) {
-            log.info("Collecte des parties demandée pour le compte {}", acteur.getDiscordId());
+            log.info("Collecte des parties demandée pour le compte {}", acteur.getId());
         }
         return demandee;
     }

@@ -13,6 +13,7 @@ public record UserDto(
         String riotGameName,
         String riotTagLine,
         Instant createdAt,
-        Instant lastLoginAt
+        Instant lastLoginAt,
+        AccountLinksDto links
 ) {
 }
