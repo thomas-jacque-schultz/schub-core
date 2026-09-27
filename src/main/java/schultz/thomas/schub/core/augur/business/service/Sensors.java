@@ -14,4 +14,7 @@ public interface Sensors {
 
     // Les moyennes d'un joueur sur la période, à son poste principal.
     Optional<Signals> habit(String puuid, Instant since);
+
+    // Une équipe sur la période : ses duos et la répartition de ses ressources.
+    Optional<Signals> team(String teamId, Instant since);
 }
