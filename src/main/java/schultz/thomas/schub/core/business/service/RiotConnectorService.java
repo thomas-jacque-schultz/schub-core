@@ -24,7 +24,12 @@ public interface RiotConnectorService {
 
     List<KnownPlayer> search(String query, int limit);
 
-    record PlayerIngest(long pending, long running, Instant estimatedReadyAt) {
+    // priorityPending : tâches demandées pour ce joueur (aperçu d'un joueur recherché) encore en file.
+    record PlayerIngest(long pending, long running, Instant estimatedReadyAt, long priorityPending) {
+
+        public PlayerIngest(long pending, long running, Instant estimatedReadyAt) {
+            this(pending, running, estimatedReadyAt, 0);
+        }
     }
 
     record IngestSummary(Counts matches, Counts profiles) {

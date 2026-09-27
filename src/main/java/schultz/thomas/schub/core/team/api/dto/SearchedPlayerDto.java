@@ -9,6 +9,8 @@ public record SearchedPlayerDto(
         String slug,
         boolean known,
         long knownGames,
+        // Son aperçu est en cours de collecte : ses dernières parties arrivent.
+        boolean collecting,
         List<RankedStandingDto> rankings,
         List<MasteryDto> masteries,
         MyStatsDto stats

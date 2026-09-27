@@ -45,7 +45,8 @@ public class SearchedPlayerService {
                 joueur.tagLine(),
                 slugOf(joueur.gameName(), joueur.tagLine()),
                 couverture.map(ligne -> ligne.lastSyncAt() != null).orElse(false),
-                couverture.map(RiotStatsGateway.Coverage::knownMatches).orElse(0L),
+                couverture.map(RiotStatsGateway.Coverage::analysedMatches).orElse(0L),
+                riotConnector.ingestOf(joueur.puuid()).map(en -> en.priorityPending() > 0).orElse(false),
                 playerStatsService.rankings(joueur.puuid()),
                 maitrises(joueur.puuid()),
                 myStats.of(joueur, days, champions));
