@@ -37,7 +37,8 @@ public class SearchedPlayerService {
     private final MyGamesService myGames;
     private final VisitorBudget budget;
 
-    public SearchedPlayerDto page(String slug, Integer days, Integer champions) {
+    // light : sans rang ni maîtrises, donc sans appel à Riot. Pour rafraîchir la page pendant une collecte.
+    public SearchedPlayerDto page(String slug, Integer days, Integer champions, boolean light) {
         PlayerRef joueur = resolve(slug);
         Optional<RiotStatsGateway.Coverage> couverture = couverture(joueur.puuid());
         return new SearchedPlayerDto(
@@ -47,8 +48,8 @@ public class SearchedPlayerService {
                 couverture.map(ligne -> ligne.lastSyncAt() != null).orElse(false),
                 couverture.map(RiotStatsGateway.Coverage::analysedMatches).orElse(0L),
                 riotConnector.ingestOf(joueur.puuid()).map(en -> en.priorityPending() > 0).orElse(false),
-                playerStatsService.rankings(joueur.puuid()),
-                maitrises(joueur.puuid()),
+                light ? List.of() : playerStatsService.rankings(joueur.puuid()),
+                light ? List.of() : maitrises(joueur.puuid()),
                 myStats.of(joueur, days, champions));
     }
 
