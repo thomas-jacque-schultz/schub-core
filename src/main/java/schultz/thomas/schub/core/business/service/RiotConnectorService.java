@@ -11,6 +11,9 @@ public interface RiotConnectorService {
 
     boolean requestIngest(String puuid);
 
+    // Joueur recherché : ses dernières parties d'abord ; slow, au compte-gouttes.
+    boolean requestPreview(String puuid, boolean slow);
+
     Optional<IngestLoad> load();
 
     Optional<IngestSummary> summary();

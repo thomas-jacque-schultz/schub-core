@@ -7,6 +7,7 @@ import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableExcept
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.business.model.PlayerRef;
 import schultz.thomas.schub.core.team.business.model.StatsState;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
@@ -30,26 +31,34 @@ public class MyGamesService {
     private final GameViews views;
 
     public MyGamesDto games(User actor, Integer days, Integer limit) {
-        String puuid = puuid(actor);
+        return games(joueur(actor), days, limit);
+    }
+
+    public TeamGameDetailDto game(User actor, String matchId, Integer days) {
+        return game(joueur(actor), matchId, days);
+    }
+
+    public MyGamesDto games(PlayerRef joueur, Integer days, Integer limit) {
+        String puuid = puuid(joueur);
         if (puuid == null) {
-            return vide(actor, days, StatsState.COMPTE_RIOT_ABSENT);
+            return vide(joueur, days, StatsState.COMPTE_RIOT_ABSENT);
         }
         int borne = limit == null ? PARTIES_DEFAUT : (int) Math.clamp(limit.longValue(), 1, PARTIES_MAX);
         Optional<RiotStatsGateway.SharedMatches> parties =
                 statsGateway.playerMatches(puuid, PlayerStatsService.depuis(days), borne);
         if (parties.isEmpty()) {
-            return vide(actor, days, StatsState.CONNECTEUR_INDISPONIBLE);
+            return vide(joueur, days, StatsState.CONNECTEUR_INDISPONIBLE);
         }
         if (parties.get().matches().isEmpty()) {
-            return vide(actor, days, etatSansPartie(puuid));
+            return vide(joueur, days, etatSansPartie(puuid));
         }
         return new MyGamesDto(days, StatsState.STATISTIQUES_CONNUES,
-                views.parties(parties.get().matches(), soi(actor, puuid), noms(actor)),
-                parties.get().totalMatches(), parties.get().truncated(), actor.getId(), Instant.now());
+                views.parties(parties.get().matches(), soi(joueur), noms(joueur)),
+                parties.get().totalMatches(), parties.get().truncated(), joueur.id(), Instant.now());
     }
 
-    public TeamGameDetailDto game(User actor, String matchId, Integer days) {
-        String puuid = puuid(actor);
+    public TeamGameDetailDto game(PlayerRef joueur, String matchId, Integer days) {
+        String puuid = puuid(joueur);
         if (puuid == null || matchId == null || matchId.isBlank()) {
             throw new NoSuchElementException("Aucune partie « " + matchId + " » pour ce compte");
         }
@@ -59,7 +68,7 @@ public class MyGamesService {
                 .filter(candidate -> matchId.equals(candidate.matchId()))
                 .findFirst()
                 .orElseThrow(() -> new NoSuchElementException("Aucune partie « " + matchId + " » pour ce compte"));
-        return views.detail(null, partie, soi(actor, puuid), noms(actor), actor.getId(), days);
+        return views.detail(null, partie, soi(joueur), noms(joueur), joueur.id(), days);
     }
 
     private StatsState etatSansPartie(String puuid) {
@@ -70,29 +79,33 @@ public class MyGamesService {
                 .orElse(StatsState.AUCUNE_PARTIE);
     }
 
-    private static MyGamesDto vide(User actor, Integer days, StatsState state) {
-        return new MyGamesDto(days, state, List.of(), 0, false, actor.getId(), Instant.now());
-    }
-
-    private static String puuid(User actor) {
-        String puuid = actor.getRiotPuuid();
-        return puuid == null || puuid.isBlank() ? null : puuid;
-    }
-
-    private static Map<String, TeamMember> soi(User actor, String puuid) {
-        TeamMember moi = new TeamMember();
-        moi.setMemberId(actor.getId());
-        moi.setUserId(actor.getId());
-        moi.setRiotPuuid(puuid);
-        moi.setRiotGameName(actor.getRiotGameName());
-        moi.setRiotTagLine(actor.getRiotTagLine());
-        return Map.of(puuid, moi);
-    }
-
-    private Map<String, String> noms(User actor) {
+    private PlayerRef joueur(User actor) {
         MemberDirectory.MemberIdentity identite = memberDirectory.byIds(Set.of(actor.getId())).get(actor.getId());
         String nom = identite != null && identite.displayName() != null && !identite.displayName().isBlank()
                 ? identite.displayName() : actor.getRiotGameName();
-        return nom == null ? Map.of() : Map.of(actor.getId(), nom);
+        return new PlayerRef(actor.getId(), nom, actor.getRiotPuuid(), actor.getRiotGameName(), actor.getRiotTagLine());
+    }
+
+    private static MyGamesDto vide(PlayerRef joueur, Integer days, StatsState state) {
+        return new MyGamesDto(days, state, List.of(), 0, false, joueur.id(), Instant.now());
+    }
+
+    private static String puuid(PlayerRef joueur) {
+        String puuid = joueur.puuid();
+        return puuid == null || puuid.isBlank() ? null : puuid;
+    }
+
+    private static Map<String, TeamMember> soi(PlayerRef joueur) {
+        TeamMember moi = new TeamMember();
+        moi.setMemberId(joueur.id());
+        moi.setUserId(joueur.id());
+        moi.setRiotPuuid(joueur.puuid());
+        moi.setRiotGameName(joueur.gameName());
+        moi.setRiotTagLine(joueur.tagLine());
+        return Map.of(joueur.puuid(), moi);
+    }
+
+    private static Map<String, String> noms(PlayerRef joueur) {
+        return joueur.displayName() == null ? Map.of() : Map.of(joueur.id(), joueur.displayName());
     }
 }
