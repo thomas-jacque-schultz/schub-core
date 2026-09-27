@@ -83,7 +83,7 @@ public class SearchedPlayerService {
         }
         String gameName = slug.substring(0, separateur).trim();
         String tagLine = slug.substring(separateur + 1).trim();
-        RiotIdResolution resolution = resolver.resolve(gameName, tagLine);
+        RiotIdResolution resolution = resolver.resolveRecent(gameName, tagLine);
         switch (resolution.outcome()) {
             case NOT_FOUND -> throw new UnknownRiotAccountException(gameName + "#" + tagLine);
             case BUSY -> throw new RiotConnectorBusyException();
