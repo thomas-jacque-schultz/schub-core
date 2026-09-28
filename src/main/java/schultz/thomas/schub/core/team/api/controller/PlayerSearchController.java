@@ -5,8 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import schultz.thomas.schub.core.api.controller.CoreHeaders;
+import schultz.thomas.schub.core.business.service.ActivityService;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
 import schultz.thomas.schub.core.team.api.dto.PlayerSuggestionDto;
@@ -23,6 +26,7 @@ public class PlayerSearchController {
     private static final int MAX_LIMIT = 10;
 
     private final RiotConnectorService riotConnector;
+    private final ActivityService activityService;
 
     // Pour le plan du site : des Riot ID, jamais de puuid.
     @GetMapping("/tracked")
@@ -40,11 +44,13 @@ public class PlayerSearchController {
 
     @GetMapping("/search")
     public List<PlayerSuggestionDto> search(@RequestParam String q,
-                                            @RequestParam(defaultValue = "8") int limit) {
+                                            @RequestParam(defaultValue = "8") int limit,
+                                            @RequestHeader(value = CoreHeaders.VISITOR, required = false) String visitor) {
         String pseudo = q.split("#")[0].trim();
         if (pseudo.length() < MIN_QUERY) {
             return List.of();
         }
+        activityService.recordSearch(visitor);
         return riotConnector.search(pseudo, Math.clamp(limit, 1, MAX_LIMIT)).stream()
                 .filter(joueur -> joueur.gameName() != null && joueur.tagLine() != null)
                 .map(joueur -> new PlayerSuggestionDto(joueur.riotId(), joueur.gameName(), joueur.tagLine(),
