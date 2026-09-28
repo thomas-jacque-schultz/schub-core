@@ -231,6 +231,19 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     }
 
     @Override
+    public Optional<TimelineHabits> timelineHabits(String puuid, Instant since) {
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri(uri -> uri.path("/stats/players/{puuid}/timeline-habits")
+                            .queryParamIfPresent("since", Optional.ofNullable(since)).build(puuid))
+                    .retrieve().body(TimelineHabits.class));
+        } catch (RestClientException e) {
+            log.warn("Habitudes de timeline non obtenues ({})", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public Optional<List<Standing>> rankings(String puuid) {
         if (puuid == null || puuid.isBlank()) {
             return Optional.of(List.of());
