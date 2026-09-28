@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.PlayerStatsDto;
+import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
 import schultz.thomas.schub.core.team.api.dto.TeamComparisonDto;
 import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
@@ -47,10 +48,14 @@ public class TeamPlayerStatsService {
         Map<String, PlayerStatsService.Figures> figures =
                 playerStatsService.of(puuids, since, championsMax);
         Map<String, MemberDirectory.MemberIdentity> identites = resoutLesComptes(joueurs);
+        Map<String, List<RankedStandingDto>> rangs = Parallele.parCle(figures.entrySet().stream()
+                .filter(entree -> entree.getValue().state() == StatsState.STATISTIQUES_CONNUES)
+                .map(Map.Entry::getKey)
+                .toList(), playerStatsService::rankings);
 
         List<PlayerStatsDto> colonnes = new ArrayList<>();
         for (TeamMember membre : joueurs) {
-            colonnes.add(colonne(membre, figures, identites));
+            colonnes.add(colonne(membre, figures, identites, rangs));
         }
         List<PlayerStatsDto> compares = comparent(colonnes);
 
@@ -78,7 +83,8 @@ public class TeamPlayerStatsService {
 
     private PlayerStatsDto colonne(TeamMember membre,
                                    Map<String, PlayerStatsService.Figures> figures,
-                                   Map<String, MemberDirectory.MemberIdentity> identites) {
+                                   Map<String, MemberDirectory.MemberIdentity> identites,
+                                   Map<String, List<RankedStandingDto>> rangs) {
         String puuid = membre.getRiotPuuid();
         PlayerStatsService.Figures chiffres =
                 puuid == null || puuid.isBlank() ? null : figures.get(puuid);
@@ -102,8 +108,7 @@ public class TeamPlayerStatsService {
                 chiffres == null ? List.of() : chiffres.positions(),
                 chiffres == null ? List.of() : chiffres.queues(),
                 chiffres == null ? List.of() : chiffres.months(),
-                state == StatsState.STATISTIQUES_CONNUES ? playerStatsService.rankings(puuid)
-                        : List.of(),
+                state == StatsState.STATISTIQUES_CONNUES ? rangs.getOrDefault(puuid, List.of()) : List.of(),
                 chiffres == null ? null : chiffres.references(),
                 null);
     }

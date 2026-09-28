@@ -11,6 +11,7 @@ import schultz.thomas.schub.core.business.service.RiotIdResolver;
 import schultz.thomas.schub.core.business.service.UnknownRiotAccountException;
 import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.team.api.dto.PlayerCollectDto;
+import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
 import schultz.thomas.schub.core.team.api.dto.SearchedPlayerDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
 import schultz.thomas.schub.core.team.business.model.PlayerRef;
@@ -40,6 +41,13 @@ public class SearchedPlayerService {
     // light : sans rang ni maîtrises, donc sans appel à Riot. Pour rafraîchir la page pendant une collecte.
     public SearchedPlayerDto page(String slug, Integer days, Integer champions, boolean light) {
         PlayerRef joueur = resolve(slug);
+        var rangs = Parallele.lance(() -> light ? List.<RankedStandingDto>of()
+                : playerStatsService.rankings(joueur.puuid()));
+        var maitrises = Parallele.lance(() -> light ? List.<SearchedPlayerDto.MasteryDto>of()
+                : maitrises(joueur.puuid()));
+        var enCollecte = Parallele.lance(() -> riotConnector.ingestOf(joueur.puuid())
+                .map(en -> en.priorityPending() > 0).orElse(false));
+        var stats = Parallele.lance(() -> myStats.of(joueur, days, champions));
         Optional<RiotStatsGateway.Coverage> couverture = couverture(joueur.puuid());
         return new SearchedPlayerDto(
                 joueur.gameName(),
@@ -47,10 +55,10 @@ public class SearchedPlayerService {
                 slugOf(joueur.gameName(), joueur.tagLine()),
                 couverture.map(ligne -> ligne.lastSyncAt() != null).orElse(false),
                 couverture.map(RiotStatsGateway.Coverage::analysedMatches).orElse(0L),
-                riotConnector.ingestOf(joueur.puuid()).map(en -> en.priorityPending() > 0).orElse(false),
-                light ? List.of() : playerStatsService.rankings(joueur.puuid()),
-                light ? List.of() : maitrises(joueur.puuid()),
-                myStats.of(joueur, days, champions));
+                Parallele.attend(enCollecte),
+                Parallele.attend(rangs),
+                Parallele.attend(maitrises),
+                Parallele.attend(stats));
     }
 
     public MyGamesDto games(String slug, Integer days, Integer limit) {
