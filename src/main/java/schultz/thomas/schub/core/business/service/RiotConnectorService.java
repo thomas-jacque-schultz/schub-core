@@ -24,6 +24,12 @@ public interface RiotConnectorService {
 
     Optional<HistoryWindow> historyWindow();
 
+    // Puuid refusés par Riot (relevés avec une autre clé) depuis une date.
+    List<String> stalePuuids(Instant since);
+
+    // Rend ceux qu'on sait déjà refusés ; les autres sont vérifiés en file et apparaîtront dans stalePuuids.
+    List<String> checkPuuids(java.util.Collection<String> puuids);
+
     HistoryWindow updateHistoryWindow(HistoryWindow window);
 
     List<KnownPlayer> search(String query, int limit);

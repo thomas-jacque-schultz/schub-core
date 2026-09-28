@@ -88,6 +88,34 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     @Override
+    public List<String> stalePuuids(Instant since) {
+        try {
+            List<String> perimes = restClient.get()
+                    .uri(uri -> uri.path("/puuids/stale").queryParam("since", since).build())
+                    .retrieve().body(new ParameterizedTypeReference<List<String>>() { });
+            return perimes == null ? List.of() : perimes;
+        } catch (RestClientException indisponible) {
+            log.debug("Puuid périmés indisponibles : {}", indisponible.getMessage());
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<String> checkPuuids(java.util.Collection<String> puuids) {
+        if (puuids.isEmpty()) {
+            return List.of();
+        }
+        try {
+            List<String> perimes = restClient.post().uri("/puuids/check").body(Map.of("puuids", List.copyOf(puuids)))
+                    .retrieve().body(new ParameterizedTypeReference<List<String>>() { });
+            return perimes == null ? List.of() : perimes;
+        } catch (RestClientException indisponible) {
+            log.warn("Vérification des puuid impossible : {}", indisponible.getMessage());
+            return List.of();
+        }
+    }
+
+    @Override
     public Optional<HistoryWindow> historyWindow() {
         try {
             return Optional.ofNullable(restClient.get().uri("/ingest/history-window").retrieve()
