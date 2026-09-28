@@ -1,11 +1,14 @@
 package schultz.thomas.schub.core.team.api.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
+import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
 import schultz.thomas.schub.core.team.api.dto.PlayerSuggestionDto;
 
 import java.util.List;
@@ -25,6 +28,14 @@ public class PlayerSearchController {
     @GetMapping("/tracked")
     public List<String> tracked(@RequestParam(defaultValue = "50000") int limit) {
         return riotConnector.trackedRiotIds(Math.clamp(limit, 1, 50_000));
+    }
+
+    // La présentation publique dit ce que couvre l'historique d'un joueur.
+    @GetMapping("/history-window")
+    public ResponseEntity<HistoryWindow> historyWindow() {
+        return riotConnector.historyWindow()
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
     }
 
     @GetMapping("/search")
