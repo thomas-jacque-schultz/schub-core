@@ -13,4 +13,9 @@ public interface TeamRepository extends MongoRepository<Team, String> {
     List<Team> findByMembersUserId(String userId);
 
     List<Team> findByCreatedBy(String createdBy);
+
+    List<Team> findByMembersRiotPuuidIn(java.util.Collection<String> riotPuuids);
+
+    @org.springframework.data.mongodb.repository.Query(value = "{ 'members.riotPuuid': { $ne: null } }", fields = "{ 'members.riotPuuid': 1 }")
+    List<Team> findRiotPuuids();
 }
