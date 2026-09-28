@@ -1,8 +1,10 @@
 package schultz.thomas.schub.core.api.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -15,6 +17,8 @@ import schultz.thomas.schub.core.api.dto.RiotAccountRequest;
 import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
 import schultz.thomas.schub.core.api.dto.UserDto;
 import schultz.thomas.schub.core.api.dto.UserIdentityDto;
+import schultz.thomas.schub.core.api.dto.UserStatsDto;
+import schultz.thomas.schub.core.business.service.ActivityService;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotAccountService;
@@ -33,12 +37,26 @@ public class UserController {
     private final UserService userService;
     private final PermissionEvaluator permissionEvaluator;
     private final RiotAccountService riotAccountService;
+    private final ActivityService activityService;
 
     @GetMapping
     public List<UserDto> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.USER_VIEW, null);
         return userService.toDtos(userService.findAll());
+    }
+
+    @GetMapping("/stats")
+    public UserStatsDto stats(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.USER_VIEW, null);
+        return activityService.stats();
+    }
+
+    // Appelé par le BFF au renouvellement du jeton, soit au plus une fois par heure et par session.
+    @PostMapping("/{id}/activity")
+    public ResponseEntity<Void> activity(@PathVariable String id, @RequestParam String app) {
+        activityService.recordActivity(id, app);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/by-discord/{discordId}")
