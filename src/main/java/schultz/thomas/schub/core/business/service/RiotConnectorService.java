@@ -22,6 +22,10 @@ public interface RiotConnectorService {
 
     Crawler toggleCrawler(boolean enabled);
 
+    Optional<HistoryWindow> historyWindow();
+
+    HistoryWindow updateHistoryWindow(HistoryWindow window);
+
     List<KnownPlayer> search(String query, int limit);
 
     // Les joueurs dont l'historique a été relevé, en Nom#TAG : ceux qui ont une page publique.
@@ -48,6 +52,9 @@ public interface RiotConnectorService {
     record Crawler(boolean switchable, boolean enabled, boolean running, long knownAccounts,
                    long trackedAccounts, long backgroundPending, long databaseBytes, long storageAlertBytes,
                    boolean storageAlert, Instant lastRoundAt, int lastRoundAccounts) {
+    }
+
+    record HistoryWindow(int maxGames, int maxAgeDays, int minGames) {
     }
 
     record KnownPlayer(String puuid, String gameName, String tagLine, String riotId,

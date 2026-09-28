@@ -88,6 +88,28 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     @Override
+    public Optional<HistoryWindow> historyWindow() {
+        try {
+            return Optional.ofNullable(restClient.get().uri("/ingest/history-window").retrieve()
+                    .body(HistoryWindow.class));
+        } catch (RestClientException indisponible) {
+            log.debug("Fenêtre de relevé indisponible : {}", indisponible.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public HistoryWindow updateHistoryWindow(HistoryWindow window) {
+        try {
+            return restClient.put().uri("/ingest/history-window").body(window).retrieve().body(HistoryWindow.class);
+        } catch (HttpClientErrorException.BadRequest horsBornes) {
+            throw new IllegalArgumentException("Fenêtre de relevé hors bornes");
+        } catch (RestClientException indisponible) {
+            throw new RiotConnectorUnavailableException();
+        }
+    }
+
+    @Override
     public boolean requestIngest(String puuid) {
         if (puuid == null || puuid.isBlank()) {
             return false;

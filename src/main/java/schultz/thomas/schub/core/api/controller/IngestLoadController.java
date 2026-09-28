@@ -15,6 +15,7 @@ import schultz.thomas.schub.core.api.dto.IngestSummaryDto;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
+import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
 import schultz.thomas.schub.core.business.service.UserService;
 
 @RestController
@@ -63,5 +64,14 @@ public class IngestLoadController {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
         return ResponseEntity.ok(CrawlerDto.from(riotConnector.toggleCrawler(request.enabled())));
+    }
+
+    @PutMapping("/history-window")
+    public ResponseEntity<HistoryWindow> updateHistoryWindow(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+            @RequestBody HistoryWindow window) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
+
+        return ResponseEntity.ok(riotConnector.updateHistoryWindow(window));
     }
 }
