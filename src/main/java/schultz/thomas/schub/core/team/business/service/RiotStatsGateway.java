@@ -50,6 +50,14 @@ public interface RiotStatsGateway {
 
     Optional<List<Standing>> rankings(String puuid);
 
+    // Moyennes par partie des signaux de timeline, sur les dernières parties qui en ont une.
+    default Optional<TimelineHabits> timelineHabits(String puuid, Instant since) {
+        return Optional.empty();
+    }
+
+    record TimelineHabits(int games, Map<String, Double> means, Map<String, Integer> counts) {
+    }
+
     // Le plus récent d'abord.
     Optional<List<PatchStart>> patches(int count);
 

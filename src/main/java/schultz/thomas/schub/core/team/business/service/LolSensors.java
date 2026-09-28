@@ -70,12 +70,17 @@ public class LolSensors implements Sensors {
         Optional<ReferenceGridDto> grille = grille(poste, "MEAN", palier);
 
         StatLineDto ligne = StatLines.of(principal.get(), poste, null, null);
+        Optional<RiotStatsGateway.TimelineHabits> timeline = statsGateway.timelineHabits(puuid, since);
         Signals signaux = contexte(poste, palier).put("games", ligne.games(), null);
         objectMapper.convertValue(ligne, Map.class).forEach((cle, valeur) -> {
             if (valeur instanceof Number nombre && !"games".equals(cle)) {
                 signaux.put(String.valueOf(cle), nombre.doubleValue(),
                         centile(grille, String.valueOf(cle), palier, nombre.doubleValue()));
             }
+        });
+        timeline.filter(t -> t.games() > 0).ifPresent(t -> {
+            signaux.put("timelineGames", t.games(), null);
+            t.means().forEach((cle, moyenne) -> signaux.put(cle + "Avg", moyenne, null));
         });
         return Optional.of(signaux);
     }
