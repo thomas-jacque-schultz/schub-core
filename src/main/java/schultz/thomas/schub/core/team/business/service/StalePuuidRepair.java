@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 // Riot chiffre le puuid pour chaque clé : après un changement de clé, les comptes liés et les places d'équipe portent un
@@ -49,7 +50,10 @@ public class StalePuuidRepair {
         users.findAll().stream().map(User::getRiotPuuid).filter(StalePuuidRepair::present).forEach(puuids::add);
         teams.findRiotPuuids().forEach(team -> team.getMembers().stream()
                 .map(TeamMember::getRiotPuuid).filter(StalePuuidRepair::present).forEach(puuids::add));
-        repare(riotConnector.checkPuuids(puuids));
+        List<String> perimes = riotConnector.checkPuuids(puuids);
+        log.info("Puuid des comptes liés et des places d'équipe soumis au connecteur : {}, dont {} déjà refusés",
+                puuids.size(), perimes.size());
+        repare(perimes);
     }
 
     @Scheduled(fixedDelayString = "PT5M", initialDelayString = "PT5M")
