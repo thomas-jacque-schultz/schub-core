@@ -125,6 +125,11 @@ public class TeamService {
                         "Aucun compte Riot ne porte « " + gameName + "#" + tagLine + " »");
             }
             puuid = resolution.puuid();
+            // Le nom rendu par Riot fait foi : sa casse, ou le nom actuel d'un joueur renommé depuis la partie où on l'a vu.
+            if (resolution.gameName() != null && resolution.tagLine() != null) {
+                gameName = resolution.gameName();
+                tagLine = resolution.tagLine();
+            }
         }
 
         refuseLesDoublons(team, gameName, tagLine, puuid);

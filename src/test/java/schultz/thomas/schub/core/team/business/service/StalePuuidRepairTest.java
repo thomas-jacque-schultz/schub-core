@@ -48,6 +48,23 @@ class StalePuuidRepairTest {
     }
 
     @Test
+    @DisplayName("Une place ajoutée sans puuid, connecteur occupé, est résolue au relevé suivant sous le nom actuel du joueur")
+    void placeEnAttenteResolue() {
+        Team team = equipe(membre("m1", null, "MimiQueue", "PIKA"), membre("m2", "sain", "Autre", "EUW"));
+        when(teams.findWithUnresolvedMembers()).thenReturn(List.of(team));
+        when(resolver.resolve("MimiQueue", "PIKA")).thenReturn(RiotIdResolution.resolved("p1", "Memero", "MIAM"));
+
+        repair.resoutLesPlacesEnAttente();
+
+        TeamMember place = team.getMembers().get(0);
+        assertThat(place.getRiotPuuid()).isEqualTo("p1");
+        assertThat(place.riotId()).isEqualTo("Memero#MIAM");
+        verify(teams).save(team);
+        verify(connector).requestIngest("p1");
+        verify(resolver, never()).resolve("Autre", "EUW");
+    }
+
+    @Test
     @DisplayName("Sans résolution, la place garde son puuid et l'équipe n'est pas réécrite")
     void resolutionReportee() {
         Team team = equipe(membre("m1", "ancien", "Joueur", "EUW"));
