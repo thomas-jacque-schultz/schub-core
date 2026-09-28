@@ -46,14 +46,26 @@ public class StalePuuidRepair {
     @Async
     @EventListener(ApplicationReadyEvent.class)
     public void verifieAuDemarrage() {
-        Set<String> puuids = new LinkedHashSet<>();
-        users.findAll().stream().map(User::getRiotPuuid).filter(StalePuuidRepair::present).forEach(puuids::add);
-        teams.findRiotPuuids().forEach(team -> team.getMembers().stream()
-                .map(TeamMember::getRiotPuuid).filter(StalePuuidRepair::present).forEach(puuids::add));
+        Set<String> puuids = puuidsSuivis();
         List<String> perimes = riotConnector.checkPuuids(puuids);
         log.info("Puuid des comptes liés et des places d'équipe soumis au connecteur : {}, dont {} déjà refusés",
                 puuids.size(), perimes.size());
         repare(perimes);
+    }
+
+    // Après l'invalidation des données Riot : chaque puuid suivi est tenu pour périmé, qu'il le soit ou non.
+    @Async
+    public void resoutTout(Collection<String> puuids) {
+        repare(puuids);
+        log.info("Invalidation des données Riot : {} puuid repassés par la résolution de leur Riot ID", puuids.size());
+    }
+
+    public Set<String> puuidsSuivis() {
+        Set<String> puuids = new LinkedHashSet<>();
+        users.findAll().stream().map(User::getRiotPuuid).filter(StalePuuidRepair::present).forEach(puuids::add);
+        teams.findRiotPuuids().forEach(team -> team.getMembers().stream()
+                .map(TeamMember::getRiotPuuid).filter(StalePuuidRepair::present).forEach(puuids::add));
+        return puuids;
     }
 
     @Scheduled(fixedDelayString = "PT5M", initialDelayString = "PT5M")

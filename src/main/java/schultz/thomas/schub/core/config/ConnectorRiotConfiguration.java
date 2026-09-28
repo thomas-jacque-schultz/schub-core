@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
+
 @RequiredArgsConstructor
 @Configuration
 @EnableConfigurationProperties(ConnectorRiotProperties.class)
@@ -21,9 +23,18 @@ public class ConnectorRiotConfiguration {
 
     @Bean("connectorRiotRestClient")
     public RestClient connectorRiotRestClient() {
+        return client(properties.getReadTimeout());
+    }
+
+    @Bean("connectorRiotPurgeRestClient")
+    public RestClient connectorRiotPurgeRestClient() {
+        return client(properties.getPurgeTimeout());
+    }
+
+    private RestClient client(Duration readTimeout) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
                 .withConnectTimeout(properties.getConnectTimeout())
-                .withReadTimeout(properties.getReadTimeout());
+                .withReadTimeout(readTimeout);
 
         return RestClient.builder()
                 .requestFactory(ClientHttpRequestFactories.get(settings))

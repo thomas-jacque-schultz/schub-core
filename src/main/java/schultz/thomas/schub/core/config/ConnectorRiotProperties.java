@@ -14,4 +14,7 @@ public class ConnectorRiotProperties {
     private Duration connectTimeout = Duration.ofSeconds(2);
 
     private Duration readTimeout = Duration.ofSeconds(5);
+
+    // Sous les 60 s de lecture du BFF (Feign) : l'effacement des données Riot supprime des collections entières.
+    private Duration purgeTimeout = Duration.ofSeconds(50);
 }
