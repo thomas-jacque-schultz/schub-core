@@ -22,7 +22,8 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
         this.restClient = restClient;
     }
 
-    private static final Duration RECENTE = Duration.ofHours(1);
+    // Un Riot ID vu en partie ou résolu cette semaine : Riot n'est appelé que pour un inconnu.
+    private static final Duration RECENTE = Duration.ofDays(7);
 
     @Override
     public RiotIdResolution resolve(String gameName, String tagLine) {

@@ -6,7 +6,7 @@ public interface RiotIdResolver {
 
     RiotIdResolution resolve(String gameName, String tagLine);
 
-    // Accepte une résolution de moins d'une heure, sans appel à Riot : pour une page rafraîchie souvent.
+    // Accepte un compte connu observé récemment, sans appel à Riot : pour une page publique.
     default RiotIdResolution resolveRecent(String gameName, String tagLine) {
         return resolve(gameName, tagLine);
     }
