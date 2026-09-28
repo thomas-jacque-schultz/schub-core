@@ -18,4 +18,7 @@ public interface TeamRepository extends MongoRepository<Team, String> {
 
     @org.springframework.data.mongodb.repository.Query(value = "{ 'members.riotPuuid': { $ne: null } }", fields = "{ 'members.riotPuuid': 1 }")
     List<Team> findRiotPuuids();
+
+    @org.springframework.data.mongodb.repository.Query("{ 'members': { $elemMatch: { $or: [ { 'riotPuuid': null }, { 'riotPuuid': '' } ] } } }")
+    List<Team> findWithUnresolvedMembers();
 }

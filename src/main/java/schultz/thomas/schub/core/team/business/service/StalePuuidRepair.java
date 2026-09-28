@@ -72,7 +72,21 @@ public class StalePuuidRepair {
     public void releve() {
         Instant debut = Instant.now();
         repare(riotConnector.stalePuuids(dernierReleve.minus(RECOUVREMENT)));
+        resoutLesPlacesEnAttente();
         dernierReleve = debut;
+    }
+
+    // Une place ajoutée pendant que le connecteur était occupé n'a pas de puuid : rien d'autre ne la retenterait.
+    void resoutLesPlacesEnAttente() {
+        for (Team team : teams.findWithUnresolvedMembers()) {
+            Set<String> aCollecter = new LinkedHashSet<>();
+            for (TeamMember membre : team.getMembers()) {
+                if (!present(membre.getRiotPuuid()) && resout(team, membre)) {
+                    aCollecter.add(membre.getRiotPuuid());
+                }
+            }
+            enregistre(team, aCollecter, "place(s) en attente résolue(s)");
+        }
     }
 
     void repare(Collection<String> perimes) {
@@ -94,25 +108,37 @@ public class StalePuuidRepair {
     private void repare(Team team, Set<String> refuses) {
         Set<String> aCollecter = new LinkedHashSet<>();
         for (TeamMember membre : team.getMembers()) {
-            if (!refuses.contains(membre.getRiotPuuid())) {
-                continue;
+            if (refuses.contains(membre.getRiotPuuid()) && resout(team, membre)) {
+                aCollecter.add(membre.getRiotPuuid());
             }
-            RiotIdResolution resolution = resolver.resolve(membre.getRiotGameName(), membre.getRiotTagLine());
-            if (resolution.puuid() == null) {
-                log.info("Place {} de l'équipe « {} » : Riot ID pas encore résolu ({})", membre.getMemberId(),
-                        team.getName(), resolution.outcome());
-                continue;
-            }
-            membre.setRiotPuuid(resolution.puuid());
-            aCollecter.add(resolution.puuid());
         }
+        enregistre(team, aCollecter, "place(s) au puuid périmé réparée(s)");
+    }
+
+    // Le nom rendu par Riot remplace celui de la place : sa casse, ou le nom actuel d'un joueur renommé depuis.
+    private boolean resout(Team team, TeamMember membre) {
+        RiotIdResolution resolution = resolver.resolve(membre.getRiotGameName(), membre.getRiotTagLine());
+        if (resolution.puuid() == null) {
+            log.info("Place {} de l'équipe « {} » : Riot ID pas encore résolu ({})", membre.getMemberId(),
+                    team.getName(), resolution.outcome());
+            return false;
+        }
+        membre.setRiotPuuid(resolution.puuid());
+        if (resolution.gameName() != null && resolution.tagLine() != null) {
+            membre.setRiotGameName(resolution.gameName());
+            membre.setRiotTagLine(resolution.tagLine());
+        }
+        return true;
+    }
+
+    private void enregistre(Team team, Set<String> aCollecter, String quoi) {
         if (aCollecter.isEmpty()) {
             return;
         }
         try {
             teams.save(team);
             aCollecter.forEach(riotConnector::requestIngest);
-            log.info("Équipe « {} » : {} place(s) au puuid périmé réparée(s)", team.getName(), aCollecter.size());
+            log.info("Équipe « {} » : {} {}", team.getName(), aCollecter.size(), quoi);
         } catch (OptimisticLockingFailureException concurrente) {
             log.info("Équipe « {} » modifiée pendant la réparation : reprise au prochain relevé", team.getName());
         }
