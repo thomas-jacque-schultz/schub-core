@@ -324,7 +324,7 @@ class TeamStatsServiceTest {
 
     private static RiotStatsGateway.SharedMatchPlayer joueur(String puuid, boolean win, int side) {
         return new RiotStatsGateway.SharedMatchPlayer(puuid, 126, "Jayce", "MIDDLE", win, side,
-                5, 2, 3, 150, 12000, 20000, 18000, 25, false);
+                5, 2, 3, 150, 12000, 20000, 18000, 25, false, null);
     }
 
     private static TeamMember membre(String memberId, String userId, String puuid, GameRole role) {

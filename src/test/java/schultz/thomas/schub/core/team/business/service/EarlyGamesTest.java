@@ -45,7 +45,7 @@ class EarlyGamesTest {
     private static RiotStatsGateway.SharedMatch partie(boolean win) {
         return new RiotStatsGateway.SharedMatch("g1", QUAND, 1800, 420, "RANKED_SOLO", "16.18", 4, false, win,
                 List.of(new RiotStatsGateway.SharedMatchPlayer("top", 1, "A", "TOP", win, 100, 0, 0, 0, 0, 0, 0,
-                        0, 0, false)), List.of());
+                        0, 0, false, null)), List.of());
     }
 
     private static RiotStatsGateway.Insight insight() {

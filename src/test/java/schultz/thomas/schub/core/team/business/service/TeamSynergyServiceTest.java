@@ -17,7 +17,7 @@ class TeamSynergyServiceTest {
 
     private static RiotStatsGateway.SharedMatchPlayer joueur(String puuid, String poste, int or, int degats) {
         return new RiotStatsGateway.SharedMatchPlayer(puuid, 1, "X", poste, true, 100, 0, 0, 0, 0, or, degats, 0, 0,
-                false);
+                false, null);
     }
 
     private static RiotStatsGateway.SharedMatch partie(boolean victoire, List<String> presents) {

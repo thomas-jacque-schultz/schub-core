@@ -33,7 +33,7 @@ class TeamOppositionServiceTest {
     private static RiotStatsGateway.SharedMatch partie(String id, boolean win) {
         return new RiotStatsGateway.SharedMatch(id, QUAND, 1800, 440, "RANKED_FLEX", "16.18", 4, false, win,
                 List.of(new RiotStatsGateway.SharedMatchPlayer("m1", 1, "A", "TOP", win, 100, 0, 0, 0, 0, 0, 0,
-                        0, 0, false)), List.of());
+                        0, 0, false, null)), List.of());
     }
 
     // Notre camp en Or II, le leur au palier donné ; le top membre face au top adverse.

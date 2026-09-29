@@ -206,7 +206,8 @@ public interface RiotStatsGateway {
             int damageToChampions,
             int damageTaken,
             int visionScore,
-            boolean afk
+            boolean afk,
+            String riotId
     ) {
     }
 

@@ -3,6 +3,7 @@ package schultz.thomas.schub.core.team.api.dto;
 public record TeamGamePlayerDto(
         String memberId,
         String displayName,
+        String riotId,
         int championId,
         String championName,
         String iconUrl,
