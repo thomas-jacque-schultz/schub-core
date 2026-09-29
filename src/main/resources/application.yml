@@ -12,6 +12,8 @@ spring:
       uri: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_HOST:schub-mongo}:27017/${MONGO_DB}?authSource=${MONGO_DB}
 
 mongock:
+  # Avant les runners : OwnerSeeder lit les rôles, qu'une migration peut réécrire.
+  runner-type: initializingbean
   migration-scan-package:
     - schultz.thomas.schub.core.data.migration
   throw-exception-if-cannot-obtain-lock: true
