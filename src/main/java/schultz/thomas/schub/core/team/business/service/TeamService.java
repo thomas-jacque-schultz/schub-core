@@ -91,14 +91,14 @@ public class TeamService {
 
     public Team rename(User actor, String teamId, String name) {
         Team team = require(teamId);
-        permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
+        permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
         team.setName(nomValide(name));
         return touch(team);
     }
 
     public void delete(User actor, String teamId) {
         Team team = require(teamId);
-        permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
+        permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
         compositionRepository.deleteByTeamId(teamId);
         championPoolRepository.deleteById(teamId);
         reviewRepository.deleteByTeamId(teamId);
@@ -108,7 +108,7 @@ public class TeamService {
 
     public Team addMember(User actor, String teamId, NewMember demande) {
         Team team = require(teamId);
-        permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
+        permissionEvaluator.require(actor, Permission.ROSTER_EDIT, ref(teamId));
 
         String gameName = trimOrNull(demande.riotGameName());
         String tagLine = trimOrNull(demande.riotTagLine());
@@ -164,7 +164,7 @@ public class TeamService {
     public Team updateMember(User actor, String teamId, String memberId, List<GameRole> roles,
                              MemberStatus status, Boolean coach) {
         Team team = require(teamId);
-        permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
+        permissionEvaluator.require(actor, Permission.ROSTER_EDIT, ref(teamId));
 
         TeamMember member = team.findMember(memberId)
                 .orElseThrow(() -> new NoSuchElementException("Aucun membre d'identifiant '" + memberId + "'"));
@@ -182,7 +182,7 @@ public class TeamService {
 
     public Team removeMember(User actor, String teamId, String memberId) {
         Team team = require(teamId);
-        permissionEvaluator.require(actor, Permission.TEAM_EDIT, ref(teamId));
+        permissionEvaluator.require(actor, Permission.ROSTER_EDIT, ref(teamId));
 
         TeamMember member = team.findMember(memberId)
                 .orElseThrow(() -> new NoSuchElementException("Aucun membre d'identifiant '" + memberId + "'"));

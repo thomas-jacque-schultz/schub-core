@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.ResourceType;
 import schultz.thomas.schub.core.data.model.User;
+import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
@@ -42,16 +43,28 @@ class TeamScopedAuthorityTest {
     }
 
     @Test
-    @DisplayName("le capitaine voit, modifie l'effectif et écrit les compositions")
+    @DisplayName("le créateur a tout : gérer l'équipe, son effectif et ses compositions")
     void leCapitaine() {
         assertThat(authority.grantedTo(capitaine, "equipe-1")).containsExactlyInAnyOrder(
-                Permission.TEAM_VIEW, Permission.TEAM_EDIT, Permission.COMPOSITION_EDIT);
+                Permission.TEAM_VIEW, Permission.TEAM_MANAGE, Permission.ROSTER_EDIT, Permission.COMPOSITION_EDIT);
     }
 
     @Test
-    @DisplayName("un membre voit tout et n'écrit rien")
+    @DisplayName("un membre voit tout et écrit pool et compositions, sans toucher à l'effectif")
     void unMembre() {
-        assertThat(authority.grantedTo(membre, "equipe-1")).containsExactly(Permission.TEAM_VIEW);
+        assertThat(authority.grantedTo(membre, "equipe-1"))
+                .containsExactlyInAnyOrder(Permission.TEAM_VIEW, Permission.COMPOSITION_EDIT);
+    }
+
+    @Test
+    @DisplayName("un coach gère aussi l'effectif, pas l'équipe")
+    void unCoach() {
+        Team equipe = equipe();
+        equipe.getMembers().getFirst().setStatus(MemberStatus.COACH);
+        when(teamRepository.findById("equipe-3")).thenReturn(Optional.of(equipe));
+
+        assertThat(authority.grantedTo(membre, "equipe-3")).containsExactlyInAnyOrder(
+                Permission.TEAM_VIEW, Permission.ROSTER_EDIT, Permission.COMPOSITION_EDIT);
     }
 
     @Test

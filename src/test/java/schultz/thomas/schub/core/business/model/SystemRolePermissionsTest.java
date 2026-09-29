@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SystemRolePermissionsTest {
 
     private static final Set<Permission> PORTEES_PAR_EQUIPE =
-            EnumSet.of(Permission.TEAM_VIEW, Permission.TEAM_EDIT, Permission.COMPOSITION_EDIT);
+            EnumSet.of(Permission.TEAM_VIEW, Permission.TEAM_MANAGE, Permission.ROSTER_EDIT,
+            Permission.COMPOSITION_EDIT);
 
     @Test
     @DisplayName("administrer l'hébergement ne donne aucun droit sur les équipes des autres")
@@ -67,7 +68,7 @@ class SystemRolePermissionsTest {
                 Permission.USER_VIEW, Permission.USER_ROLE_ASSIGN,
                 Permission.ROLE_MANAGE,
                 Permission.INGEST_VIEW, Permission.INGEST_MANAGE,
-                Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_EDIT,
+                Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_MANAGE, Permission.ROSTER_EDIT,
                 Permission.COMPOSITION_EDIT,
                 // OWNER seul : les règles du moteur sont des connaissances de coaching (Schub#37).
                 Permission.AUGUR_PATTERN_EDIT);

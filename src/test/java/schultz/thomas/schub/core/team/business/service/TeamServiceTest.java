@@ -51,6 +51,7 @@ class TeamServiceTest {
     private User capitaine;
     private User membre;
     private User etranger;
+    private User coach;
 
     @BeforeEach
     void setUp() {
@@ -88,6 +89,7 @@ class TeamServiceTest {
         capitaine = compte("capitaine", "role-visiteur");
         membre = compte("membre", "role-visiteur");
         etranger = compte("etranger", "role-visiteur");
+        coach = compte("coach", "role-visiteur");
 
         when(teamRepository.save(any(Team.class))).thenAnswer(invocation -> {
             Team team = invocation.getArgument(0);
@@ -135,7 +137,7 @@ class TeamServiceTest {
 
         assertThatThrownBy(() -> teamService.rename(membre, "equipe-1", "Autre nom"))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessageContaining("TEAM_EDIT");
+                .hasMessageContaining("TEAM_MANAGE");
     }
 
     @Test
@@ -185,6 +187,38 @@ class TeamServiceTest {
 
         assertThatThrownBy(() -> teamService.removeMember(membre, "equipe-1", "m-1"))
                 .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("un membre n'ajoute personne à l'effectif")
+    void unMembreNAjoutePersonne() {
+        donneLEquipe();
+
+        assertThatThrownBy(() -> teamService.addMember(membre, "equipe-1", nouveau()))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("ROSTER_EDIT");
+    }
+
+    @Test
+    @DisplayName("un coach recrute, mais ne renomme ni ne supprime l'équipe")
+    void unCoachRecrute() {
+        donneLEquipeAvecUnCoach();
+
+        assertThat(teamService.addMember(coach, "equipe-1", nouveau()).getMembers()).hasSize(3);
+        assertThatThrownBy(() -> teamService.rename(coach, "equipe-1", "Autre nom"))
+                .isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> teamService.delete(coach, "equipe-1"))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("un titulaire marqué coach recrute aussi")
+    void unTitulaireCoachRecrute() {
+        Team equipe = equipe();
+        equipe.getMembers().getFirst().setCoach(true);
+        when(teamRepository.findById("equipe-1")).thenReturn(Optional.of(equipe));
+
+        assertThat(teamService.addMember(membre, "equipe-1", nouveau()).getMembers()).hasSize(2);
     }
 
     @Test
@@ -464,6 +498,22 @@ class TeamServiceTest {
         when(teamRepository.findByCreatedBy("capitaine")).thenReturn(List.of(equipe));
 
         assertThat(teamService.mine(capitaine)).containsExactly(equipe);
+    }
+
+    private void donneLEquipeAvecUnCoach() {
+        Team equipe = equipe();
+        TeamMember leCoach = new TeamMember();
+        leCoach.setMemberId("m-coach");
+        leCoach.setUserId("coach");
+        leCoach.setRiotGameName("Coach");
+        leCoach.setRiotTagLine("EUW");
+        leCoach.setStatus(MemberStatus.COACH);
+        equipe.getMembers().add(leCoach);
+        when(teamRepository.findById("equipe-1")).thenReturn(Optional.of(equipe));
+    }
+
+    private static TeamService.NewMember nouveau() {
+        return new TeamService.NewMember("Nouveau", "EUW", "puuid-nouveau", List.of(), MemberStatus.REMPLACANT, false);
     }
 
     private void donneLEquipe() {

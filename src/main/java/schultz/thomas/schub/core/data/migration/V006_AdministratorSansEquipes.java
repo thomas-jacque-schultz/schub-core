@@ -20,7 +20,7 @@ public class V006_AdministratorSansEquipes {
 
     private static final List<String> PORTEES_PAR_EQUIPE = List.of(
             Permission.TEAM_VIEW.name(),
-            Permission.TEAM_EDIT.name(),
+            "TEAM_EDIT",
             Permission.COMPOSITION_EDIT.name());
 
     @Execution

@@ -191,9 +191,14 @@ class CompositionServiceTest {
     }
 
     @Test
-    @DisplayName("un membre ne peut pas écrire de composition — il voit tout et n'écrit rien")
-    void unMembreNEcritPas() {
-        assertThatThrownBy(() -> compositionService.create(membre, "equipe-1",
+    @DisplayName("hors de l'équipe, on n'écrit pas de composition")
+    void unEtrangerNEcritPas() {
+        User etranger = new User();
+        etranger.setId("etranger");
+        etranger.setDiscordId("discord-etranger");
+        etranger.setRoleId("role-visiteur");
+
+        assertThatThrownBy(() -> compositionService.create(etranger, "equipe-1",
                 new CompositionService.Draft("La mienne", cinqPostes(), List.of(), "14.18.1", null)))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("COMPOSITION_EDIT");

@@ -40,7 +40,8 @@ public class TeamProjectionService {
                 team.getCreatedAt(),
                 team.getUpdatedAt(),
                 placeDuLecteur(team, actor).orElse(null),
-                droits.contains(Permission.TEAM_EDIT),
+                droits.contains(Permission.TEAM_MANAGE),
+                droits.contains(Permission.ROSTER_EDIT),
                 droits.contains(Permission.COMPOSITION_EDIT));
     }
 
@@ -58,7 +59,8 @@ public class TeamProjectionService {
                 team.getCreatedAt(),
                 team.getUpdatedAt(),
                 placeDuLecteur(team, actor).orElse(null),
-                droits.contains(Permission.TEAM_EDIT),
+                droits.contains(Permission.TEAM_MANAGE),
+                droits.contains(Permission.ROSTER_EDIT),
                 droits.contains(Permission.COMPOSITION_EDIT));
     }
 

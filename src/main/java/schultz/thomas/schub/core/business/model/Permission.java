@@ -24,12 +24,16 @@ public enum Permission {
     INGEST_VIEW,
     INGEST_MANAGE,
 
-    // TEAM_CREATE est globale ; les trois suivantes s'évaluent sur une équipe (TeamScopedAuthority).
+    // TEAM_CREATE est globale ; les quatre suivantes s'évaluent sur une équipe (TeamScopedAuthority).
     TEAM_CREATE,
 
     TEAM_VIEW,
 
-    TEAM_EDIT,
+    // Renommer, supprimer.
+    TEAM_MANAGE,
+
+    // Ajouter, modifier, retirer un membre.
+    ROSTER_EDIT,
 
     COMPOSITION_EDIT,
 
