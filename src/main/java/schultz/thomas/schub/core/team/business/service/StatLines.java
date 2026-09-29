@@ -150,10 +150,4 @@ final class StatLines {
     static Double ecart(Double valeur, Double reference) {
         return valeur == null || reference == null ? null : valeur - reference;
     }
-
-    static Double moyenne(List<Double> valeurs) {
-        List<Double> connues = valeurs.stream().filter(java.util.Objects::nonNull).toList();
-        return connues.isEmpty() ? null
-                : connues.stream().mapToDouble(Double::doubleValue).average().orElseThrow();
-    }
 }

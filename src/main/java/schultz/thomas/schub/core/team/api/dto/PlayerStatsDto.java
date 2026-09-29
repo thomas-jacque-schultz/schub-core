@@ -4,6 +4,8 @@ import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.business.model.StatsState;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 public record PlayerStatsDto(
@@ -24,6 +26,7 @@ public record PlayerStatsDto(
         List<StatLineDto> months,
         List<RankedStandingDto> rankings,
         RadarReferencesDto references,
-        TeamComparisonDto versusTeammates
+        @Schema(description = "Sur les parties d'équipe de la période seulement. Absente : aucune partie d'équipe.")
+        StatLineDto premade
 ) {
 }

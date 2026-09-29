@@ -7,7 +7,6 @@ import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.PlayerStatsDto;
 import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
-import schultz.thomas.schub.core.team.api.dto.TeamComparisonDto;
 import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
 import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
@@ -33,6 +32,9 @@ public class TeamPlayerStatsService {
     private final TeamService teamService;
     private final MemberDirectory memberDirectory;
     private final PlayerStatsService playerStatsService;
+    private final RiotStatsGateway statsGateway;
+
+    private static final int PARTIES_D_EQUIPE_MAX = 1000;
 
     public TeamPlayersStatsDto of(User actor, String teamId, Integer days, Integer champions) {
         Team team = teamService.requireVisible(actor, teamId);
@@ -53,14 +55,46 @@ public class TeamPlayerStatsService {
                 .map(Map.Entry::getKey)
                 .toList(), playerStatsService::rankings);
 
+        Optional<Premade> premade = premade(puuids, since);
+
         List<PlayerStatsDto> colonnes = new ArrayList<>();
         for (TeamMember membre : joueurs) {
-            colonnes.add(colonne(membre, figures, identites, rangs));
+            colonnes.add(colonne(membre, figures, identites, rangs,
+                    premade.flatMap(p -> p.ligneDe(membre.getRiotPuuid())).orElse(null)));
         }
-        List<PlayerStatsDto> compares = comparent(colonnes);
+        return new TeamPlayersStatsDto(team.getId(), team.getName(), days, championsMax, colonnes,
+                placeDuLecteur(team, actor), Instant.now(), premade.map(Premade::parties).orElse(null),
+                TeamGamesStatsService.MINIMUM_MEMBRES);
+    }
 
-        return new TeamPlayersStatsDto(team.getId(), team.getName(), days, championsMax, compares,
-                placeDuLecteur(team, actor), Instant.now());
+    private record Premade(long parties, Map<String, StatLineDto> lignes) {
+
+        Optional<StatLineDto> ligneDe(String puuid) {
+            return puuid == null ? Optional.empty() : Optional.ofNullable(lignes.get(puuid));
+        }
+    }
+
+    private Optional<Premade> premade(List<String> puuids, Instant since) {
+        if (puuids.size() < TeamGamesStatsService.MINIMUM_MEMBRES) {
+            return Optional.of(new Premade(0, Map.of()));
+        }
+        Optional<RiotStatsGateway.SharedMatches> communes = statsGateway.sharedMatches(puuids,
+                TeamGamesStatsService.MINIMUM_MEMBRES, since, PARTIES_D_EQUIPE_MAX);
+        if (communes.isEmpty()) {
+            return Optional.empty();
+        }
+        List<String> ids = communes.get().matches().stream().map(RiotStatsGateway.SharedMatch::matchId).toList();
+        if (ids.isEmpty()) {
+            return Optional.of(new Premade(0, Map.of()));
+        }
+        return statsGateway.aggregate(puuids, RiotStatsGateway.Grouping.OVERALL, RiotStatsGateway.Scope.RIFT,
+                        since, ids)
+                .map(buckets -> {
+                    Map<String, StatLineDto> lignes = new LinkedHashMap<>();
+                    buckets.stream().filter(bucket -> bucket.games() > 0)
+                            .forEach(bucket -> lignes.put(bucket.puuid(), StatLines.of(bucket, null, null, null)));
+                    return new Premade(ids.size(), lignes);
+                });
     }
 
     static List<TeamMember> joueursDe(Team team) {
@@ -84,7 +118,8 @@ public class TeamPlayerStatsService {
     private PlayerStatsDto colonne(TeamMember membre,
                                    Map<String, PlayerStatsService.Figures> figures,
                                    Map<String, MemberDirectory.MemberIdentity> identites,
-                                   Map<String, List<RankedStandingDto>> rangs) {
+                                   Map<String, List<RankedStandingDto>> rangs,
+                                   StatLineDto premade) {
         String puuid = membre.getRiotPuuid();
         PlayerStatsService.Figures chiffres =
                 puuid == null || puuid.isBlank() ? null : figures.get(puuid);
@@ -110,53 +145,7 @@ public class TeamPlayerStatsService {
                 chiffres == null ? List.of() : chiffres.months(),
                 state == StatsState.STATISTIQUES_CONNUES ? rangs.getOrDefault(puuid, List.of()) : List.of(),
                 chiffres == null ? null : chiffres.references(),
-                null);
-    }
-
-    private static List<PlayerStatsDto> comparent(List<PlayerStatsDto> colonnes) {
-        List<PlayerStatsDto> avecChiffres = colonnes.stream()
-                .filter(colonne -> colonne.overall() != null && colonne.overall().games() > 0)
-                .toList();
-        if (avecChiffres.size() < 2) {
-            return colonnes;
-        }
-        return colonnes.stream()
-                .map(colonne -> {
-                    if (colonne.overall() == null || colonne.overall().games() == 0) {
-                        return colonne;
-                    }
-                    List<StatLineDto> autres = avecChiffres.stream()
-                            .filter(candidat -> !candidat.memberId().equals(colonne.memberId()))
-                            .map(PlayerStatsDto::overall)
-                            .toList();
-                    return versus(colonne, autres);
-                })
-                .toList();
-    }
-
-    private static PlayerStatsDto versus(PlayerStatsDto colonne, List<StatLineDto> autres) {
-        if (autres.isEmpty()) {
-            return colonne;
-        }
-        StatLineDto mien = colonne.overall();
-        TeamComparisonDto comparaison = new TeamComparisonDto(
-                autres.size(),
-                StatLines.ecart(mien.winRate(), moyenne(autres, StatLineDto::winRate)),
-                StatLines.ecart(mien.kda(), moyenne(autres, StatLineDto::kda)),
-                StatLines.ecart(mien.csPerMinute(), moyenne(autres, StatLineDto::csPerMinute)),
-                StatLines.ecart(mien.goldPerMinute(), moyenne(autres, StatLineDto::goldPerMinute)),
-                StatLines.ecart(mien.damagePerMinute(), moyenne(autres, StatLineDto::damagePerMinute)),
-                StatLines.ecart(mien.damageTakenPerMinute(), moyenne(autres, StatLineDto::damageTakenPerMinute)),
-                StatLines.ecart(mien.visionPerMinute(), moyenne(autres, StatLineDto::visionPerMinute)));
-        return new PlayerStatsDto(colonne.memberId(), colonne.displayName(), colonne.avatarUrl(),
-                colonne.riotGameName(), colonne.riotTagLine(), colonne.status(), colonne.roles(),
-                colonne.linked(), colonne.state(), colonne.coverage(), colonne.overall(),
-                colonne.champions(), colonne.positions(), colonne.queues(), colonne.months(),
-                colonne.rankings(), colonne.references(), comparaison);
-    }
-
-    private static Double moyenne(List<StatLineDto> lignes, Function<StatLineDto, Double> mesure) {
-        return StatLines.moyenne(lignes.stream().map(mesure).toList());
+                premade);
     }
 
     private static String nomAffiche(TeamMember membre, MemberDirectory.MemberIdentity identite) {
