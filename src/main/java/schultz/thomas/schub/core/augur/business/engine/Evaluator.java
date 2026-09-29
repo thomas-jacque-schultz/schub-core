@@ -22,8 +22,9 @@ public final class Evaluator {
 
     public enum Role { REQUIRED, OPTIONAL, EXCEPTION }
 
+    // observed : ce que la condition compare (le centile pour une condition en centile) ; value : la mesure brute.
     public record ConditionTrace(Role role, String signal, Condition.Unit unit, double from, double to,
-                                 Double observed, Double degree) {
+                                 Double observed, Double value, Double degree) {
     }
 
     public record Evaluation(String patternKey, int version, double degree, boolean emitted, boolean excepted,
@@ -135,7 +136,8 @@ public final class Evaluator {
 
     private static ConditionTrace trace(Role role, Condition condition, Signals signals, Optional<Double> degre) {
         return new ConditionTrace(role, condition.signal(), condition.unit(), condition.from(), condition.to(),
-                observed(condition, signals).orElse(null), degre.orElse(null));
+                observed(condition, signals).orElse(null),
+                signals.get(condition.signal()).map(Signals.Signal::value).orElse(null), degre.orElse(null));
     }
 
     private static double clamp(double x) {

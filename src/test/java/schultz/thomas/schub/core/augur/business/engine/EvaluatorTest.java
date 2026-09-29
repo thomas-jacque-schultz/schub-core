@@ -39,6 +39,18 @@ class EvaluatorTest {
     }
 
     @Test
+    @DisplayName("la preuve d'une condition en centile porte aussi la mesure brute, que cite la phrase")
+    void preuveAvecMesureBrute() {
+        PatternVersion morts = pattern("morts", List.of(pct("deathsPer10", 60, 80)), List.of(), List.of());
+
+        Evaluator.ConditionTrace preuve = Evaluator.evaluate(morts, new Signals().put("deathsPer10", 8.8, 88.0))
+                .conditions().get(0);
+
+        assertThat(preuve.observed()).isEqualTo(88.0);
+        assertThat(preuve.value()).isEqualTo(8.8);
+    }
+
+    @Test
     @DisplayName("4,9 et 5,1 morts ne donnent pas deux conclusions opposées : le degré varie peu")
     void pasDeClignotement() {
         PatternVersion morts = pattern("morts", List.of(new Condition("deaths", Condition.Unit.VALUE, 3, 7, 1)),
