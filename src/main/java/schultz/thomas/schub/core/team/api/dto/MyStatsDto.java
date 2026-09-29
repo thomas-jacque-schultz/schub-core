@@ -18,6 +18,7 @@ public record MyStatsDto(
         List<StatLineDto> positions,
         List<StatLineDto> queues,
         List<StatLineDto> months,
+        List<StatLineDto> patches,
         List<RankedStandingDto> rankings,
         RadarReferencesDto references,
         Instant generatedAt

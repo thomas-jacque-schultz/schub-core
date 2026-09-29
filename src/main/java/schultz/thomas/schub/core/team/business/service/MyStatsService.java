@@ -56,6 +56,7 @@ public class MyStatsService {
                 chiffres.positions(),
                 chiffres.queues(),
                 chiffres.months(),
+                chiffres.patches(),
                 chiffres.state() == StatsState.STATISTIQUES_CONNUES
                         ? playerStatsService.rankings(puuid) : List.of(),
                 chiffres.references(),
@@ -66,6 +67,6 @@ public class MyStatsService {
                                    RiotIngestProgressDto ingest) {
         return new MyStatsDto(joueur.displayName(), joueur.gameName(),
                 joueur.tagLine(), days, state, null, ingest, null, List.of(), List.of(),
-                List.of(), List.of(), List.of(), null, Instant.now());
+                List.of(), List.of(), List.of(), List.of(), null, Instant.now());
     }
 }
