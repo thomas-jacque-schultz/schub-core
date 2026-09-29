@@ -160,14 +160,10 @@ class ChampionPoolServiceTest {
     }
 
     @Test
-    @DisplayName("Un membre lit le pool mais ne l'écrit pas : viewerCanEdit le dit avant le refus")
-    void unMembreLitSansEcrire() {
-        assertThat(service.of(membre, "equipe-1", null).viewerCanEdit()).isFalse();
+    @DisplayName("Un membre écrit le pool comme le créateur")
+    void unMembreEcritLePool() {
+        assertThat(service.of(membre, "equipe-1", null).viewerCanEdit()).isTrue();
         assertThat(service.of(capitaine, "equipe-1", null).viewerCanEdit()).isTrue();
-
-        assertThatThrownBy(() -> service.setChampions(membre, "equipe-1", GameRole.TOP, List.of("Jax")))
-                .isInstanceOf(AccessDeniedException.class)
-                .hasMessageContaining(Permission.COMPOSITION_EDIT.name());
     }
 
     @Test

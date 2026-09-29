@@ -78,18 +78,20 @@ class TeamProjectionServiceTest {
     void leCapitaine() {
         TeamDto dto = projection.toDto(equipe(), capitaine);
 
-        assertThat(dto.viewerCanEdit()).isTrue();
+        assertThat(dto.viewerCanManage()).isTrue();
+        assertThat(dto.viewerCanEditRoster()).isTrue();
         assertThat(dto.viewerCanEditCompositions()).isTrue();
         assertThat(dto.viewerMemberId()).isEqualTo("m-cap");
     }
 
     @Test
-    @DisplayName("un membre lit qu'il ne peut pas écrire — le front n'a rien à déduire")
+    @DisplayName("un membre lit qu'il écrit les compositions, pas l'effectif — le front n'a rien à déduire")
     void unMembre() {
         TeamDto dto = projection.toDto(equipe(), membre);
 
-        assertThat(dto.viewerCanEdit()).isFalse();
-        assertThat(dto.viewerCanEditCompositions()).isFalse();
+        assertThat(dto.viewerCanManage()).isFalse();
+        assertThat(dto.viewerCanEditRoster()).isFalse();
+        assertThat(dto.viewerCanEditCompositions()).isTrue();
         assertThat(dto.viewerMemberId()).isEqualTo("m-1");
     }
 
@@ -98,7 +100,7 @@ class TeamProjectionServiceTest {
     void unOwner() {
         TeamDto dto = projection.toDto(equipe(), owner);
 
-        assertThat(dto.viewerCanEdit()).isTrue();
+        assertThat(dto.viewerCanManage()).isTrue();
         assertThat(dto.viewerMemberId()).isNull();
     }
 
@@ -137,8 +139,8 @@ class TeamProjectionServiceTest {
     @Test
     @DisplayName("un résumé porte les mêmes faits — une liste d'équipes sans un appel par ligne")
     void leResume() {
-        assertThat(projection.toSummary(equipe(), capitaine).viewerCanEdit()).isTrue();
-        assertThat(projection.toSummary(equipe(), membre).viewerCanEdit()).isFalse();
+        assertThat(projection.toSummary(equipe(), capitaine).viewerCanManage()).isTrue();
+        assertThat(projection.toSummary(equipe(), membre).viewerCanManage()).isFalse();
         assertThat(projection.toSummary(equipe(), membre).memberCount()).isEqualTo(3);
     }
 

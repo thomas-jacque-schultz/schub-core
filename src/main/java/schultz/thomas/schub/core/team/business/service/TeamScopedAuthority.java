@@ -12,18 +12,22 @@ import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 import java.util.Set;
 
 /**
- * créateur -> TEAM_VIEW, TEAM_EDIT, COMPOSITION_EDIT
- * membre   -> TEAM_VIEW
+ * créateur -> tout
+ * coach    -> TEAM_VIEW, ROSTER_EDIT, COMPOSITION_EDIT
+ * membre   -> TEAM_VIEW, COMPOSITION_EDIT
  * le reste -> rien (OWNER passe par son rôle)
  */
 @Service
 @RequiredArgsConstructor
 public class TeamScopedAuthority implements ScopedAuthorityProvider {
 
-    private static final Set<Permission> DU_CAPITAINE =
-            Set.of(Permission.TEAM_VIEW, Permission.TEAM_EDIT, Permission.COMPOSITION_EDIT);
+    private static final Set<Permission> DU_CREATEUR = Set.of(Permission.TEAM_VIEW, Permission.TEAM_MANAGE,
+            Permission.ROSTER_EDIT, Permission.COMPOSITION_EDIT);
 
-    private static final Set<Permission> DU_MEMBRE = Set.of(Permission.TEAM_VIEW);
+    private static final Set<Permission> DU_COACH =
+            Set.of(Permission.TEAM_VIEW, Permission.ROSTER_EDIT, Permission.COMPOSITION_EDIT);
+
+    private static final Set<Permission> DU_MEMBRE = Set.of(Permission.TEAM_VIEW, Permission.COMPOSITION_EDIT);
 
     private final TeamRepository teamRepository;
 
@@ -44,8 +48,15 @@ public class TeamScopedAuthority implements ScopedAuthorityProvider {
 
     private Set<Permission> grantedTo(User actor, Team team) {
         if (actor.getId().equals(team.getCreatedBy())) {
-            return DU_CAPITAINE;
+            return DU_CREATEUR;
         }
-        return team.hasMemberLinkedTo(actor.getId()) ? DU_MEMBRE : Set.of();
+        if (team.getMembers() == null) {
+            return Set.of();
+        }
+        return team.getMembers().stream()
+                .filter(member -> actor.getId().equals(member.getUserId()))
+                .findFirst()
+                .map(member -> member.coaches() ? DU_COACH : DU_MEMBRE)
+                .orElseGet(Set::of);
     }
 }

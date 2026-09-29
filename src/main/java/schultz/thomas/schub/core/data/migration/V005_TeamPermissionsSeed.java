@@ -29,7 +29,8 @@ public class V005_TeamPermissionsSeed {
     private static final Set<Permission> NOUVELLES = EnumSet.of(
             Permission.TEAM_CREATE,
             Permission.TEAM_VIEW,
-            Permission.TEAM_EDIT,
+            Permission.TEAM_MANAGE,
+            Permission.ROSTER_EDIT,
             Permission.COMPOSITION_EDIT);
 
     @Execution

@@ -51,7 +51,7 @@ class PermissionEvaluatorTest {
         userRepository = mock(UserRepository.class);
         roleRepository = mock(RoleRepository.class);
         evaluator = new PermissionEvaluator(userRepository, roleRepository,
-                List.of(surLaRessource("equipe-1", Permission.TEAM_EDIT)));
+                List.of(surLaRessource("equipe-1", Permission.TEAM_MANAGE)));
 
         acteur = new User();
         acteur.setId(ACTEUR_ID);
@@ -91,19 +91,19 @@ class PermissionEvaluatorTest {
     @Test
     @DisplayName("appartenir à une ressource donne un droit sur CETTE ressource")
     void porteeDeRessource() {
-        assertThat(evaluator.can(acteur, Permission.TEAM_EDIT, ResourceRef.team("equipe-1"))).isTrue();
+        assertThat(evaluator.can(acteur, Permission.TEAM_MANAGE, ResourceRef.team("equipe-1"))).isTrue();
     }
 
     @Test
     @DisplayName("appartenir à une ressource ne donne rien sur une autre")
     void porteeQuiNeDebordePas() {
-        assertThat(evaluator.can(acteur, Permission.TEAM_EDIT, ResourceRef.team("equipe-2"))).isFalse();
+        assertThat(evaluator.can(acteur, Permission.TEAM_MANAGE, ResourceRef.team("equipe-2"))).isFalse();
     }
 
     @Test
     @DisplayName("sans ressource, la question est globale : appartenir quelque part ne compte pas")
     void questionGlobale() {
-        assertThat(evaluator.can(acteur, Permission.TEAM_EDIT, null)).isFalse();
+        assertThat(evaluator.can(acteur, Permission.TEAM_MANAGE, null)).isFalse();
     }
 
     @Test

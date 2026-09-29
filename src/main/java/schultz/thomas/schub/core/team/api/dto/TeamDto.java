@@ -11,7 +11,8 @@ public record TeamDto(
         Instant createdAt,
         Instant updatedAt,
         String viewerMemberId,
-        boolean viewerCanEdit,
+        boolean viewerCanManage,
+        boolean viewerCanEditRoster,
         boolean viewerCanEditCompositions
 ) {
 }

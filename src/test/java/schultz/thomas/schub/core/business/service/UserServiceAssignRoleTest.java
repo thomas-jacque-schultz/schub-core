@@ -133,7 +133,7 @@ class UserServiceAssignRoleTest {
         when(permissionEvaluator.rolePermissions(acteur))
                 .thenReturn(EnumSet.copyOf(SystemRole.VISITEUR.permissions()));
         Role capitaine = role("role-capitaine", "CAPITAINE",
-                EnumSet.of(Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_EDIT));
+                EnumSet.of(Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_MANAGE));
         when(roleRepository.findById("role-capitaine")).thenReturn(Optional.of(capitaine));
 
         assertThatThrownBy(() -> userService.assignRole(acteur, "cible", "role-capitaine"))

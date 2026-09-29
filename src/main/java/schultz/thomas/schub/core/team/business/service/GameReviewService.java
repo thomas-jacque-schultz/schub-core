@@ -123,20 +123,20 @@ public class GameReviewService {
         if (sujet.getMemberId().equals(placeDuLecteur(team, actor))) {
             return;
         }
-        permissionEvaluator.require(actor, Permission.TEAM_EDIT, TeamService.ref(team.getId()));
+        permissionEvaluator.require(actor, Permission.TEAM_MANAGE, TeamService.ref(team.getId()));
     }
 
     private void exigeLeDroitDeRetoucher(User actor, String teamId, GameReview revue) {
         if (actor != null && actor.getId() != null && actor.getId().equals(revue.getAuthorUserId())) {
             return;
         }
-        if (!permissionEvaluator.can(actor, Permission.TEAM_EDIT, TeamService.ref(teamId))) {
+        if (!permissionEvaluator.can(actor, Permission.TEAM_MANAGE, TeamService.ref(teamId))) {
             throw new AccessDeniedException("Cette note appartient à quelqu'un d'autre");
         }
     }
 
     private boolean peutNoterToutLeMonde(User actor, String teamId) {
-        return permissionEvaluator.can(actor, Permission.TEAM_EDIT, TeamService.ref(teamId));
+        return permissionEvaluator.can(actor, Permission.TEAM_MANAGE, TeamService.ref(teamId));
     }
 
     private List<GameReviewDto> projette(List<GameReview> revues, Team team, User actor) {
@@ -170,7 +170,7 @@ public class GameReviewService {
             return false;
         }
         return actor.getId().equals(revue.getAuthorUserId())
-                || permissionEvaluator.can(actor, Permission.TEAM_EDIT, TeamService.ref(team.getId()));
+                || permissionEvaluator.can(actor, Permission.TEAM_MANAGE, TeamService.ref(team.getId()));
     }
 
     private Map<String, MemberDirectory.MemberIdentity> identites(Team team, List<GameReview> revues) {
