@@ -91,7 +91,7 @@ class TeamStatsServiceTest {
                 mock(RiotIdResolver.class));
         PlayerStatsService playerStats =
                 new PlayerStatsService(statsGateway, championGateway, riotConnector);
-        joueurs = new TeamPlayerStatsService(teamService, memberDirectory, playerStats);
+        joueurs = new TeamPlayerStatsService(teamService, memberDirectory, playerStats, statsGateway);
         parties = new TeamGamesStatsService(teamService, memberDirectory, statsGateway,
                 new GameViews(statsGateway, championGateway));
 
@@ -169,20 +169,30 @@ class TeamStatsServiceTest {
     }
 
     @Test
-    @DisplayName("L'écart aux coéquipiers ne compte que ceux qui ont des parties")
-    void ecartAuxCoequipiers() {
-        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any(), any()))
-                .thenReturn(Optional.of(List.of(
-                        total("puuid-1", 100, 60),
-                        total("puuid-2", 100, 40),
-                        total("puuid-3", 100, 50))));
+    @DisplayName("La ligne premade ne compte que les parties d'équipe de la période")
+    void lignePremade() {
+        when(statsGateway.sharedMatches(any(), anyInt(), any(), any())).thenReturn(Optional.of(
+                new RiotStatsGateway.SharedMatches(4, 2, false, List.of(
+                        partie("EUW1_1", 420, "SOLO", true, 5),
+                        partie("EUW1_2", 440, "FLEX", false, 5)))));
+        when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.OVERALL), any(), any(),
+                eq(List.of("EUW1_1", "EUW1_2"))))
+                .thenReturn(Optional.of(List.of(total("puuid-1", 2, 1))));
 
         TeamPlayersStatsDto panneau = joueurs.of(capitaine, "equipe-1", null, null);
 
-        assertThat(colonne(panneau, "m-top").versusTeammates().comparedWith()).isEqualTo(2);
-        assertThat(colonne(panneau, "m-top").versusTeammates().winRateDelta())
-                .isEqualTo(0.6 - (0.4 + 0.5) / 2);
-        assertThat(colonne(panneau, "m-adc").versusTeammates()).isNull();
+        assertThat(panneau.premadeGames()).isEqualTo(2);
+        assertThat(colonne(panneau, "m-top").premade().games()).isEqualTo(2);
+        assertThat(colonne(panneau, "m-top").premade().winRate()).isEqualTo(0.5);
+        assertThat(colonne(panneau, "m-jgl").premade()).isNull();
+    }
+
+    @Test
+    @DisplayName("Connecteur muet sur les parties d'équipe : le nombre est inconnu, pas nul")
+    void premadeInconnu() {
+        when(statsGateway.sharedMatches(any(), anyInt(), any(), any())).thenReturn(Optional.empty());
+
+        assertThat(joueurs.of(capitaine, "equipe-1", null, null).premadeGames()).isNull();
     }
 
     @Test

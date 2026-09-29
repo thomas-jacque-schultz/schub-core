@@ -49,13 +49,19 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     @Override
     public Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Scope scope,
                                             Instant since) {
-        if (puuids == null || puuids.isEmpty()) {
+        return aggregate(puuids, groupBy, scope, since, null);
+    }
+
+    @Override
+    public Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Scope scope,
+                                            Instant since, List<String> matchIds) {
+        if (puuids == null || puuids.isEmpty() || (matchIds != null && matchIds.isEmpty())) {
             return Optional.of(List.of());
         }
         try {
             List<BucketResponse> reponse = restClient.post()
                     .uri("/stats/aggregate")
-                    .body(new AggregateRequest(puuids, groupBy.name(), scope.name(), since))
+                    .body(new AggregateRequest(puuids, groupBy.name(), scope.name(), since, matchIds))
                     .retrieve()
                     .body(BUCKETS);
             return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
@@ -320,7 +326,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                 player.damageToChampions(), player.damageTaken(), player.visionScore(), player.afk());
     }
 
-    record AggregateRequest(List<String> puuids, String groupBy, String scope, Instant since) {
+    record AggregateRequest(List<String> puuids, String groupBy, String scope, Instant since,
+                            List<String> matchIds) {
     }
 
     record PuuidsRequest(List<String> puuids) {

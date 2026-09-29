@@ -28,6 +28,10 @@ public interface RiotStatsGateway {
 
     Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Scope scope, Instant since);
 
+    // Ces parties seulement : les chiffres d'un joueur dans les parties de son équipe.
+    Optional<List<Bucket>> aggregate(List<String> puuids, Grouping groupBy, Scope scope, Instant since,
+                                     List<String> matchIds);
+
     Optional<List<References>> references(List<ReferenceRequest> joueurs);
 
     Optional<List<Coverage>> coverage(List<String> puuids);
