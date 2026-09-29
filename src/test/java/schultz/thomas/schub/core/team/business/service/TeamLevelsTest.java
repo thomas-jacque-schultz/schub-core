@@ -62,7 +62,7 @@ class TeamLevelsTest {
 
     private static RiotStatsGateway.SharedMatch partie(String id) {
         RiotStatsGateway.SharedMatchPlayer nous = new RiotStatsGateway.SharedMatchPlayer("p0", 1, "X", "TOP", true,
-                100, 0, 0, 0, 0, 0, 0, 0, 0, false);
+                100, 0, 0, 0, 0, 0, 0, 0, 0, false, null);
         return new RiotStatsGateway.SharedMatch(id, Instant.EPOCH, 1800, 420, "RANKED_SOLO", "16.18", 5, false, true,
                 List.of(nous), List.of());
     }

@@ -144,7 +144,7 @@ class MyGamesServiceTest {
 
     private static RiotStatsGateway.SharedMatchPlayer joueur(String puuid, int side, boolean win) {
         return new RiotStatsGateway.SharedMatchPlayer(puuid, side == 100 ? 1 : 2, "Ahri", "MIDDLE", win, side,
-                5, 2, 7, 240, 12_000, 20_000, 15_000, 30, false);
+                5, 2, 7, 240, 12_000, 20_000, 15_000, 30, false, null);
     }
 
     private static RiotStatsGateway.Bucket moyenne(String puuid, String poste, long parties, long minions,

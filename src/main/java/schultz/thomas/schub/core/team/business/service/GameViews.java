@@ -180,6 +180,7 @@ public class GameViews {
         return new Joueur(joueur, insight, new TeamGamePlayerDto(
                 membre == null ? null : membre.getMemberId(),
                 membre == null ? null : noms.getOrDefault(membre.getMemberId(), membre.riotId()),
+                membre != null && membre.riotId() != null ? membre.riotId() : joueur.riotId(),
                 joueur.championId(),
                 champion != null ? champion.name() : joueur.championName(),
                 champion == null ? null : champion.iconUrl(),

@@ -323,7 +323,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
         return new SharedMatchPlayer(player.puuid(), player.championId(), player.championName(),
                 player.position(), player.win(), player.side(), player.kills(), player.deaths(),
                 player.assists(), player.minionsKilled(), player.goldEarned(),
-                player.damageToChampions(), player.damageTaken(), player.visionScore(), player.afk());
+                player.damageToChampions(), player.damageTaken(), player.visionScore(), player.afk(),
+                player.riotId());
     }
 
     record AggregateRequest(List<String> puuids, String groupBy, String scope, Instant since,
@@ -375,7 +376,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                                      String position, boolean win, int side, int kills, int deaths,
                                      int assists, int minionsKilled, int goldEarned,
                                      int damageToChampions, int damageTaken, int visionScore,
-                                     boolean afk, boolean requested) {
+                                     boolean afk, boolean requested, String riotId) {
     }
 
     record ReferencesRequest(List<ReferenceRequest> players) {
