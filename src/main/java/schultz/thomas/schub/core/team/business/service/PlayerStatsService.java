@@ -25,6 +25,7 @@ public class PlayerStatsService {
     public static final int CHAMPIONS_DEFAUT = 8;
     public static final int CHAMPIONS_MAX = 30;
     private static final int MOIS_RENDUS = 12;
+    private static final int PATCHS_RENDUS = 12;
 
     private final RiotStatsGateway statsGateway;
     private final RiotChampionGateway championGateway;
@@ -38,6 +39,7 @@ public class PlayerStatsService {
             List<StatLineDto> positions,
             List<StatLineDto> queues,
             List<StatLineDto> months,
+            List<StatLineDto> patches,
             RadarReferencesDto references,
             RiotStatsGateway.Bucket total
     ) {
@@ -71,6 +73,8 @@ public class PlayerStatsService {
                 groupe(propres, RiotStatsGateway.Grouping.QUEUE, RiotStatsGateway.Scope.ALL, since);
         Map<String, List<RiotStatsGateway.Bucket>> mois =
                 groupe(propres, RiotStatsGateway.Grouping.MONTH, RiotStatsGateway.Scope.RIFT, since);
+        Map<String, List<RiotStatsGateway.Bucket>> patchs =
+                groupe(propres, RiotStatsGateway.Grouping.PATCH, RiotStatsGateway.Scope.RIFT, since);
         Map<String, RadarReferencesDto> referentiels = referentiels(positions, since);
 
         Map<String, Figures> figures = new LinkedHashMap<>();
@@ -86,6 +90,7 @@ public class PlayerStatsService {
                     lignes(positions.getOrDefault(puuid, List.of()), total),
                     lignes(queues.getOrDefault(puuid, List.of()), null),
                     lignesMois(mois.getOrDefault(puuid, List.of())),
+                    lignesPatchs(patchs.getOrDefault(puuid, List.of())),
                     referentiels.get(puuid),
                     total));
         }
@@ -148,7 +153,7 @@ public class PlayerStatsService {
             RiotStatsGateway.Bucket vide = StatLines.vide(puuid);
             figures.put(puuid, new Figures(StatsState.CONNECTEUR_INDISPONIBLE, null,
                     StatLines.of(vide, null, null, null), List.of(), List.of(), List.of(),
-                    List.of(), null, vide));
+                    List.of(), List.of(), null, vide));
         }
         return figures;
     }
@@ -234,6 +239,17 @@ public class PlayerStatsService {
                 .toList();
         return lignes.size() <= MOIS_RENDUS ? lignes
                 : lignes.subList(lignes.size() - MOIS_RENDUS, lignes.size());
+    }
+
+    // Le plus ancien d'abord ; firstPlayedAt et lastPlayedAt datent le patch par les parties du joueur.
+    private static List<StatLineDto> lignesPatchs(List<RiotStatsGateway.Bucket> buckets) {
+        List<StatLineDto> lignes = buckets.stream()
+                .filter(bucket -> !bucket.key().isBlank())
+                .sorted(Comparator.comparing(RiotStatsGateway.Bucket::key, TeamGamesStatsService::parVersion))
+                .map(bucket -> StatLines.of(bucket, null, null, null))
+                .toList();
+        return lignes.size() <= PATCHS_RENDUS ? lignes
+                : lignes.subList(lignes.size() - PATCHS_RENDUS, lignes.size());
     }
 
     private static int entier(String valeur) {
