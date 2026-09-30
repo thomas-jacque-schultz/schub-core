@@ -6,17 +6,18 @@ import io.mongock.api.annotations.RollbackExecution;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.index.CompoundIndexDefinition;
-import schultz.thomas.schub.core.team.data.model.GameReview;
 
 @ChangeUnit(id = "game-review-indexes", order = "009", author = "schub")
 public class V009_GameReviewIndexes {
 
+    // La revue est retirée (Schub#67), sa collection reste en base : le nom remplace la classe.
+    private static final String COLLECTION = "team_game_reviews";
     private static final String UNIQUE = "revue_unique";
     private static final String PAR_PARTIE = "revue_equipe_partie";
 
     @Execution
     public void execution(MongoTemplate mongoTemplate) {
-        mongoTemplate.indexOps(GameReview.class).ensureIndex(
+        mongoTemplate.indexOps(COLLECTION).ensureIndex(
                 new CompoundIndexDefinition(new Document()
                         .append("matchId", 1)
                         .append("subjectMemberId", 1)
@@ -24,7 +25,7 @@ public class V009_GameReviewIndexes {
                         .unique()
                         .named(UNIQUE));
 
-        mongoTemplate.indexOps(GameReview.class).ensureIndex(
+        mongoTemplate.indexOps(COLLECTION).ensureIndex(
                 new CompoundIndexDefinition(new Document()
                         .append("teamId", 1)
                         .append("matchId", 1)
@@ -34,7 +35,7 @@ public class V009_GameReviewIndexes {
 
     @RollbackExecution
     public void rollback(MongoTemplate mongoTemplate) {
-        mongoTemplate.indexOps(GameReview.class).dropIndex(UNIQUE);
-        mongoTemplate.indexOps(GameReview.class).dropIndex(PAR_PARTIE);
+        mongoTemplate.indexOps(COLLECTION).dropIndex(UNIQUE);
+        mongoTemplate.indexOps(COLLECTION).dropIndex(PAR_PARTIE);
     }
 }

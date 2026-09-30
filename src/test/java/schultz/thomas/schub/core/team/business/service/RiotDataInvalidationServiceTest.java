@@ -7,7 +7,6 @@ import schultz.thomas.schub.core.augur.data.repository.FindingRecordRepository;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 import schultz.thomas.schub.core.team.api.dto.RiotDataInvalidationDto;
-import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.util.LinkedHashSet;
@@ -32,9 +31,8 @@ class RiotDataInvalidationServiceTest {
     private final FindingRecordRepository findings = mock(FindingRecordRepository.class);
     private final UserRepository users = mock(UserRepository.class);
     private final TeamRepository teams = mock(TeamRepository.class);
-    private final GameReviewRepository reviews = mock(GameReviewRepository.class);
     private final RiotDataInvalidationService service =
-            new RiotDataInvalidationService(riotData, repair, findings, users, teams, reviews);
+            new RiotDataInvalidationService(riotData, repair, findings, users, teams);
 
     @Test
     @DisplayName("Sans la saisie exacte de INVALIDER, rien n'est effacé")

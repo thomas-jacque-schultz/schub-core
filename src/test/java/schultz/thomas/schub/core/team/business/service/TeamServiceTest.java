@@ -22,7 +22,6 @@ import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
-import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
@@ -44,7 +43,6 @@ class TeamServiceTest {
     private TeamRepository teamRepository;
     private RoleRepository roleRepository;
     private CompositionRepository compositionRepository;
-    private GameReviewRepository reviewRepository;
     private MemberDirectory memberDirectory;
     private RiotIdResolver riotIdResolver;
     private TeamChampionPoolRepository championPoolRepository;
@@ -60,7 +58,6 @@ class TeamServiceTest {
         teamRepository = mock(TeamRepository.class);
         compositionRepository = mock(CompositionRepository.class);
         championPoolRepository = mock(TeamChampionPoolRepository.class);
-        reviewRepository = mock(GameReviewRepository.class);
         memberDirectory = mock(MemberDirectory.class);
         riotIdResolver = mock(RiotIdResolver.class);
 
@@ -85,7 +82,7 @@ class TeamServiceTest {
                 List.of(new TeamScopedAuthority(teamRepository)));
 
         teamService = new TeamService(teamRepository, compositionRepository,
-                championPoolRepository, reviewRepository, evaluator,
+                championPoolRepository, evaluator,
                 memberDirectory, riotIdResolver);
 
         capitaine = compte("capitaine", "role-visiteur");
