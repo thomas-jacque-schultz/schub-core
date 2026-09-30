@@ -87,6 +87,9 @@ public class PatternService {
         brouillon.setThreshold(request.threshold() == null ? 0.5 : request.threshold());
         brouillon.setLabel(request.label() == null ? Map.of() : request.label());
         brouillon.setSentence(request.sentence() == null ? Map.of() : request.sentence());
+        brouillon.setExperimental(request.experimental() != null ? request.experimental()
+                : versions.isEmpty() || versions.get(0).isExperimental());
+        brouillon.setLimits(request.limits() == null ? Map.of() : request.limits());
         brouillon.setAuthor(actor.getId());
         brouillon.setComment(request.comment());
         brouillon.setCreatedAt(Instant.now());

@@ -11,5 +11,5 @@ public record PatternRequest(
         String key, PatternVersion.Scope scope, PatternVersion.Polarity polarity, PatternVersion.Category category,
         PatternVersion.Nature nature, List<Condition> required, List<Condition> optional,
         List<Condition> exceptions, Double optionalInfluence, Double threshold, Map<String, String> label,
-        Map<String, String> sentence, String comment) {
+        Map<String, String> sentence, Boolean experimental, Map<String, String> limits, String comment) {
 }

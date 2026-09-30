@@ -52,6 +52,10 @@ public class PatternVersion {
     private Map<String, String> label = new LinkedHashMap<>();
     private Map<String, String> sentence = new LinkedHashMap<>();
 
+    // Mesure fragile (échantillon mince, seuil sans grille par palier) : l'écran le dit, avec ce que la mesure ne voit pas.
+    private boolean experimental;
+    private Map<String, String> limits = new LinkedHashMap<>();
+
     private String author;
     private String comment;
     private Instant createdAt;
