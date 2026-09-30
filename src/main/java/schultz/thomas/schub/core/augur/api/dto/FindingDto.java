@@ -16,12 +16,15 @@ public record FindingDto(
         PatternVersion.Category category,
         PatternVersion.Nature nature,
         double confidence,
+        boolean experimental,
+        Map<String, String> limits,
         List<Evaluator.ConditionTrace> evidence,
         Map<String, String> context
 ) {
 
     public static FindingDto of(FindingRecord record, PatternVersion pattern) {
         return new FindingDto(record.patternKey(), pattern.getLabel(), pattern.getSentence(), pattern.getPolarity(),
-                pattern.getCategory(), pattern.getNature(), record.degree(), record.conditions(), record.context());
+                pattern.getCategory(), pattern.getNature(), record.degree(), pattern.isExperimental(), pattern.getLimits(),
+                record.conditions(), record.context());
     }
 }

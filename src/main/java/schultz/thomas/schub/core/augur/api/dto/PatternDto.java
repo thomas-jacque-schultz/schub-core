@@ -12,12 +12,12 @@ public record PatternDto(
         PatternVersion.Polarity polarity, PatternVersion.Category category, PatternVersion.Nature nature,
         List<Condition> required, List<Condition> optional, List<Condition> exceptions,
         double optionalInfluence, double threshold, Map<String, String> label, Map<String, String> sentence,
-        String author, String comment, Instant createdAt, Instant activatedAt) {
+        boolean experimental, Map<String, String> limits, String author, String comment, Instant createdAt, Instant activatedAt) {
 
     public static PatternDto of(PatternVersion p) {
         return new PatternDto(p.getKey(), p.getVersion(), p.getStatus(), p.getScope(), p.getPolarity(),
                 p.getCategory(), p.getNature(), p.getRequired(), p.getOptional(), p.getExceptions(),
-                p.getOptionalInfluence(), p.getThreshold(), p.getLabel(), p.getSentence(), p.getAuthor(),
+                p.getOptionalInfluence(), p.getThreshold(), p.getLabel(), p.getSentence(), p.isExperimental(), p.getLimits(), p.getAuthor(),
                 p.getComment(), p.getCreatedAt(), p.getActivatedAt());
     }
 }
