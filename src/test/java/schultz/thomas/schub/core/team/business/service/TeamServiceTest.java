@@ -15,7 +15,9 @@ import schultz.thomas.schub.core.data.model.Role;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
+import org.mockito.ArgumentCaptor;
 import schultz.thomas.schub.core.team.business.model.GameRole;
+import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -110,6 +112,10 @@ class TeamServiceTest {
         assertThat(equipe.getName()).isEqualTo("Les cinq");
         assertThat(equipe.getCreatedBy()).isEqualTo("capitaine");
         assertThat(equipe.getMembers()).isEmpty();
+        ArgumentCaptor<TeamChampionPool> pool = ArgumentCaptor.forClass(TeamChampionPool.class);
+        verify(championPoolRepository).save(pool.capture());
+        assertThat(pool.getValue().isStartingSelection()).isTrue();
+        assertThat(pool.getValue().championKeys(GameRole.JGL)).contains("LeeSin", "Graves");
     }
 
     @Test

@@ -13,6 +13,7 @@ public record ChampionPoolDto(
         List<ChampionPoolColumnDto> columns,
         String viewerMemberId,
         boolean viewerCanEdit,
+        boolean startingSelection,
         Instant generatedAt
 ) {
 }

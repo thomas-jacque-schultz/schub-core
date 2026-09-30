@@ -13,6 +13,7 @@ import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
+import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
@@ -85,6 +86,7 @@ public class TeamService {
         team.setUpdatedAt(team.getCreatedAt());
 
         Team created = teamRepository.save(team);
+        championPoolRepository.save(TeamChampionPool.depart(created.getId()));
         log.info("Équipe « {} » créée par {}", created.getName(), actor.getId());
         return created;
     }

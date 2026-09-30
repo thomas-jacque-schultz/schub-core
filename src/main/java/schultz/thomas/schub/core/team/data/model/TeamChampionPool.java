@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import schultz.thomas.schub.core.team.business.model.GameRole;
+import schultz.thomas.schub.core.team.business.model.StartingChampionPool;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,6 +24,18 @@ public class TeamChampionPool {
     private int masteryFloor;
 
     private Instant updatedAt;
+
+    // Vrai tant qu'aucun poste n'a été modifié : l'écran dit que c'est la sélection de départ.
+    private boolean startingSelection;
+
+    public static TeamChampionPool depart(String teamId) {
+        TeamChampionPool pool = new TeamChampionPool();
+        pool.setTeamId(teamId);
+        StartingChampionPool.SELECTION.forEach(pool::setChampionKeys);
+        pool.setStartingSelection(true);
+        pool.setUpdatedAt(Instant.now());
+        return pool;
+    }
 
     public List<String> championKeys(GameRole role) {
         if (championKeysByRole == null || role == null) {
