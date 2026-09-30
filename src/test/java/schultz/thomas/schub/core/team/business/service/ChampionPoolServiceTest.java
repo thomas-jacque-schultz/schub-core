@@ -112,6 +112,8 @@ class ChampionPoolServiceTest {
                                     (List<String>) valeur);
                         } else if (cle.equals("masteryFloor")) {
                             pool.setMasteryFloor((Integer) valeur);
+                        } else if (cle.equals("startingSelection")) {
+                            pool.setStartingSelection((Boolean) valeur);
                         }
                     });
                     return null;
@@ -292,6 +294,16 @@ class ChampionPoolServiceTest {
                 service.setChampions(capitaine, "equipe-1", GameRole.MID, List.of("Ahri", "Ahri"));
 
         assertThat(colonne(reponse, GameRole.MID).champions()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Modifier un poste fait sortir le pool de la sélection de départ")
+    void quitteLaSelectionDeDepart() {
+        pool.setStartingSelection(true);
+
+        ChampionPoolDto reponse = service.setChampions(capitaine, "equipe-1", GameRole.MID, List.of("Ahri"));
+
+        assertThat(reponse.startingSelection()).isFalse();
     }
 
     @Test

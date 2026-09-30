@@ -74,6 +74,7 @@ public class ChampionPoolService {
                 colonnes,
                 placeDuLecteur(team, actor),
                 peutEcrire(actor, teamId),
+                pool.isStartingSelection(),
                 Instant.now());
     }
 
@@ -99,7 +100,8 @@ public class ChampionPoolService {
             }
             retenues.add(propre);
         }
-        ecrit(teamId, new Update().set("championKeysByRole." + role.name(), List.copyOf(retenues)));
+        ecrit(teamId, new Update().set("championKeysByRole." + role.name(), List.copyOf(retenues))
+                .set("startingSelection", false));
         log.info("Pool du poste {} de l'équipe {} : {} champion(s) retenu(s)", role, teamId, retenues.size());
         return of(actor, teamId, null);
     }
