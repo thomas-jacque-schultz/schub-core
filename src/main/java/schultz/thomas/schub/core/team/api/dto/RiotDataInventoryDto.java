@@ -7,6 +7,5 @@ public record RiotDataInventoryDto(
         long findings,
         long linkedAccounts,
         long teamSlots,
-        long teams,
-        long reviews) {
+        long teams) {
 }

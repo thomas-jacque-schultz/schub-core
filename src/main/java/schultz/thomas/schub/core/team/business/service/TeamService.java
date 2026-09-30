@@ -17,7 +17,6 @@ import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
-import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.time.Instant;
@@ -43,7 +42,6 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final CompositionRepository compositionRepository;
     private final TeamChampionPoolRepository championPoolRepository;
-    private final GameReviewRepository reviewRepository;
     private final PermissionEvaluator permissionEvaluator;
     private final MemberDirectory memberDirectory;
     private final RiotIdResolver riotIdResolver;
@@ -103,7 +101,6 @@ public class TeamService {
         permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
         compositionRepository.deleteByTeamId(teamId);
         championPoolRepository.deleteById(teamId);
-        reviewRepository.deleteByTeamId(teamId);
         teamRepository.delete(team);
         log.info("Équipe « {} » supprimée par {}", team.getName(), actor.getId());
     }
@@ -190,7 +187,6 @@ public class TeamService {
                 .orElseThrow(() -> new NoSuchElementException("Aucun membre d'identifiant '" + memberId + "'"));
         team.getMembers().remove(member);
         Team enregistree = touch(team);
-        reviewRepository.deleteByTeamIdAndSubjectMemberId(teamId, memberId);
         log.info("Membre {} retiré de l'équipe « {} »", member.riotId(), team.getName());
         return enregistree;
     }

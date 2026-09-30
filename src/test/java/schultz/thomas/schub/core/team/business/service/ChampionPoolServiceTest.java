@@ -27,7 +27,6 @@ import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
-import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
@@ -97,7 +96,7 @@ class ChampionPoolServiceTest {
                 List.of(new TeamScopedAuthority(teamRepository)));
         TeamService teamService = new TeamService(teamRepository, mock(CompositionRepository.class),
                 mock(TeamChampionPoolRepository.class),
-                mock(GameReviewRepository.class), evaluator, memberDirectory,
+                evaluator, memberDirectory,
                 mock(RiotIdResolver.class));
         MongoTemplate mongo = mock(MongoTemplate.class);
         service = new ChampionPoolService(teamService, memberDirectory, championGateway, statsGateway, pools,

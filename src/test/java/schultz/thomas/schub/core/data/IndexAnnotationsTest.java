@@ -22,7 +22,6 @@ class IndexAnnotationsTest {
             "User.java",                // V002 — discordId, V007 — riotPuuid
             "Role.java",                // V002 — nom unique
             "StaticPortRuleEntity.java",// V011 — proto + port WAN unique
-            "GameReview.java",          // V009 — revue unique, et l'index de lecture
             "Composition.java",         // V009 — index de lecture par équipe
             "PatternVersion.java",      // V016 — clé et version uniques
             "FindingRecord.java");      // V016 — sujet, pattern

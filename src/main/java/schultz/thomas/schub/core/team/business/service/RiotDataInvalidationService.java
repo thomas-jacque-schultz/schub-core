@@ -11,7 +11,6 @@ import schultz.thomas.schub.core.team.api.dto.IngestPauseDto;
 import schultz.thomas.schub.core.team.api.dto.RiotDataInvalidationDto;
 import schultz.thomas.schub.core.team.api.dto.RiotDataInventoryDto;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
-import schultz.thomas.schub.core.team.data.repository.GameReviewRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.util.Map;
@@ -34,7 +33,6 @@ public class RiotDataInvalidationService {
     private final FindingRecordRepository findings;
     private final UserRepository users;
     private final TeamRepository teams;
-    private final GameReviewRepository reviews;
 
     public IngestPauseDto pause() {
         return riotData.pause().map(IngestPauseDto::from).orElseGet(IngestPauseDto::unavailable);
@@ -48,7 +46,7 @@ public class RiotDataInvalidationService {
         Optional<RiotDataGateway.Inventory> connecteur = riotData.inventory();
         return new RiotDataInventoryDto(connecteur.isPresent(),
                 connecteur.map(inventaire -> somme(inventaire.purged())).orElse(0L), findings.count(),
-                users.countByRiotPuuidNotNull(), placesSuivies(), teams.count(), reviews.count());
+                users.countByRiotPuuidNotNull(), placesSuivies(), teams.count());
     }
 
     public RiotDataInvalidationDto invalidate(User actor, String confirmation) {
