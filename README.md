@@ -25,3 +25,8 @@ mvn spring-boot:run
 
 En dev, le service est monté par `schub-infra-docker/Hosting/Tool/CodeInfrastructure/docker-compose.dev.yml`
 avec les sources en volume : `task dev` depuis ce dossier, puis `task logs -- schub-core`.
+
+
+## Licence
+
+[PolyForm Noncommercial 1.0.0](LICENSE) : le code se lit et se réutilise, sauf pour un usage commercial.
