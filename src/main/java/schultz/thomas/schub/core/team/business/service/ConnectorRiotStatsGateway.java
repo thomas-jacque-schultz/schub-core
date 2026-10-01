@@ -285,8 +285,9 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                     .map(row -> new Insight(row.matchId(), row.timelineAvailable(), row.ranksObservedAt(), row.early(),
                             row.participants() == null ? List.of() : row.participants().stream()
                                     .map(p -> new InsightPlayer(p.puuid(), p.side(), p.position(),
-                                            p.championId(), toStanding(p.solo()), toStanding(p.flex()), p.at15()))
-                                    .toList()))
+                                            p.championId(), toStanding(p.solo()), toStanding(p.flex()), p.at15(),
+                                            p.atEnd()))
+                                    .toList(), row.endObjectives()))
                     .toList());
         } catch (RestClientException e) {
             log.warn("Rangs et chiffres à 15 minutes non obtenus ({})", e.getMessage());
@@ -343,11 +344,11 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     }
 
     record InsightResponse(String matchId, boolean timelineAvailable, Instant ranksObservedAt, EarlyGame early,
-                           List<InsightPlayerResponse> participants) {
+                           List<EndObjectives> endObjectives, List<InsightPlayerResponse> participants) {
     }
 
     record InsightPlayerResponse(String puuid, int side, String position, int championId,
-                                 StandingResponse solo, StandingResponse flex, At15 at15) {
+                                 StandingResponse solo, StandingResponse flex, At15 at15, AtEnd atEnd) {
     }
 
     record BucketResponse(String puuid, String key, String championName, long games, long wins,

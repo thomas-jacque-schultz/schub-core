@@ -50,8 +50,8 @@ class EarlyGamesTest {
 
     private static RiotStatsGateway.Insight insight() {
         return new RiotStatsGateway.Insight("g1", true, null, early(), List.of(
-                new RiotStatsGateway.InsightPlayer("top", 100, "TOP", 1, null, null, null),
-                new RiotStatsGateway.InsightPlayer("jgl", 100, "JUNGLE", 2, null, null, null)));
+                new RiotStatsGateway.InsightPlayer("top", 100, "TOP", 1, null, null, null, null),
+                new RiotStatsGateway.InsightPlayer("jgl", 100, "JUNGLE", 2, null, null, null, null)), null);
     }
 
     @Test
@@ -92,6 +92,14 @@ class EarlyGamesTest {
         assertThat(jungler.ganksDecisive()).isZero();
         assertThat(jungler.ganksCountered()).isEqualTo(1);
         assertThat(jungler.botMinutes()).isEqualTo(10);
+        assertThat(jungler.presenceWith()).singleElement().satisfies(aupres -> {
+            assertThat(aupres.memberId()).isEqualTo("m-top");
+            assertThat(aupres.displayName()).isEqualTo("Top");
+            assertThat(aupres.games()).isEqualTo(1);
+            assertThat(aupres.minutes()).isEqualTo(2);
+            assertThat(aupres.totalMinutes()).isEqualTo(13);
+        });
+        assertThat(top.presenceWith()).isEmpty();
 
         assertThat(bilan.strongSides()).singleElement().satisfies(cote -> {
             assertThat(cote.side()).isEqualTo("BOT");

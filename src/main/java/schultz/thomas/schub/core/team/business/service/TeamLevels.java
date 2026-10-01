@@ -37,9 +37,14 @@ final class TeamLevels {
             }
             String palier = rang == null ? null : Notes.groupe(Rangs.palier(rang));
             Map<String, Integer> valeurs = valeurs(insight, cote);
+            Map<String, Integer> fins = fins(insight, cote);
             valeurs.forEach((cle, valeur) -> {
                 if (valeur != null) {
                     cumuls.get(cle).ajoute(valeur, cle, palier, grille);
+                    Integer fin = fins.get(cle);
+                    if (fin != null) {
+                        cumuls.get(cle).ajouteFin(valeur, fin);
+                    }
                 }
             });
         }
@@ -66,6 +71,32 @@ final class TeamLevels {
         return valeurs;
     }
 
+    static Map<String, Integer> fins(RiotStatsGateway.Insight insight, int cote) {
+        Map<String, Integer> fins = new LinkedHashMap<>();
+        fins.put("goldDiffAt15", ecartFinal(insight, cote, RiotStatsGateway.AtEnd::gold));
+        fins.put("xpDiffAt15", ecartFinal(insight, cote, RiotStatsGateway.AtEnd::xp));
+        fins.put("killsDiffAt15", ecartFinal(insight, cote, RiotStatsGateway.AtEnd::kills));
+        RiotStatsGateway.EndObjectives objectifs = insight.endObjectives() == null ? null
+                : insight.endObjectives().stream().filter(o -> o.side() == cote).findFirst().orElse(null);
+        if (objectifs != null) {
+            fins.put("dragons", objectifs.dragons());
+            fins.put("heralds", objectifs.heralds());
+        }
+        return fins;
+    }
+
+    private static Integer ecartFinal(RiotStatsGateway.Insight insight, int cote,
+                                      ToIntFunction<RiotStatsGateway.AtEnd> valeur) {
+        if (insight.participants().stream().anyMatch(joueur -> joueur.atEnd() == null)) {
+            return null;
+        }
+        int nous = insight.participants().stream().filter(j -> j.side() == cote)
+                .mapToInt(j -> valeur.applyAsInt(j.atEnd())).sum();
+        int eux = insight.participants().stream().filter(j -> j.side() != cote)
+                .mapToInt(j -> valeur.applyAsInt(j.atEnd())).sum();
+        return nous - eux;
+    }
+
     // Les dix chiffres à 15 min, sinon pas d'écart.
     private static Integer ecart(RiotStatsGateway.Insight insight, int cote,
                                  ToIntFunction<RiotStatsGateway.At15> valeur) {
@@ -84,6 +115,15 @@ final class TeamLevels {
         private double somme;
         private int notees;
         private double sommeDansPalier;
+        private int fins;
+        private double sommeFin;
+        private double sommeChangement;
+
+        void ajouteFin(int a15, int fin) {
+            fins++;
+            sommeFin += fin;
+            sommeChangement += fin - a15;
+        }
 
         void ajoute(int valeur, String cle, String palier, ReferenceGridDto grille) {
             parties++;
@@ -105,7 +145,8 @@ final class TeamLevels {
             Double moyenne = parties == 0 ? null : somme / parties;
             return new TeamLevelDto.Metric(cle, metrique == null ? null : metrique.polarity(), parties, moyenne,
                     notees == 0 ? null : sommeDansPalier / notees,
-                    metrique == null ? null : Notes.niveau(moyenne, metrique.rankMeans()));
+                    metrique == null ? null : Notes.niveau(moyenne, metrique.rankMeans()),
+                    fins, fins == 0 ? null : sommeFin / fins, fins == 0 ? null : sommeChangement / fins);
         }
     }
 }

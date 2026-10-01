@@ -42,12 +42,12 @@ class TeamOppositionServiceTest {
         for (int i = 0; i < 5; i++) {
             String puuid = i < 4 ? "m" + (i + 1) : "allie";
             RiotStatsGateway.At15 a15 = i == 0 ? new RiotStatsGateway.At15(5000 + orTop, 0, 120, 0, 0, 0, 0) : null;
-            joueurs.add(new RiotStatsGateway.InsightPlayer(puuid, 100, POSTES.get(i), 1, solo("GOLD", "II"), null, a15));
+            joueurs.add(new RiotStatsGateway.InsightPlayer(puuid, 100, POSTES.get(i), 1, solo("GOLD", "II"), null, a15, null));
             RiotStatsGateway.At15 a15Adverse = i == 0 ? new RiotStatsGateway.At15(5000, 0, 110, 0, 0, 0, 0) : null;
             joueurs.add(new RiotStatsGateway.InsightPlayer("e" + i, 200, POSTES.get(i), 2,
-                    tierAdverse == null ? null : solo(tierAdverse, "II"), null, a15Adverse));
+                    tierAdverse == null ? null : solo(tierAdverse, "II"), null, a15Adverse, null));
         }
-        return new RiotStatsGateway.Insight(id, true, QUAND.plusSeconds(3 * 86_400), null, joueurs);
+        return new RiotStatsGateway.Insight(id, true, QUAND.plusSeconds(3 * 86_400), null, joueurs, null);
     }
 
     @Test

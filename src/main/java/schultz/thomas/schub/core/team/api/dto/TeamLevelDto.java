@@ -13,7 +13,11 @@ public record TeamLevelDto(int games, String tier, List<String> patches, List<Me
             // De 0 à 1, « plus haut = mieux » quel que soit le sens de la métrique.
             Double inTier,
             // Palier dont la moyenne par partie est la plus proche de celle de l'équipe, quand la métrique suit le rang : l'icône.
-            String level
+            String level,
+            // Fin de partie, sur les parties qui ont aussi la valeur à 15 min ; nulle pour ce qui n'existe qu'en début de partie.
+            int gamesAtEnd,
+            Double meanAtEnd,
+            Double meanChange
     ) {
     }
 }

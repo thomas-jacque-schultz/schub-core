@@ -60,6 +60,29 @@ class TeamLevelsTest {
         assertThat(or.level()).isNull();
     }
 
+    @Test
+    @DisplayName("la fin de partie et le changement depuis 15 min ; rien à la fin pour les larves et les ganks")
+    void finDePartie() {
+        TeamLevelDto niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
+                Map.of("a", insight("a", 5200, 12_000), "b", insight("b", 5200)), null);
+
+        TeamLevelDto.Metric or = metrique(niveau, "goldDiffAt15");
+        assertThat(or.mean()).isCloseTo(1000, within(1e-9));
+        assertThat(or.gamesAtEnd()).isEqualTo(1);
+        assertThat(or.meanAtEnd()).isCloseTo(5000, within(1e-9));
+        assertThat(or.meanChange()).isCloseTo(4000, within(1e-9));
+        TeamLevelDto.Metric dragons = metrique(niveau, "dragons");
+        assertThat(dragons.meanAtEnd()).isCloseTo(3, within(1e-9));
+        assertThat(dragons.meanChange()).isCloseTo(2, within(1e-9));
+        assertThat(metrique(niveau, "grubs").gamesAtEnd()).isZero();
+        assertThat(metrique(niveau, "grubs").meanAtEnd()).isNull();
+        assertThat(metrique(niveau, "ganksDecisive").meanChange()).isNull();
+    }
+
+    private static TeamLevelDto.Metric metrique(TeamLevelDto niveau, String cle) {
+        return niveau.metrics().stream().filter(m -> m.key().equals(cle)).findFirst().orElseThrow();
+    }
+
     private static RiotStatsGateway.SharedMatch partie(String id) {
         RiotStatsGateway.SharedMatchPlayer nous = new RiotStatsGateway.SharedMatchPlayer("p0", 1, "X", "TOP", true,
                 100, 0, 0, 0, 0, 0, 0, 0, 0, false, null);
@@ -69,14 +92,21 @@ class TeamLevelsTest {
 
     // Notre camp à « or » par joueur, l'autre à 5000 : écart = 5 × (or − 5000).
     private static RiotStatsGateway.Insight insight(String id, int or) {
+        return insight(id, or, null);
+    }
+
+    // À la fin, notre camp à « orFin » par joueur, l'autre à 11 000 ; sans « orFin », pas encore recalculée.
+    private static RiotStatsGateway.Insight insight(String id, int or, Integer orFin) {
         List<RiotStatsGateway.InsightPlayer> joueurs = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             int cote = i < 5 ? 100 : 200;
             joueurs.add(new RiotStatsGateway.InsightPlayer("p" + i, cote, "TOP", 1, OR, null,
-                    new RiotStatsGateway.At15(cote == 100 ? or : 5000, 6000, 100, 0, 0, 0, 0)));
+                    new RiotStatsGateway.At15(cote == 100 ? or : 5000, 6000, 100, 0, 0, 0, 0),
+                    orFin == null ? null : new RiotStatsGateway.AtEnd(cote == 100 ? orFin : 11_000, 15_000, 3)));
         }
         RiotStatsGateway.EarlyGame early = new RiotStatsGateway.EarlyGame(List.of(), List.of(),
                 List.of(new RiotStatsGateway.Objectives(100, 1, 3, 0)));
-        return new RiotStatsGateway.Insight(id, true, Instant.EPOCH, early, joueurs);
+        return new RiotStatsGateway.Insight(id, true, Instant.EPOCH, early, joueurs, orFin == null ? null
+                : List.of(new RiotStatsGateway.EndObjectives(100, 3, 1), new RiotStatsGateway.EndObjectives(200, 2, 0)));
     }
 }
