@@ -20,6 +20,8 @@ public interface RiotConnectorService {
 
     Optional<Crawler> crawler();
 
+    Optional<AccountsByRank> accountsByRank();
+
     Crawler toggleCrawler(boolean enabled);
 
     Optional<HistoryWindow> historyWindow();
@@ -58,6 +60,12 @@ public interface RiotConnectorService {
     record Crawler(boolean switchable, boolean enabled, boolean running, long knownAccounts,
                    long trackedAccounts, long backgroundPending, long databaseBytes, long storageAlertBytes,
                    boolean storageAlert, Instant lastRoundAt, int lastRoundAccounts) {
+    }
+
+    record AccountsByRank(List<Row> rows) {
+
+        public record Row(String tier, long tracked, long seeds) {
+        }
     }
 
     record HistoryWindow(int maxGames, int maxAgeDays, int minGames) {

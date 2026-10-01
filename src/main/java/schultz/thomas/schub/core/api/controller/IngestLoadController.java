@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import schultz.thomas.schub.core.api.dto.AccountsByRankDto;
 import schultz.thomas.schub.core.api.dto.CrawlerDto;
 import schultz.thomas.schub.core.api.dto.CrawlerToggleRequest;
 import schultz.thomas.schub.core.api.dto.IngestLoadDto;
@@ -55,6 +56,16 @@ public class IngestLoadController {
         return ResponseEntity.ok(riotConnector.crawler()
                 .map(CrawlerDto::from)
                 .orElseGet(CrawlerDto::unavailable));
+    }
+
+    @GetMapping("/accounts-by-rank")
+    public ResponseEntity<AccountsByRankDto> accountsByRank(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_VIEW, null);
+
+        return ResponseEntity.ok(riotConnector.accountsByRank()
+                .map(AccountsByRankDto::from)
+                .orElseGet(AccountsByRankDto::unavailable));
     }
 
     @PutMapping("/crawler")

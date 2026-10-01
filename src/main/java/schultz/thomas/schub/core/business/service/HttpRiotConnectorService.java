@@ -76,6 +76,17 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     @Override
+    public Optional<AccountsByRank> accountsByRank() {
+        try {
+            return Optional.ofNullable(restClient.get().uri("/ingest/accounts-by-rank").retrieve()
+                    .body(AccountsByRank.class));
+        } catch (RestClientException indisponible) {
+            log.debug("Comptes par rang indisponibles : {}", indisponible.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public Crawler toggleCrawler(boolean enabled) {
         try {
             return restClient.put().uri("/ingest/crawler").body(Map.of("enabled", enabled))
