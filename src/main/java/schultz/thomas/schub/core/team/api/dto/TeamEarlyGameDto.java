@@ -8,7 +8,11 @@ public record TeamEarlyGameDto(int games, List<MemberEarlyDto> members, List<Str
     public record MemberEarlyDto(String memberId, String displayName, int laneGames, int ganksFaced,
                                  int ganksHeld, int deathsOnGank, int jungleGames, int ganksMade,
                                  int ganksDecisive, int ganksCountered, int topMinutes, int midMinutes,
-                                 int botMinutes) {
+                                 int botMinutes, List<PresenceWithDto> presenceWith) {
+    }
+
+    // Minutes passées par ce jungler du côté où jouait ce coéquipier, sur leurs parties communes.
+    public record PresenceWithDto(String memberId, String displayName, int games, int minutes, int totalMinutes) {
     }
 
     // Côté fort = côté où notre jungler a passé le plus de temps ; les ganks adverses le fuient-ils ?

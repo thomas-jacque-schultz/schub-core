@@ -64,6 +64,17 @@ final class EarlyGames {
                 }
             }
             RiotStatsGateway.JunglePresence notreJungler = jungler(early, notreCote, true);
+            Membre junglerMembre = notreJungler == null ? null : parMembre.get(notreJungler.puuid());
+            if (junglerMembre != null) {
+                for (RiotStatsGateway.InsightPlayer joueur : insight.participants()) {
+                    Membre coequipier = parMembre.get(joueur.puuid());
+                    Integer minutes = minutesDuCote(notreJungler, joueur.position());
+                    if (coequipier != null && coequipier != junglerMembre && joueur.side() == notreCote
+                            && minutes != null) {
+                        junglerMembre.aupres(coequipier.membre.getMemberId(), minutes, notreJungler);
+                    }
+                }
+            }
             String fort = notreJungler == null ? EQUILIBRE : coteFort(notreJungler);
             parCote.get(fort).ajoute(partie, early, notreCote, fort);
         }
@@ -82,6 +93,15 @@ final class EarlyGames {
             return HAUT;
         }
         return presence.botMinutes() >= presence.topMinutes() + 2 ? BAS : EQUILIBRE;
+    }
+
+    private static Integer minutesDuCote(RiotStatsGateway.JunglePresence presence, String poste) {
+        return switch (poste == null ? "" : poste) {
+            case "TOP" -> presence.topMinutes();
+            case "MIDDLE" -> presence.midMinutes();
+            case "BOTTOM", "UTILITY" -> presence.botMinutes();
+            default -> null;
+        };
     }
 
     private static RiotStatsGateway.JunglePresence jungler(RiotStatsGateway.EarlyGame early, int notreCote,
@@ -132,9 +152,17 @@ final class EarlyGames {
         private int haut;
         private int milieu;
         private int bas;
+        private final Map<String, int[]> aupres = new LinkedHashMap<>();
 
         Membre(TeamMember membre) {
             this.membre = membre;
+        }
+
+        void aupres(String coequipier, int minutes, RiotStatsGateway.JunglePresence presence) {
+            int[] cumul = aupres.computeIfAbsent(coequipier, id -> new int[3]);
+            cumul[0]++;
+            cumul[1] += minutes;
+            cumul[2] += presence.topMinutes() + presence.midMinutes() + presence.botMinutes();
         }
 
         void ajoute(RiotStatsGateway.InsightPlayer joueur, RiotStatsGateway.EarlyGame early) {
@@ -170,7 +198,11 @@ final class EarlyGames {
 
         TeamEarlyGameDto.MemberEarlyDto dto(Map<String, String> noms) {
             return new TeamEarlyGameDto.MemberEarlyDto(membre.getMemberId(), noms.get(membre.getMemberId()),
-                    couloirs, subis, tenus, morts, jungles, faits, decisifs, contres, haut, milieu, bas);
+                    couloirs, subis, tenus, morts, jungles, faits, decisifs, contres, haut, milieu, bas,
+                    aupres.entrySet().stream()
+                            .map(e -> new TeamEarlyGameDto.PresenceWithDto(e.getKey(), noms.get(e.getKey()),
+                                    e.getValue()[0], e.getValue()[1], e.getValue()[2]))
+                            .toList());
         }
     }
 

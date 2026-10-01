@@ -78,11 +78,17 @@ public interface RiotStatsGateway {
     Optional<List<Insight>> insights(List<String> matchIds);
 
     record Insight(String matchId, boolean timelineAvailable, Instant ranksObservedAt, EarlyGame early,
-                   List<InsightPlayer> participants) {
+                   List<InsightPlayer> participants, List<EndObjectives> endObjectives) {
     }
 
     record InsightPlayer(String puuid, int side, String position, int championId, Standing solo,
-                         Standing flex, At15 at15) {
+                         Standing flex, At15 at15, AtEnd atEnd) {
+    }
+
+    record AtEnd(int gold, int xp, int kills) {
+    }
+
+    record EndObjectives(int side, int dragons, int heralds) {
     }
 
     record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists) {
