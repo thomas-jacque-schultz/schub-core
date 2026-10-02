@@ -39,11 +39,12 @@ public class SearchedPlayerService {
     private final VisitorBudget budget;
 
     // light : sans rang ni maîtrises, donc sans appel à Riot. Pour rafraîchir la page pendant une collecte.
-    public SearchedPlayerDto page(String slug, Integer days, Integer champions, boolean light) {
+    // masteries=false : la page d'un robot, qui ne les affiche pas et ne doit pas entamer le quota.
+    public SearchedPlayerDto page(String slug, Integer days, Integer champions, boolean light, boolean masteries) {
         PlayerRef joueur = resolve(slug);
         var rangs = Parallele.lance(() -> light ? List.<RankedStandingDto>of()
                 : playerStatsService.rankings(joueur.puuid()));
-        var maitrises = Parallele.lance(() -> light ? List.<SearchedPlayerDto.MasteryDto>of()
+        var maitrises = Parallele.lance(() -> light || !masteries ? List.<SearchedPlayerDto.MasteryDto>of()
                 : maitrises(joueur.puuid()));
         var enCollecte = Parallele.lance(() -> riotConnector.ingestOf(joueur.puuid())
                 .map(en -> en.priorityPending() > 0).orElse(false));

@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -30,6 +31,7 @@ class SearchedPlayerServiceTest {
     private RiotStatsGateway stats;
     private RiotConnectorService connector;
     private VisitorBudget budget;
+    private RiotChampionGateway champions;
     private SearchedPlayerService service;
 
     @BeforeEach
@@ -38,7 +40,8 @@ class SearchedPlayerServiceTest {
         stats = mock(RiotStatsGateway.class);
         connector = mock(RiotConnectorService.class);
         budget = mock(VisitorBudget.class);
-        service = new SearchedPlayerService(resolver, stats, mock(RiotChampionGateway.class), connector,
+        champions = mock(RiotChampionGateway.class);
+        service = new SearchedPlayerService(resolver, stats, champions, connector,
                 mock(PlayerStatsService.class), mock(MyStatsService.class), mock(MyGamesService.class), budget);
         when(resolver.resolveRecent("Le Nom-Composé", "EUW")).thenReturn(RiotIdResolution.resolved("p1", "le nom-composé", "euw"));
         when(connector.requestPreview(anyString(), anyBoolean())).thenReturn(true);
@@ -83,5 +86,15 @@ class SearchedPlayerServiceTest {
         assertThat(service.collect("Le Nom-Composé-EUW", "ip:1").lane()).isEqualTo(PlayerCollectDto.Lane.SLOW);
         verify(connector).requestPreview("p1", false);
         verify(connector).requestPreview("p1", true);
+    }
+
+    @Test
+    @DisplayName("la page d'un robot ne demande pas les maîtrises à Riot")
+    void pageSansMaitrises() {
+        when(stats.coverage(List.of("p1"))).thenReturn(Optional.empty());
+        when(connector.ingestOf("p1")).thenReturn(Optional.empty());
+
+        assertThat(service.page("Le Nom-Composé-EUW", 30, 3, false, false).masteries()).isEmpty();
+        verify(champions, never()).masteries(anyString(), anyInt());
     }
 }

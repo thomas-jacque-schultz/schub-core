@@ -44,8 +44,9 @@ public class PlayerController {
                                   @RequestParam(required = false) Integer days,
                                   @RequestParam(required = false) Integer patches,
                                   @RequestParam(required = false) Integer champions,
-                                  @RequestParam(defaultValue = "false") boolean light) {
-        return players.page(riotId, windows.days(days, patches), champions, light);
+                                  @RequestParam(defaultValue = "false") boolean light,
+                                  @RequestParam(defaultValue = "true") boolean masteries) {
+        return players.page(riotId, windows.days(days, patches), champions, light, masteries);
     }
 
     @GetMapping("/games")
