@@ -18,6 +18,9 @@ import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.team.business.service.ConnectorRiotSeoGateway;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/ingest")
@@ -27,6 +30,7 @@ public class IngestLoadController {
     private final RiotConnectorService riotConnector;
     private final PermissionEvaluator permissionEvaluator;
     private final UserService userService;
+    private final ConnectorRiotSeoGateway seoGateway;
 
     @GetMapping("/load")
     public ResponseEntity<IngestLoadDto> load(
@@ -84,5 +88,22 @@ public class IngestLoadController {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
         return ResponseEntity.ok(riotConnector.updateHistoryWindow(window));
+    }
+
+    @GetMapping("/seo-creators")
+    public ResponseEntity<ConnectorRiotSeoGateway.SeoCreators> seoCreators(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
+
+        return ResponseEntity.ok(seoGateway.creators());
+    }
+
+    @PutMapping("/seo-creators")
+    public ResponseEntity<ConnectorRiotSeoGateway.SeoCreators> replaceSeoCreators(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+            @RequestBody List<String> riotIds) {
+        permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
+
+        return ResponseEntity.ok(seoGateway.replaceCreators(riotIds));
     }
 }
