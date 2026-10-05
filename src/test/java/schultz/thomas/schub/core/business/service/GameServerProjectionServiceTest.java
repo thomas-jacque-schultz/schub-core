@@ -28,7 +28,9 @@ class GameServerProjectionServiceTest {
     @BeforeEach
     void setUp() {
         permissionEvaluator = mock(PermissionEvaluator.class);
-        projection = new GameServerProjectionService(new GameServerMapperImpl(), permissionEvaluator);
+        UserService userService = mock(UserService.class);
+        projection = new GameServerProjectionService(new GameServerMapperImpl(), permissionEvaluator,
+                new GameServerControlPolicy(permissionEvaluator), userService);
 
         serveur = new GameServer();
         serveur.setId("srv-1");
@@ -75,6 +77,31 @@ class GameServerProjectionServiceTest {
     @DisplayName("sans acteur — le pull d'un service — c'est la projection membre")
     void sansActeur() {
         assertThat(projection.project(serveur, null)).isInstanceOf(GameServerMemberDto.class);
+    }
+
+    @Test
+    @DisplayName("un modérateur ne pilote que les serveurs dont il est référent")
+    void moderateurReferent() {
+        User moderateur = compte("modo-1");
+        when(permissionEvaluator.can(eq(moderateur), eq(Permission.SERVER_START), isNull())).thenReturn(true);
+        when(permissionEvaluator.can(eq(moderateur), eq(Permission.SERVER_STOP), isNull())).thenReturn(true);
+
+        assertThat(((GameServerMemberDto) projection.project(serveur, moderateur)).viewerCanControl()).isFalse();
+
+        serveur.setReferents(java.util.List.of("modo-1"));
+        assertThat(((GameServerMemberDto) projection.project(serveur, moderateur)).viewerCanControl()).isTrue();
+    }
+
+    @Test
+    @DisplayName("SERVER_CONTROL_ALL pilote sans être référent ; un référent sans rôle ne pilote rien")
+    void controleGlobal() {
+        User admin = compte("admin-1");
+        when(permissionEvaluator.can(eq(admin), any(Permission.class), isNull())).thenReturn(true);
+        assertThat(((GameServerDto) projection.project(serveur, admin)).viewerCanControl()).isTrue();
+
+        User referentSansRole = compte("user-2");
+        serveur.setReferents(java.util.List.of("user-2"));
+        assertThat(((GameServerMemberDto) projection.project(serveur, referentSansRole)).viewerCanControl()).isFalse();
     }
 
     @Test

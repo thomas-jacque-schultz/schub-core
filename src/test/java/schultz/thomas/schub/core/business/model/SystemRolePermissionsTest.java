@@ -62,6 +62,8 @@ class SystemRolePermissionsTest {
         Set<Permission> connues = EnumSet.of(
                 Permission.SERVER_VIEW, Permission.SERVER_INFRA_VIEW,
                 Permission.SERVER_START, Permission.SERVER_STOP,
+                // ADMINISTRATOR et OWNER ; MODERATOR ne pilote que ses serveurs (Schub#87).
+                Permission.SERVER_CONTROL_ALL,
                 Permission.SERVER_CREATE, Permission.SERVER_EDIT, Permission.SERVER_DELETE,
                 Permission.PORT_VIEW, Permission.PORT_RULE_EDIT,
                 Permission.DISCORD_CHANNEL_MANAGE,
