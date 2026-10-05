@@ -17,10 +17,14 @@ import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
 import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
 import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
+import schultz.thomas.schub.core.team.api.dto.CompositionRecordDto;
+import schultz.thomas.schub.core.team.api.dto.DraftAdviceDto;
 import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
 import schultz.thomas.schub.core.augur.api.dto.FindingDto;
 import schultz.thomas.schub.core.augur.business.service.AugurService;
 import schultz.thomas.schub.core.team.business.service.TeamService;
+import schultz.thomas.schub.core.team.business.service.CompositionRecordService;
+import schultz.thomas.schub.core.team.business.service.DraftAdviceService;
 import schultz.thomas.schub.core.team.business.service.TeamSynergyService;
 import schultz.thomas.schub.core.team.business.service.TeamGamesStatsService;
 import schultz.thomas.schub.core.team.business.service.TeamOppositionService;
@@ -42,6 +46,26 @@ public class TeamStatsController {
     private final TeamSynergyService synergy;
     private final AugurService augur;
     private final TeamService teamService;
+    private final DraftAdviceService draftAdvice;
+    private final CompositionRecordService compositionRecords;
+
+    @GetMapping("/draft")
+    public DraftAdviceDto draft(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+            @PathVariable String teamId,
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches) {
+        return draftAdvice.of(userService.requireActor(actorId), teamId, windows.days(days, patches));
+    }
+
+    @GetMapping("/compositions")
+    public List<CompositionRecordDto> compositions(
+            @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+            @PathVariable String teamId,
+            @RequestParam(required = false) Integer days,
+            @RequestParam(required = false) Integer patches) {
+        return compositionRecords.of(userService.requireActor(actorId), teamId, windows.days(days, patches));
+    }
 
     @GetMapping("/refresh")
     public StatsRefreshDto refreshStatus(
