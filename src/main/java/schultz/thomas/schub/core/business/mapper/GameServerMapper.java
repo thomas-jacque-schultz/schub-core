@@ -36,6 +36,7 @@ public interface GameServerMapper {
     @Mapping(target = "lastStatusChangeAt", ignore = true)
     @Mapping(target = "statusHistory", ignore = true)
     @Mapping(target = "lastCommandFailure", ignore = true)
+    @Mapping(target = "referents", source = "referentIds")
     @Mapping(target = "game", source = "game", qualifiedByName = "stringToGame")
     GameServer toEntity(GameServerDto dto);
 
@@ -44,6 +45,9 @@ public interface GameServerMapper {
     @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
     @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
+    @Mapping(target = "referentIds", source = "referents")
+    @Mapping(target = "referents", ignore = true)
+    @Mapping(target = "viewerCanControl", ignore = true)
     GameServerDto toDto(GameServer entity);
 
     @Mapping(target = "game", source = "game", qualifiedByName = "gameToString")
@@ -51,6 +55,8 @@ public interface GameServerMapper {
     @Mapping(target = "gameIconUrl", source = "game", qualifiedByName = "gameToIcon")
     @Mapping(target = "status", source = "status", qualifiedByName = "statusToString")
     @Mapping(target = "statusHistory", source = "statusHistory", qualifiedByName = "historyToDto")
+    @Mapping(target = "referents", ignore = true)
+    @Mapping(target = "viewerCanControl", ignore = true)
     GameServerMemberDto toMemberDto(GameServer entity);
 
     @Named("stringToGame")

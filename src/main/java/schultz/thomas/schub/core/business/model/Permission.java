@@ -9,6 +9,9 @@ public enum Permission {
     SERVER_START,
     SERVER_STOP,
 
+    // Sans elle, SERVER_START/STOP ne valent que sur les serveurs dont on est référent.
+    SERVER_CONTROL_ALL,
+
     SERVER_CREATE,
     SERVER_EDIT,
     SERVER_DELETE,

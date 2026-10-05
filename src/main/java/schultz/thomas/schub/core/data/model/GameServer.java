@@ -31,6 +31,9 @@ public class GameServer {
 
     private List<GameServerPort> ports = new ArrayList<>();
 
+    // Identifiants de comptes (User.id).
+    private List<String> referents = new ArrayList<>();
+
     // null = jamais observé ; force la notification au premier passage.
     private GameServerStatus status;
 

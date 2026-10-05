@@ -14,7 +14,7 @@ public enum SystemRole {
     // Liste explicite, jamais complementOf : une nouvelle permission ne doit arriver ici que si on l'écrit.
     ADMINISTRATOR(EnumSet.of(
             Permission.SERVER_VIEW, Permission.SERVER_INFRA_VIEW,
-            Permission.SERVER_START, Permission.SERVER_STOP,
+            Permission.SERVER_START, Permission.SERVER_STOP, Permission.SERVER_CONTROL_ALL,
             Permission.SERVER_CREATE, Permission.SERVER_EDIT, Permission.SERVER_DELETE,
             Permission.PORT_VIEW, Permission.PORT_RULE_EDIT,
             Permission.DISCORD_CHANNEL_MANAGE,

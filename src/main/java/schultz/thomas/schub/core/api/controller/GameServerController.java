@@ -5,6 +5,7 @@ import schultz.thomas.schub.core.api.dto.PublicServerStatusDto;
 import schultz.thomas.schub.core.business.mapper.GameServerMapper;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.DeploymentService;
+import schultz.thomas.schub.core.business.service.GameServerControlPolicy;
 import schultz.thomas.schub.core.business.service.GameServerProjectionService;
 import schultz.thomas.schub.core.business.service.GameServerService;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/game-servers")
@@ -38,6 +40,7 @@ public class GameServerController {
     private final PermissionEvaluator permissionEvaluator;
     private final UserService userService;
     private final GameServerMapper mapper;
+    private final GameServerControlPolicy controlPolicy;
 
     @GetMapping
     public List<?> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
@@ -73,8 +76,8 @@ public class GameServerController {
             @RequestBody GameServerDto dto) {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.SERVER_CREATE, null);
-        GameServer created = gameServerService.create(mapper.toEntity(dto));
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created));
+        GameServer created = gameServerService.create(withKnownReferents(mapper.toEntity(dto)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created, actor));
     }
 
     @PutMapping("/{id}")
@@ -84,17 +87,17 @@ public class GameServerController {
             @RequestBody GameServerDto dto) {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.SERVER_EDIT, null);
-        GameServer updated = gameServerService.update(id, mapper.toEntity(dto));
-        return ResponseEntity.ok(projectionService.toInfraDto(updated));
+        GameServer updated = gameServerService.update(id, withKnownReferents(mapper.toEntity(dto)));
+        return ResponseEntity.ok(projectionService.toInfraDto(updated, actor));
     }
 
     @PostMapping("/{slug}/start")
     public ResponseEntity<Void> start(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String slug) {
-        permissionEvaluator.require(userService.requireActor(actorId),
-                Permission.SERVER_START, null);
-        deploymentService.start(gameServerService.requireBySlug(slug));
+        GameServer server = gameServerService.requireBySlug(slug);
+        controlPolicy.require(userService.requireActor(actorId), server, Permission.SERVER_START);
+        deploymentService.start(server);
         return ResponseEntity.accepted().build();
     }
 
@@ -102,9 +105,9 @@ public class GameServerController {
     public ResponseEntity<Void> stop(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String slug) {
-        permissionEvaluator.require(userService.requireActor(actorId),
-                Permission.SERVER_STOP, null);
-        deploymentService.stop(gameServerService.requireBySlug(slug));
+        GameServer server = gameServerService.requireBySlug(slug);
+        controlPolicy.require(userService.requireActor(actorId), server, Permission.SERVER_STOP);
+        deploymentService.stop(server);
         return ResponseEntity.accepted().build();
     }
 
@@ -114,6 +117,13 @@ public class GameServerController {
         return java.util.Arrays.stream(Game.values())
                 .map(game -> new GameDto(game.name(), game.getLabel(), game.getIconUrl()))
                 .toList();
+    }
+
+    private GameServer withKnownReferents(GameServer server) {
+        if (server.getReferents() != null) {
+            server.setReferents(List.copyOf(userService.byIds(Set.copyOf(server.getReferents())).keySet()));
+        }
+        return server;
     }
 
     private Optional<User> readActor(String actorId) {

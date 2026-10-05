@@ -19,6 +19,14 @@ public record GameServerMemberDto(
         Instant lastStatusCheckAt,
         Instant lastStatusChangeAt,
         List<GameServerStatusHistoryEntryDto> statusHistory,
-        GameServerCommandFailureDto lastCommandFailure
+        GameServerCommandFailureDto lastCommandFailure,
+        List<GameServerReferentDto> referents,
+        boolean viewerCanControl
 ) {
+
+    public GameServerMemberDto forViewer(List<GameServerReferentDto> resolvedReferents, boolean canControl) {
+        return new GameServerMemberDto(id, slug, name, urlConnection, game, gameLabel, gameIconUrl, playersMax,
+                installation, version, description, status, lastStatusCheckAt, lastStatusChangeAt, statusHistory,
+                lastCommandFailure, resolvedReferents, canControl);
+    }
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
+import schultz.thomas.schub.core.business.service.NotReferentException;
 import schultz.thomas.schub.core.business.service.RiotAccountChangeNotConfirmedException;
 import schultz.thomas.schub.core.business.service.RiotConnectorBusyException;
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
@@ -25,6 +26,12 @@ public class CoreExceptionHandler {
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> handleMissing(NoSuchElementException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(NotReferentException.class)
+    public ResponseEntity<Map<String, String>> handleNotReferent(NotReferentException e) {
+        log.warn("Accès refusé : {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage(), "code", "NOT_REFERENT"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
