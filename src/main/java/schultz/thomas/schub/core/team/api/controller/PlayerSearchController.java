@@ -13,6 +13,8 @@ import schultz.thomas.schub.core.business.service.ActivityService;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
 import schultz.thomas.schub.core.team.api.dto.PlayerSuggestionDto;
+import schultz.thomas.schub.core.team.business.service.ConnectorRiotSeoGateway;
+import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 
@@ -27,11 +29,21 @@ public class PlayerSearchController {
 
     private final RiotConnectorService riotConnector;
     private final ActivityService activityService;
+    private final ConnectorRiotSeoGateway seoGateway;
 
-    // Pour le plan du site : des Riot ID, jamais de puuid.
-    @GetMapping("/tracked")
-    public List<String> tracked(@RequestParam(defaultValue = "50000") int limit) {
-        return riotConnector.trackedRiotIds(Math.clamp(limit, 1, 50_000));
+    // Pour le plan du site : des Riot ID, jamais de puuid. Connecteur muet : liste vide, le plan garde ses pages fixes.
+    @GetMapping("/indexable")
+    public List<IndexablePlayerDto> indexable(@RequestParam(defaultValue = "50000") int limit) {
+        try {
+            return seoGateway.indexable(Math.clamp(limit, 1, 50_000)).stream()
+                    .map(joueur -> new IndexablePlayerDto(joueur.riotId(), joueur.featured()))
+                    .toList();
+        } catch (RestClientException indisponible) {
+            return List.of();
+        }
+    }
+
+    public record IndexablePlayerDto(String riotId, boolean featured) {
     }
 
     // La présentation publique dit ce que couvre l'historique d'un joueur.
