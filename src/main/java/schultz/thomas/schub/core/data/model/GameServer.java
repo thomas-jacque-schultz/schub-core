@@ -39,4 +39,6 @@ public class GameServer {
     private Instant lastStatusChangeAt;
 
     private List<GameServerStatusHistoryEntry> statusHistory = new ArrayList<>();
+
+    private GameServerCommandFailure lastCommandFailure;
 }

@@ -1,6 +1,8 @@
 package schultz.thomas.schub.core.business.service;
 
+import schultz.thomas.schub.core.api.dto.GameServerCommandFailureDto;
 import schultz.thomas.schub.core.api.dto.PortainerStack;
+import schultz.thomas.schub.core.data.model.GameServerCommandFailure;
 import schultz.thomas.schub.core.business.model.DockerContainerState;
 import schultz.thomas.schub.core.config.ConnectorPortainerProperties;
 
@@ -58,6 +60,10 @@ public class HttpContainerRequestService implements ContainerRequestService {
 
         DockerContainerState state = new DockerContainerState();
         state.setRunning(stack.running());
+        GameServerCommandFailureDto failure = stack.lastCommandFailure();
+        if (failure != null) {
+            state.setCommandFailure(new GameServerCommandFailure(failure.action(), failure.message(), failure.at()));
+        }
         return state;
     }
 

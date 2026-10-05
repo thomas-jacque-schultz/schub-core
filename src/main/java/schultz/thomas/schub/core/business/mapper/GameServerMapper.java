@@ -28,12 +28,14 @@ public interface GameServerMapper {
     @Mapping(target = "lastStatusCheckAt", ignore = true)
     @Mapping(target = "lastStatusChangeAt", ignore = true)
     @Mapping(target = "statusHistory", ignore = true)
+    @Mapping(target = "lastCommandFailure", ignore = true)
     void updateFromSource(GameServer source, @MappingTarget GameServer target);
 
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "lastStatusCheckAt", ignore = true)
     @Mapping(target = "lastStatusChangeAt", ignore = true)
     @Mapping(target = "statusHistory", ignore = true)
+    @Mapping(target = "lastCommandFailure", ignore = true)
     @Mapping(target = "game", source = "game", qualifiedByName = "stringToGame")
     GameServer toEntity(GameServerDto dto);
 
