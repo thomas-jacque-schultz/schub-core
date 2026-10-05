@@ -7,6 +7,7 @@ public record PortainerStack(
         String name,
         Integer endpointId,
         boolean running,
-        Instant observedAt
+        Instant observedAt,
+        GameServerCommandFailureDto lastCommandFailure
 ) {
 }

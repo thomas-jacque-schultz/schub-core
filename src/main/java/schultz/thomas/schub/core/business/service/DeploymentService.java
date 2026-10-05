@@ -30,6 +30,7 @@ public class DeploymentService {
         try {
             DockerContainerState state = containerRequestService.getContainerState(gameServer.getDeploymentId());
             newStatus = resolveStatus(state);
+            gameServer.setLastCommandFailure(state != null ? state.getCommandFailure() : null);
         } catch (Exception e) {
             log.warn("Lecture du déploiement impossible pour '{}' [{}] : {}",
                     gameServer.getSlug(), e.getClass().getSimpleName(), e.getMessage());

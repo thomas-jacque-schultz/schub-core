@@ -95,7 +95,8 @@ public class GameServerService {
     }
 
     public void persistObservedState(GameServer gameServer, boolean changed) {
-        Update update = new Update().set("lastStatusCheckAt", gameServer.getLastStatusCheckAt());
+        Update update = new Update().set("lastStatusCheckAt", gameServer.getLastStatusCheckAt())
+                .set("lastCommandFailure", gameServer.getLastCommandFailure());
         if (changed) {
             List<GameServerStatusHistoryEntry> historique = gameServer.getStatusHistory();
             update.set("status", gameServer.getStatus())

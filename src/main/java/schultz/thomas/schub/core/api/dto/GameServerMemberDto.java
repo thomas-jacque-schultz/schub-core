@@ -18,6 +18,7 @@ public record GameServerMemberDto(
         String status,
         Instant lastStatusCheckAt,
         Instant lastStatusChangeAt,
-        List<GameServerStatusHistoryEntryDto> statusHistory
+        List<GameServerStatusHistoryEntryDto> statusHistory,
+        GameServerCommandFailureDto lastCommandFailure
 ) {
 }
