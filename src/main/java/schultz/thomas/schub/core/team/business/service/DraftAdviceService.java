@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 // Conseils de draft (Schub#104) : nos combos (#105), les bans (#106), les combos à essayer (#108).
@@ -125,6 +126,11 @@ public class DraftAdviceService {
             }
         }
 
+        // Les appels au repère général prennent chacun quelques secondes : ils partent ensemble.
+        CompletableFuture<List<DraftAdviceDto.Combo>> essais =
+                Parallele.lance(() -> aEssayer(team, joueurs, parPuuid, noms, catalogue, duos));
+        CompletableFuture<List<DraftAdviceDto.LaneThreat>> menaces =
+                Parallele.lance(() -> menacesDeCouloir(parties, parPuuid, noms, catalogue));
         Rendu rendu = new Rendu(noms, catalogue, sansPartenaire);
         List<DraftAdviceDto.Combo> duosRendus = duos.entrySet().stream()
                 .map(e -> rendu.combo(kindOf(e.getKey()), e.getKey(), e.getValue(), DUO_SEUIL))
@@ -161,9 +167,9 @@ public class DraftAdviceService {
                 triosRendus.stream().map(c -> avecRepere(c, reperes)).toList(),
                 composRendues,
                 aEviter.stream().map(c -> avecRepere(c, reperes)).toList(),
-                aEssayer(team, joueurs, parPuuid, noms, catalogue, duos),
+                Parallele.attend(essais),
                 bans(parties, catalogue),
-                menacesDeCouloir(parties, parPuuid, noms, catalogue));
+                Parallele.attend(menaces));
     }
 
     private static void ajoute(Map<List<Choix>, Compte> comptes, Type type, Map<String, Choix> parPoste,
@@ -234,7 +240,8 @@ public class DraftAdviceService {
         Map<String, GeneralRecord> reperes = new HashMap<>();
         Map<String, List<DraftAdviceDto.Combo>> parType = affiches.stream()
                 .collect(Collectors.groupingBy(DraftAdviceDto.Combo::kind, LinkedHashMap::new, Collectors.toList()));
-        parType.forEach((kind, liste) -> {
+        Parallele.parCle(parType.keySet(), kind -> {
+            List<DraftAdviceDto.Combo> liste = parType.get(kind);
             List<String> postes = liste.get(0).picks().stream()
                     .map(pick -> positionDe(GameRole.valueOf(pick.role()))).toList();
             List<ConnectorRiotComboGateway.Slot> slots = new ArrayList<>();
@@ -243,9 +250,9 @@ public class DraftAdviceService {
                 slots.add(new ConnectorRiotComboGateway.Slot(postes.get(i), liste.stream()
                         .map(c -> c.picks().get(index).championId()).distinct().toList()));
             }
-            combos.combos(slots, 1).orElseGet(List::of).forEach(general ->
-                    reperes.put(cle(kind, general.championIds()), new GeneralRecord(general.games(), general.wins())));
-        });
+            return combos.combos(slots, 1).orElseGet(List::of);
+        }).forEach((kind, generaux) -> generaux.forEach(general ->
+                reperes.put(cle(kind, general.championIds()), new GeneralRecord(general.games(), general.wins()))));
         return reperes;
     }
 
@@ -288,7 +295,7 @@ public class DraftAdviceService {
                 cle(kindOf(choix), choix.stream().map(Choix::championId).toList()), compte.parties, Long::sum));
 
         Rendu rendu = new Rendu(noms, catalogue, Map.of());
-        List<DraftAdviceDto.Combo> propositions = new ArrayList<>();
+        Map<Type, List<Map<Integer, String>>> candidatsParType = new LinkedHashMap<>();
         for (Type type : DUOS) {
             // Pour chaque poste : quel membre peut prendre quel champion.
             List<Map<Integer, String>> candidats = new ArrayList<>();
@@ -309,15 +316,24 @@ public class DraftAdviceService {
                 }
                 candidats.add(parChampion);
             }
-            if (candidats.stream().anyMatch(Map::isEmpty)) {
-                continue;
+            if (candidats.stream().noneMatch(Map::isEmpty)) {
+                candidatsParType.put(type, candidats);
             }
-            List<ConnectorRiotComboGateway.Slot> slots = new ArrayList<>();
-            for (int i = 0; i < type.positions().size(); i++) {
-                slots.add(new ConnectorRiotComboGateway.Slot(type.positions().get(i),
-                        List.copyOf(candidats.get(i).keySet())));
-            }
-            combos.combos(slots, REPERE_SOLIDE).orElseGet(List::of).stream()
+        }
+        Map<Type, List<ConnectorRiotComboGateway.GeneralCombo>> generaux = Parallele.parCle(candidatsParType.keySet(),
+                type -> {
+                    List<Map<Integer, String>> candidats = candidatsParType.get(type);
+                    List<ConnectorRiotComboGateway.Slot> slots = new ArrayList<>();
+                    for (int i = 0; i < type.positions().size(); i++) {
+                        slots.add(new ConnectorRiotComboGateway.Slot(type.positions().get(i),
+                                List.copyOf(candidats.get(i).keySet())));
+                    }
+                    return combos.combos(slots, REPERE_SOLIDE).orElseGet(List::of);
+                });
+        List<DraftAdviceDto.Combo> propositions = new ArrayList<>();
+        for (Type type : candidatsParType.keySet()) {
+            List<Map<Integer, String>> candidats = candidatsParType.get(type);
+            generaux.get(type).stream()
                     .filter(general -> (double) general.wins() / general.games() > 0.5)
                     .filter(general -> ensemble.getOrDefault(cle(type.kind(), general.championIds()), 0L) < DEJA_ESSAYE)
                     .filter(general -> !Objects.equals(candidats.get(0).get(general.championIds().get(0)),
