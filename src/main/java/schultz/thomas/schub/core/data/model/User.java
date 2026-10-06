@@ -34,4 +34,12 @@ public class User {
 
     private Instant createdAt;
     private Instant lastLoginAt;
+
+    // Résumés de session en MP (Schub#99) : absent, les réglages par défaut s'appliquent.
+    private SessionSummaryPreferences sessionSummaries;
+
+    // Discord a refusé un MP (MP fermés, application bloquée) : le profil explique comment les ouvrir.
+    private Instant dmUnreachableAt;
+
+    private String lastSessionSummaryDay;
 }

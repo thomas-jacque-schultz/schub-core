@@ -11,6 +11,7 @@ import schultz.thomas.schub.core.api.dto.UserIdentityDto;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.SystemRole;
 import schultz.thomas.schub.core.data.model.Role;
+import schultz.thomas.schub.core.data.model.SessionSummaryPreferences;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
@@ -118,7 +119,15 @@ public class UserService {
                 new MeDto.RoleSummaryDto(role == null ? null : role.getName(),
                         permissionEvaluator.rolePermissions(user)),
                 riotAccountService.of(user),
-                AccountLinksDto.of(user));
+                AccountLinksDto.of(user),
+                new MeDto.SessionSummariesDto(SessionSummaryPreferences.of(user).planned(),
+                        SessionSummaryPreferences.of(user).free()),
+                user.getDmUnreachableAt() != null);
+    }
+
+    public User changeSessionSummaries(User actor, boolean planned, boolean free) {
+        actor.setSessionSummaries(new SessionSummaryPreferences(planned, free));
+        return userRepository.save(actor);
     }
 
     public List<User> findAll() {
