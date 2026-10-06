@@ -132,13 +132,13 @@ public class SessionWatcher {
             return List.of();
         }
         return team.getTrainingSlots().stream()
-                .filter(s -> s.recurring() ? s.day() == jour.getDayOfWeek() : jour.equals(s.date()))
+                .filter(s -> s.recurring() ? s.day() == jour.getDayOfWeek() : jour.equals(s.localDate()))
                 .toList();
     }
 
     static Instant[] bornes(TrainingSlot slot, LocalDate jour) {
-        ZonedDateTime debut = jour.atTime(slot.start()).atZone(PARIS);
-        ZonedDateTime fin = jour.atTime(slot.end()).atZone(PARIS);
+        ZonedDateTime debut = jour.atTime(slot.startTime()).atZone(PARIS);
+        ZonedDateTime fin = jour.atTime(slot.endTime()).atZone(PARIS);
         if (!fin.isAfter(debut)) {
             fin = fin.plusDays(1);
         }
