@@ -12,6 +12,8 @@ public interface TeamRepository extends MongoRepository<Team, String> {
 
     List<Team> findByMembersUserId(String userId);
 
+    List<Team> findByPublicPageTrue();
+
     List<Team> findByCreatedBy(String createdBy);
 
     List<Team> findByMembersRiotPuuidIn(java.util.Collection<String> riotPuuids);

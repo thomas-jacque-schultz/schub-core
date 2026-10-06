@@ -106,6 +106,26 @@ public class TeamController {
         return projectionService.toDto(teamService.removeMember(actor, teamId, memberId), actor);
     }
 
+    @PutMapping("/{teamId}/public")
+    public TeamDto setPublic(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+                             @PathVariable String teamId,
+                             @RequestBody VisibilityRequest request) {
+        User actor = userService.requireActor(actorId);
+        return projectionService.toDto(teamService.setPublicPage(actor, teamId, request.value()), actor);
+    }
+
+    @PutMapping("/{teamId}/members/{memberId}/hidden")
+    public TeamDto setMemberHidden(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+                                   @PathVariable String teamId,
+                                   @PathVariable String memberId,
+                                   @RequestBody VisibilityRequest request) {
+        User actor = userService.requireActor(actorId);
+        return projectionService.toDto(teamService.setMemberHidden(actor, teamId, memberId, request.value()), actor);
+    }
+
+    public record VisibilityRequest(boolean value) {
+    }
+
     @PostMapping("/claim")
     public List<TeamSummaryDto> claim(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {

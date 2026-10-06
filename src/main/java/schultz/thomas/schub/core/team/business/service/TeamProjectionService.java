@@ -61,7 +61,8 @@ public class TeamProjectionService {
                 placeDuLecteur(team, actor).orElse(null),
                 droits.contains(Permission.TEAM_MANAGE),
                 droits.contains(Permission.ROSTER_EDIT),
-                droits.contains(Permission.COMPOSITION_EDIT));
+                droits.contains(Permission.COMPOSITION_EDIT),
+                team.isPublicPage());
     }
 
     public List<CompositionDto> toDtos(List<Composition> compositions, Team team, User actor) {
@@ -115,7 +116,8 @@ public class TeamProjectionService {
                 member.getStatus(),
                 member.coaches(),
                 member.isLinked(),
-                member.getUserId() != null && member.getUserId().equals(team.getCreatedBy()));
+                member.getUserId() != null && member.getUserId().equals(team.getCreatedBy()),
+                member.isHiddenOnPublicPage());
     }
 
     private String nomAffiche(TeamMember member, Map<String, MemberDirectory.MemberIdentity> identites) {
