@@ -35,6 +35,8 @@ public class Team {
     // Page publique en lecture seule (Schub#98) : le créateur décide, chaque membre peut masquer son nom.
     private boolean publicPage;
 
+    private List<TrainingSlot> trainingSlots = new ArrayList<>();
+
     public Optional<TeamMember> findMember(String memberId) {
         return members == null || memberId == null
                 ? Optional.empty()

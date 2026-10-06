@@ -24,6 +24,8 @@ import schultz.thomas.schub.core.team.business.service.TeamProjectionService;
 import schultz.thomas.schub.core.team.business.service.TeamService;
 import schultz.thomas.schub.core.team.data.model.Team;
 
+import schultz.thomas.schub.core.team.data.model.TrainingSlot;
+
 import java.util.List;
 
 @RestController
@@ -124,6 +126,14 @@ public class TeamController {
     }
 
     public record VisibilityRequest(boolean value) {
+    }
+
+    @PutMapping("/{teamId}/training-slots")
+    public TeamDto setTrainingSlots(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+                                    @PathVariable String teamId,
+                                    @RequestBody List<TrainingSlot> slots) {
+        User actor = userService.requireActor(actorId);
+        return projectionService.toDto(teamService.setTrainingSlots(actor, teamId, slots), actor);
     }
 
     @PostMapping("/claim")

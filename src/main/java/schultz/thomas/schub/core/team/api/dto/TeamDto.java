@@ -1,6 +1,8 @@
 package schultz.thomas.schub.core.team.api.dto;
 
 import java.time.Instant;
+import schultz.thomas.schub.core.team.data.model.TrainingSlot;
+
 import java.util.List;
 
 public record TeamDto(
@@ -14,6 +16,7 @@ public record TeamDto(
         boolean viewerCanManage,
         boolean viewerCanEditRoster,
         boolean viewerCanEditCompositions,
-        boolean publicPage
+        boolean publicPage,
+        List<TrainingSlot> trainingSlots
 ) {
 }
