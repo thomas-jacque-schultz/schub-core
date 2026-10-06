@@ -18,6 +18,8 @@ import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.team.api.dto.CompanionsDto;
+import schultz.thomas.schub.core.team.business.service.CompanionsService;
 import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.team.api.dto.PlayerCollectDto;
 import schultz.thomas.schub.core.team.api.dto.SearchedPlayerDto;
@@ -34,6 +36,7 @@ public class PlayerController {
     public static final String VISITOR_ID = "X-Visitor-Id";
 
     private final SearchedPlayerService players;
+    private final CompanionsService companions;
     private final StatsWindows windows;
     private final AugurService augur;
     private final UserService userService;
@@ -47,6 +50,12 @@ public class PlayerController {
                                   @RequestParam(defaultValue = "false") boolean light,
                                   @RequestParam(defaultValue = "true") boolean masteries) {
         return players.page(riotId, windows.days(days, patches), champions, light, masteries);
+    }
+
+    // Public, comme la page : des coéquipiers que Riot rend publics, masquables sur demande par le contact.
+    @GetMapping("/companions")
+    public CompanionsDto companions(@PathVariable String riotId) {
+        return companions.of(riotId);
     }
 
     @GetMapping("/games")
