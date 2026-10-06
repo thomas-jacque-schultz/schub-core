@@ -11,8 +11,13 @@ public record MeDto(
         boolean displayNameChosen,
         RoleSummaryDto role,
         RiotAccountDto riot,
-        AccountLinksDto links
+        AccountLinksDto links,
+        SessionSummariesDto sessionSummaries,
+        boolean dmUnreachable
 ) {
+
+    public record SessionSummariesDto(boolean planned, boolean free) {
+    }
 
     public record DiscordIdentityDto(String id, String username, String avatarUrl) {
     }

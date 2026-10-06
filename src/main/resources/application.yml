@@ -58,6 +58,14 @@ connector:
     base-url: ${CONNECTOR_RIOT_URL:http://connector-riot:8080}
     connect-timeout: 2s
     read-timeout: 5s
+  premadelab:
+    base-url: ${CONNECTOR_PREMADELAB_URL:http://connector-premadelab:8080}
+    # Un 429 de Discord est réessayé dans le connecteur, jusqu'à 10 s.
+    read-timeout: 20s
+
+# Le lien des résumés de session (Schub#99).
+premadelab:
+  url: ${PREMADELAB_URL:https://premadelab.eu}
 
 port-forwarding:
   enabled: ${PORT_FORWARDING_ENABLED:false}
