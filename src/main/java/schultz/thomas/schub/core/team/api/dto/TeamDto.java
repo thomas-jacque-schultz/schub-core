@@ -13,6 +13,7 @@ public record TeamDto(
         String viewerMemberId,
         boolean viewerCanManage,
         boolean viewerCanEditRoster,
-        boolean viewerCanEditCompositions
+        boolean viewerCanEditCompositions,
+        boolean publicPage
 ) {
 }

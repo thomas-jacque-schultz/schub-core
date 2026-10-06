@@ -16,6 +16,7 @@ public record TeamMemberDto(
         MemberStatus status,
         boolean coach,
         boolean linked,
-        boolean captain
+        boolean captain,
+        boolean hiddenOnPublicPage
 ) {
 }

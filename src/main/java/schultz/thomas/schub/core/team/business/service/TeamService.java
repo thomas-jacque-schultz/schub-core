@@ -96,6 +96,26 @@ public class TeamService {
         return touch(team);
     }
 
+    public Team setPublicPage(User actor, String teamId, boolean publique) {
+        Team team = require(teamId);
+        permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
+        team.setPublicPage(publique);
+        return touch(team);
+    }
+
+    // Le membre lui-même, ou qui gère l'équipe.
+    public Team setMemberHidden(User actor, String teamId, String memberId, boolean masque) {
+        Team team = require(teamId);
+        TeamMember membre = team.getMembers().stream().filter(m -> memberId.equals(m.getMemberId())).findFirst()
+                .orElseThrow(() -> new java.util.NoSuchElementException("Aucun membre d'identifiant '" + memberId + "'"));
+        boolean luiMeme = actor != null && actor.getId() != null && actor.getId().equals(membre.getUserId());
+        if (!luiMeme) {
+            permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
+        }
+        membre.setHiddenOnPublicPage(masque);
+        return touch(team);
+    }
+
     public void delete(User actor, String teamId) {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));

@@ -30,6 +30,8 @@ public class TeamMember {
 
     private Instant linkedAt;
 
+    private boolean hiddenOnPublicPage;
+
     public boolean coaches() {
         return coach || status == MemberStatus.COACH;
     }
