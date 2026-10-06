@@ -15,12 +15,14 @@ import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
+import schultz.thomas.schub.core.team.data.model.TrainingSlot;
 import schultz.thomas.schub.core.team.data.repository.CompositionRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,7 +30,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -113,6 +114,24 @@ public class TeamService {
             permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
         }
         membre.setHiddenOnPublicPage(masque);
+        return touch(team);
+    }
+
+    // Les créneaux se remplacent en bloc ; un créneau sans identifiant en reçoit un.
+    public Team setTrainingSlots(User actor, String teamId, List<TrainingSlot> slots) {
+        Team team = require(teamId);
+        permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
+        List<TrainingSlot> valides = new ArrayList<>();
+        for (TrainingSlot slot : slots == null ? List.<TrainingSlot>of() : slots) {
+            if (slot.start() == null || slot.end() == null || slot.start().equals(slot.end())
+                    || (slot.day() == null) == (slot.date() == null)) {
+                throw new IllegalArgumentException("Un créneau a un jour de la semaine ou une date, un début et une fin");
+            }
+            valides.add(new TrainingSlot(slot.id() == null || slot.id().isBlank()
+                    ? UUID.randomUUID().toString() : slot.id(), slot.day(), slot.date(), slot.start(),
+                    slot.end()));
+        }
+        team.setTrainingSlots(valides);
         return touch(team);
     }
 

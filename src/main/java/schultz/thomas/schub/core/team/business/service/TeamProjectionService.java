@@ -62,7 +62,8 @@ public class TeamProjectionService {
                 droits.contains(Permission.TEAM_MANAGE),
                 droits.contains(Permission.ROSTER_EDIT),
                 droits.contains(Permission.COMPOSITION_EDIT),
-                team.isPublicPage());
+                team.isPublicPage(),
+                team.getTrainingSlots() == null ? List.of() : team.getTrainingSlots());
     }
 
     public List<CompositionDto> toDtos(List<Composition> compositions, Team team, User actor) {
