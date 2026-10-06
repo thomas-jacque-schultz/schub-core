@@ -123,9 +123,16 @@ public class TeamService {
         permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
         List<TrainingSlot> valides = new ArrayList<>();
         for (TrainingSlot slot : slots == null ? List.<TrainingSlot>of() : slots) {
-            if (slot.start() == null || slot.end() == null || slot.start().equals(slot.end())
-                    || (slot.day() == null) == (slot.date() == null)) {
+            if (slot.start() == null || slot.end() == null || (slot.day() == null) == (slot.date() == null)) {
                 throw new IllegalArgumentException("Un créneau a un jour de la semaine ou une date, un début et une fin");
+            }
+            try {
+                if (slot.startTime().equals(slot.endTime())) {
+                    throw new IllegalArgumentException("Un créneau finit après son début");
+                }
+                slot.localDate();
+            } catch (java.time.format.DateTimeParseException illisible) {
+                throw new IllegalArgumentException("Heure ou date illisible : HH:mm et AAAA-MM-JJ");
             }
             valides.add(new TrainingSlot(slot.id() == null || slot.id().isBlank()
                     ? UUID.randomUUID().toString() : slot.id(), slot.day(), slot.date(), slot.start(),
