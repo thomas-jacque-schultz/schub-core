@@ -48,11 +48,9 @@ public class CompanionsService {
         for (RiotStatsGateway.SharedMatch partie : parties) {
             boolean victoire = Boolean.TRUE.equals(partie.win());
             victoires += victoire ? 1 : 0;
-            int camp = partie.players().stream().filter(j -> puuid.equals(j.puuid())).findFirst()
-                    .map(RiotStatsGateway.SharedMatchPlayer::side).orElse(-1);
             Set<String> presents = new TreeSet<>();
-            partie.others().stream()
-                    .filter(o -> o.side() == camp && o.puuid() != null && !puuid.equals(o.puuid()) && o.riotId() != null)
+            VueDePartie.duJoueur(partie, puuid).allies().stream()
+                    .filter(o -> o.puuid() != null && !puuid.equals(o.puuid()) && o.riotId() != null)
                     .forEach(o -> {
                         long[] compte = ensemble.computeIfAbsent(o.puuid(), k -> new long[2]);
                         compte[0]++;
