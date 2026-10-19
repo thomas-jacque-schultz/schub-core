@@ -85,7 +85,7 @@ public class SessionSummaryService {
                 continue;
             }
             ConnectorPremadeLabGateway.Status statut = premadelab.sendDirectMessage(user.get().getDiscordId(),
-                    texte.length() > 2000 ? texte.substring(0, 1997) + "…" : texte);
+                    tronque(texte)).status();
             switch (statut) {
                 case SENT -> {
                     user.get().setLastSessionSummaryDay(jour.toString());
@@ -103,15 +103,54 @@ public class SessionSummaryService {
 
     // Ce que recevrait ce compte pour ce jour, sans rien envoyer.
     public Optional<String> preview(User user, LocalDate jour) {
+        return texte(user, jour, true);
+    }
+
+    public record RecentSession(LocalDate day, Instant startedAt, String teamName, long games, long wins,
+                                boolean planned) {
+    }
+
+    public record TestResult(String text, ConnectorPremadeLabGateway.Status status, String detail) {
+    }
+
+    public List<RecentSession> recentFor(User user, int jours) {
+        Map<String, Optional<Team>> equipes = new LinkedHashMap<>();
+        return sessions.findByDayGreaterThanEqualOrderByStartedAtDesc(LocalDate.now(PARIS).minusDays(jours)).stream()
+                .filter(s -> !s.missed())
+                .flatMap(s -> equipes.computeIfAbsent(s.teamId(), teams::findById).stream()
+                        .filter(team -> team.getMembers().stream().anyMatch(m -> user.getId().equals(m.getUserId())
+                                && s.memberIds().contains(m.getMemberId())))
+                        .map(team -> new RecentSession(s.day(), s.startedAt(), team.getName(), s.games(), s.wins(),
+                                s.planned())))
+                .toList();
+    }
+
+    // Debug : ni préférences, ni envoi unique par jour, et l'envoi n'est pas noté sur le compte.
+    public Optional<TestResult> sendTest(User user, LocalDate jour) {
+        return texte(user, jour, false).map(texte -> {
+            if (user.getDiscordId() == null) {
+                return new TestResult(texte, ConnectorPremadeLabGateway.Status.DISABLED, "Aucun compte Discord lié");
+            }
+            ConnectorPremadeLabGateway.Result envoi = premadelab.sendDirectMessage(user.getDiscordId(), tronque(texte));
+            return new TestResult(texte, envoi.status(), envoi.detail());
+        });
+    }
+
+    private Optional<String> texte(User user, LocalDate jour, boolean selonPreferences) {
         List<String> parties = new ArrayList<>();
         presences(jour).forEach((cle, liste) -> {
             if (cle.startsWith(user.getId() + "|")) {
-                voulues(user, liste).forEach(s -> teams.findById(s.teamId())
+                (selonPreferences ? voulues(user, liste) : liste).forEach(s -> teams.findById(s.teamId())
                         .map(team -> compose(team, s, cle.split("\\|")[1]))
                         .ifPresent(parties::add));
             }
         });
         return parties.isEmpty() ? Optional.empty() : Optional.of(String.join("\n\n", parties));
+    }
+
+    // Limite de Discord : 2 000 caractères par message.
+    private static String tronque(String texte) {
+        return texte.length() > 2000 ? texte.substring(0, 1997) + "…" : texte;
     }
 
     private static List<TeamSession> voulues(User user, List<TeamSession> liste) {
