@@ -10,13 +10,13 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.index.Index;
 import schultz.thomas.schub.core.augur.data.model.Condition;
 import schultz.thomas.schub.core.augur.data.model.FindingRecord;
-import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion.Category;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion.Nature;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion.Polarity;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion.Scope;
-import schultz.thomas.schub.core.business.model.Permission;
-import schultz.thomas.schub.core.business.model.SystemRole;
+import schultz.thomas.schub.core.augur.data.model.PatternVersion;
+import schultz.thomas.schub.core.data.model.Permission;
+import schultz.thomas.schub.core.data.model.SystemRole;
 
 import java.time.Instant;
 import java.util.ArrayList;

@@ -4,7 +4,6 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import schultz.thomas.schub.core.business.model.Permission;
 
 import java.util.EnumSet;
 import java.util.Set;

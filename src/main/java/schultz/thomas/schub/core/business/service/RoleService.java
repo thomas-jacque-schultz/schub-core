@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.api.dto.RoleDto;
-import schultz.thomas.schub.core.business.model.Permission;
-import schultz.thomas.schub.core.business.model.SystemRole;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.Role;
+import schultz.thomas.schub.core.data.model.SystemRole;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 

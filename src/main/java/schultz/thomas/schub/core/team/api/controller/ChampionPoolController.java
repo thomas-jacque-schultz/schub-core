@@ -14,8 +14,8 @@ import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.team.api.dto.ChampionPoolDto;
 import schultz.thomas.schub.core.team.api.dto.PoolChampionsRequest;
 import schultz.thomas.schub.core.team.api.dto.PoolMasteryFloorRequest;
-import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.service.ChampionPoolService;
+import schultz.thomas.schub.core.team.data.model.GameRole;
 
 @RestController
 @RequestMapping("/teams/{teamId}/champion-pool")

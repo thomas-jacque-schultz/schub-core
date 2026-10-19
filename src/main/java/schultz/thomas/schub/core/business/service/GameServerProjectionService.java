@@ -3,12 +3,11 @@ package schultz.thomas.schub.core.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
-import schultz.thomas.schub.core.business.mapper.GameServerMapper;
-import schultz.thomas.schub.core.business.model.Permission;
-import schultz.thomas.schub.core.data.model.GameServer;
-import schultz.thomas.schub.core.data.model.User;
-
 import schultz.thomas.schub.core.api.dto.GameServerReferentDto;
+import schultz.thomas.schub.core.business.mapper.GameServerMapper;
+import schultz.thomas.schub.core.data.model.GameServer;
+import schultz.thomas.schub.core.data.model.Permission;
+import schultz.thomas.schub.core.data.model.User;
 
 import java.util.Collection;
 import java.util.List;

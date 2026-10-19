@@ -5,27 +5,27 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.List;
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.augur.api.dto.FindingDto;
 import schultz.thomas.schub.core.augur.business.engine.Evaluator;
 import schultz.thomas.schub.core.augur.business.service.AugurService;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
-import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.team.api.dto.CompanionsDto;
-import schultz.thomas.schub.core.team.business.service.CompanionsService;
 import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.team.api.dto.PlayerCollectDto;
 import schultz.thomas.schub.core.team.api.dto.SearchedPlayerDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.business.service.CompanionsService;
 import schultz.thomas.schub.core.team.business.service.SearchedPlayerService;
 import schultz.thomas.schub.core.team.business.service.StatsWindows;
+
+import java.util.List;
 
 // Public : un joueur se désigne par son Riot ID (Nom-TAG), jamais par un puuid.
 @RestController

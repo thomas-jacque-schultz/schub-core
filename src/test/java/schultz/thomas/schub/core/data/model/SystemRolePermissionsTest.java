@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.business.model;
+package schultz.thomas.schub.core.data.model;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

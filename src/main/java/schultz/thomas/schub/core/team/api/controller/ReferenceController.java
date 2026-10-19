@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
-import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.service.RiotStatsGateway;
+import schultz.thomas.schub.core.team.data.model.GameRole;
 
 import java.util.Set;
 

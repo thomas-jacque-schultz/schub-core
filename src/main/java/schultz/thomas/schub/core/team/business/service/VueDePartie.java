@@ -1,6 +1,6 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.business.model.GameRole;
+import schultz.thomas.schub.core.team.data.model.GameRole;
 
 import java.util.ArrayList;
 import java.util.Collection;

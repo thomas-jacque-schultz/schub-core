@@ -2,8 +2,8 @@ package schultz.thomas.schub.core.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.data.model.GameServer;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
 
 // Le rôle ouvre la porte (SERVER_START/STOP) ; la liste des référents la restreint, sauf SERVER_CONTROL_ALL.

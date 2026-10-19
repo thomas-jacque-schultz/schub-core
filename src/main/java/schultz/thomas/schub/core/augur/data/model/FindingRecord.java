@@ -3,7 +3,6 @@ package schultz.thomas.schub.core.augur.data.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import schultz.thomas.schub.core.augur.business.engine.Evaluator;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,7 +22,7 @@ public record FindingRecord(
         double degree,
         boolean emitted,
         boolean excepted,
-        List<Evaluator.ConditionTrace> conditions,
+        List<ConditionTrace> conditions,
         Map<String, String> context,
         Instant computedAt,
         boolean stale

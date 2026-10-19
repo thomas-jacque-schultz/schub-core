@@ -3,8 +3,6 @@ package schultz.thomas.schub.core.team.data.model;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import schultz.thomas.schub.core.team.business.model.GameRole;
-import schultz.thomas.schub.core.team.business.model.StartingChampionPool;
 
 import java.time.Instant;
 import java.util.ArrayList;

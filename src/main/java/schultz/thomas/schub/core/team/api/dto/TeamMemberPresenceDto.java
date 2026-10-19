@@ -1,7 +1,7 @@
 package schultz.thomas.schub.core.team.api.dto;
 
-import schultz.thomas.schub.core.team.business.model.MemberStatus;
 import schultz.thomas.schub.core.team.business.model.StatsState;
+import schultz.thomas.schub.core.team.data.model.MemberStatus;
 
 public record TeamMemberPresenceDto(
         String memberId,

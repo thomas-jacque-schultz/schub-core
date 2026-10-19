@@ -8,7 +8,7 @@ import io.mongock.api.annotations.RollbackExecution;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import schultz.thomas.schub.core.business.model.Permission;
+import schultz.thomas.schub.core.data.model.Permission;
 
 import java.util.List;
 

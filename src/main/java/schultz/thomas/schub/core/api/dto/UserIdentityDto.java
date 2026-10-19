@@ -1,6 +1,6 @@
 package schultz.thomas.schub.core.api.dto;
 
-import schultz.thomas.schub.core.business.model.Permission;
+import schultz.thomas.schub.core.data.model.Permission;
 
 import java.util.Set;
 

@@ -19,10 +19,10 @@ import schultz.thomas.schub.core.api.dto.UserDto;
 import schultz.thomas.schub.core.api.dto.UserIdentityDto;
 import schultz.thomas.schub.core.api.dto.UserStatsDto;
 import schultz.thomas.schub.core.business.service.ActivityService;
-import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotAccountService;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
 
 import java.util.List;

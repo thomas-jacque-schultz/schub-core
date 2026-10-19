@@ -1,6 +1,6 @@
 package schultz.thomas.schub.core.augur.api.dto;
 
-import schultz.thomas.schub.core.augur.business.engine.Evaluator;
+import schultz.thomas.schub.core.augur.data.model.ConditionTrace;
 import schultz.thomas.schub.core.augur.data.model.FindingRecord;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 
@@ -18,7 +18,7 @@ public record FindingDto(
         double confidence,
         boolean experimental,
         Map<String, String> limits,
-        List<Evaluator.ConditionTrace> evidence,
+        List<ConditionTrace> evidence,
         Map<String, String> context
 ) {
 
