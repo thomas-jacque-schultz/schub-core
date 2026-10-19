@@ -56,7 +56,7 @@ final class EarlyGames {
             }
             analysees++;
             RiotStatsGateway.EarlyGame early = insight.early();
-            int notreCote = TeamGamesStatsService.cote(partie);
+            int notreCote = VueDePartie.de(partie).cote();
             for (RiotStatsGateway.InsightPlayer joueur : insight.participants()) {
                 Membre membre = parMembre.get(joueur.puuid());
                 if (membre != null) {

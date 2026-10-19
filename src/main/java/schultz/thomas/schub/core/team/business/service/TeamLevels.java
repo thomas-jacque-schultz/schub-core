@@ -30,7 +30,7 @@ final class TeamLevels {
                 continue;
             }
             analysees++;
-            int cote = TeamGamesStatsService.cote(partie);
+            int cote = VueDePartie.de(partie).cote();
             Double rang = TeamOppositionService.moyenne(insight, true, cote);
             if (rang != null) {
                 rangs.add(rang);
