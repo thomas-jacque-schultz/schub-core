@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.business.model;
+package schultz.thomas.schub.core.data.model;
 
 import java.util.Collections;
 import java.util.EnumSet;

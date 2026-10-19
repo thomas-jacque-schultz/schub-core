@@ -4,14 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.model.ResourceRef;
 import schultz.thomas.schub.core.business.model.ResourceType;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotIdResolver;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.business.model.GameRole;
-import schultz.thomas.schub.core.team.business.model.MemberStatus;
+import schultz.thomas.schub.core.team.data.model.GameRole;
+import schultz.thomas.schub.core.team.data.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -22,14 +22,14 @@ import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j

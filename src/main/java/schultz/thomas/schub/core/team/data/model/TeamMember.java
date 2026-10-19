@@ -1,8 +1,6 @@
 package schultz.thomas.schub.core.team.data.model;
 
 import lombok.Data;
-import schultz.thomas.schub.core.team.business.model.GameRole;
-import schultz.thomas.schub.core.team.business.model.MemberStatus;
 
 import java.time.Instant;
 import java.util.ArrayList;

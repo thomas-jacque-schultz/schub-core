@@ -1,5 +1,7 @@
 package schultz.thomas.schub.core.team.business.model;
 
+import schultz.thomas.schub.core.team.data.model.GameRole;
+
 import java.util.Arrays;
 import java.util.List;
 

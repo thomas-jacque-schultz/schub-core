@@ -3,7 +3,6 @@ package schultz.thomas.schub.core.team.data.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import schultz.thomas.schub.core.team.business.model.GameRole;
 
 import java.util.ArrayList;
 import java.util.List;

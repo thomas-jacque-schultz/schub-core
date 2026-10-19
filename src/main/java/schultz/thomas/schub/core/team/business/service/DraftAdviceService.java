@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.DraftAdviceDto;
 import schultz.thomas.schub.core.team.business.model.ComboKind;
-import schultz.thomas.schub.core.team.business.model.GameRole;
+import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.team.data.model.TeamMember;

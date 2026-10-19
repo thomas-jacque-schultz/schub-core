@@ -14,8 +14,8 @@ import schultz.thomas.schub.core.augur.data.model.FindingRecord;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 import schultz.thomas.schub.core.augur.data.repository.FindingRecordRepository;
 import schultz.thomas.schub.core.augur.data.repository.PatternVersionRepository;
-import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
 
 import java.time.Instant;

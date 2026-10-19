@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
 import schultz.thomas.schub.core.api.dto.GameServerMemberDto;
 import schultz.thomas.schub.core.business.mapper.GameServerMapperImpl;
-import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.data.model.Game;
 import schultz.thomas.schub.core.data.model.GameServer;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
 
 import static org.assertj.core.api.Assertions.assertThat;

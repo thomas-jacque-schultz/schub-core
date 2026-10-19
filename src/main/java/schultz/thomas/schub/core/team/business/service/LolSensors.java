@@ -9,7 +9,7 @@ import schultz.thomas.schub.core.augur.business.service.Sensors;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
 import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
-import schultz.thomas.schub.core.team.business.model.GameRole;
+import schultz.thomas.schub.core.team.data.model.GameRole;
 
 import java.time.Duration;
 import java.time.Instant;

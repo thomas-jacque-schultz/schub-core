@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.team.business.model;
+package schultz.thomas.schub.core.team.data.model;
 
 import java.util.List;
 import java.util.Map;

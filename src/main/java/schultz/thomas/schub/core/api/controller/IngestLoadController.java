@@ -13,11 +13,11 @@ import schultz.thomas.schub.core.api.dto.CrawlerDto;
 import schultz.thomas.schub.core.api.dto.CrawlerToggleRequest;
 import schultz.thomas.schub.core.api.dto.IngestLoadDto;
 import schultz.thomas.schub.core.api.dto.IngestSummaryDto;
-import schultz.thomas.schub.core.business.model.Permission;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
-import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
+import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.team.business.service.ConnectorRiotSeoGateway;
 
 import java.util.List;

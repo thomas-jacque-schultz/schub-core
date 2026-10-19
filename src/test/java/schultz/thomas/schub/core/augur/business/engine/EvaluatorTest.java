@@ -3,6 +3,7 @@ package schultz.thomas.schub.core.augur.business.engine;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import schultz.thomas.schub.core.augur.data.model.Condition;
+import schultz.thomas.schub.core.augur.data.model.ConditionTrace;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 
 import java.util.List;
@@ -43,7 +44,7 @@ class EvaluatorTest {
     void preuveAvecMesureBrute() {
         PatternVersion morts = pattern("morts", List.of(pct("deathsPer10", 60, 80)), List.of(), List.of());
 
-        Evaluator.ConditionTrace preuve = Evaluator.evaluate(morts, new Signals().put("deathsPer10", 8.8, 88.0))
+        ConditionTrace preuve = Evaluator.evaluate(morts, new Signals().put("deathsPer10", 8.8, 88.0))
                 .conditions().get(0);
 
         assertThat(preuve.observed()).isEqualTo(88.0);

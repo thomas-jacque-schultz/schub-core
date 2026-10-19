@@ -6,8 +6,8 @@ import io.mongock.api.annotations.ChangeUnit;
 import io.mongock.api.annotations.Execution;
 import io.mongock.api.annotations.RollbackExecution;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import schultz.thomas.schub.core.business.model.Permission;
-import schultz.thomas.schub.core.business.model.SystemRole;
+import schultz.thomas.schub.core.data.model.Permission;
+import schultz.thomas.schub.core.data.model.SystemRole;
 
 @ChangeUnit(id = "ingest-view-to-owner", order = "008", author = "schub")
 public class V008_IngestViewToOwner {

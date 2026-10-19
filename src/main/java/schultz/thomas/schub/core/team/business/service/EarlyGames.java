@@ -2,7 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import schultz.thomas.schub.core.team.api.dto.EarlyGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamEarlyGameDto;
-import schultz.thomas.schub.core.team.business.model.GameRole;
+import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
 import java.util.LinkedHashMap;

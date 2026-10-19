@@ -2,7 +2,6 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import schultz.thomas.schub.core.team.api.dto.At15Dto;
 import schultz.thomas.schub.core.team.api.dto.GamePlayerMetricsDto;
 import schultz.thomas.schub.core.team.api.dto.MatchupDto;
@@ -11,7 +10,7 @@ import schultz.thomas.schub.core.team.api.dto.SideRanksDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamePlayerDto;
-import schultz.thomas.schub.core.team.business.model.GameRole;
+import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
 import java.time.Instant;

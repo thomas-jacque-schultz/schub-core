@@ -1,17 +1,17 @@
 package schultz.thomas.schub.core.api.controller;
 
-import schultz.thomas.schub.core.api.dto.PortainerStack;
-import schultz.thomas.schub.core.business.model.Permission;
-import schultz.thomas.schub.core.business.service.ContainerRequestService;
-import schultz.thomas.schub.core.business.service.PermissionEvaluator;
-import schultz.thomas.schub.core.business.service.UserService;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import schultz.thomas.schub.core.api.dto.PortainerStack;
+import schultz.thomas.schub.core.business.service.ContainerRequestService;
+import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.data.model.Permission;
+
 import java.util.List;
 
 @RestController

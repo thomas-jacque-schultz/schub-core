@@ -1,6 +1,8 @@
 package schultz.thomas.schub.core.augur.business.engine;
 
 import schultz.thomas.schub.core.augur.data.model.Condition;
+import schultz.thomas.schub.core.augur.data.model.ConditionTrace.Role;
+import schultz.thomas.schub.core.augur.data.model.ConditionTrace;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 
 import java.util.ArrayList;
@@ -19,13 +21,6 @@ public final class Evaluator {
 
     public static final String PATTERN_SIGNAL = "pattern:";
     private static final double EXCEPTION_SATISFAITE = 0.5;
-
-    public enum Role { REQUIRED, OPTIONAL, EXCEPTION }
-
-    // observed : ce que la condition compare (le centile pour une condition en centile) ; value : la mesure brute.
-    public record ConditionTrace(Role role, String signal, Condition.Unit unit, double from, double to,
-                                 Double observed, Double value, Double degree) {
-    }
 
     public record Evaluation(String patternKey, int version, double degree, boolean emitted, boolean excepted,
                              List<ConditionTrace> conditions) {
