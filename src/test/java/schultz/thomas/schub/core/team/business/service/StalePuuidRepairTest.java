@@ -65,6 +65,20 @@ class StalePuuidRepairTest {
     }
 
     @Test
+    @DisplayName("Un compte en attente de résolution est retenté au relevé, sans attendre sa connexion (schub-core#47)")
+    void compteEnAttenteRetente() {
+        User user = new User();
+        user.setId("u1");
+        user.setRiotGameName("Joueur");
+        user.setRiotTagLine("EUW");
+        when(users.findByRiotPuuidIsNullAndRiotTagLineIsNotNull()).thenReturn(List.of(user));
+
+        repair.resoutLesComptesEnAttente();
+
+        verify(riotAccounts).resolvePendingLink(user);
+    }
+
+    @Test
     @DisplayName("Sans résolution, la place garde son puuid et l'équipe n'est pas réécrite")
     void resolutionReportee() {
         Team team = equipe(membre("m1", "ancien", "Joueur", "EUW"));

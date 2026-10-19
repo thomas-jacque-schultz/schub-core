@@ -21,6 +21,8 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     List<User> findByRiotPuuidIn(java.util.Collection<String> riotPuuids);
 
+    List<User> findByRiotPuuidIsNullAndRiotTagLineIsNotNull();
+
     List<User> findAllByRoleId(String roleId);
 
     long countByRoleId(String roleId);

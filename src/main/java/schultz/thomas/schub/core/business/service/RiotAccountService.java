@@ -116,14 +116,36 @@ public class RiotAccountService {
             return false;
         }
 
-        actor.setRiotPuuid(resolution.puuid());
-        User enregistre = userRepository.save(actor);
-        demandeLaCollecte(enregistre, null, resolution.puuid());
+        resout(actor, resolution.puuid());
+        return true;
+    }
+
+    // Plusieurs comptes qui déclarent le même Riot ID : aucun n'est choisi.
+    public Optional<User> pendingDeclarer(String gameName, String tagLine) {
+        List<User> enAttente = userRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase(gameName, tagLine)
+                .stream()
+                .filter(user -> trimOrNull(user.getRiotPuuid()) == null)
+                .toList();
+        return enAttente.size() == 1 ? Optional.of(enAttente.get(0)) : Optional.empty();
+    }
+
+    public void adoptPuuid(String userId, String puuid) {
+        if (userRepository.findByRiotPuuid(puuid).isPresent()) {
+            return;
+        }
+        userRepository.findById(userId)
+                .filter(user -> trimOrNull(user.getRiotPuuid()) == null)
+                .ifPresent(user -> resout(user, puuid));
+    }
+
+    private void resout(User user, String puuid) {
+        user.setRiotPuuid(puuid);
+        User enregistre = userRepository.save(user);
+        demandeLaCollecte(enregistre, null, puuid);
         events.publishEvent(new RiotAccountResolved(enregistre.getId(),
                 enregistre.getRiotPuuid(), enregistre.getRiotGameName(), enregistre.getRiotTagLine()));
-        log.info("Lien en attente de {} résolu à la connexion : {}#{}",
-                actor.getId(), gameName, tagLine);
-        return true;
+        log.info("Lien en attente de {} résolu : {}#{}",
+                enregistre.getId(), enregistre.getRiotGameName(), enregistre.getRiotTagLine());
     }
 
     public List<RiotAccountSuggestionDto> suggestions(User actor, String query, int limit) {

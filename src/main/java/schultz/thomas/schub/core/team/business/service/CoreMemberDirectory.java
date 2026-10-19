@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.business.service.RiotAccountService;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.User;
 
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 public class CoreMemberDirectory implements MemberDirectory {
 
     private final UserService userService;
+    private final RiotAccountService riotAccountService;
 
     @Override
     public Map<String, MemberIdentity> byIds(Set<String> userIds) {
@@ -25,6 +27,16 @@ public class CoreMemberDirectory implements MemberDirectory {
     @Override
     public Optional<MemberIdentity> byRiotPuuid(String riotPuuid) {
         return userService.findByRiotPuuid(riotPuuid).map(CoreMemberDirectory::toIdentity);
+    }
+
+    @Override
+    public Optional<MemberIdentity> pendingByRiotId(String riotGameName, String riotTagLine) {
+        return riotAccountService.pendingDeclarer(riotGameName, riotTagLine).map(CoreMemberDirectory::toIdentity);
+    }
+
+    @Override
+    public void adoptPuuid(String userId, String riotPuuid) {
+        riotAccountService.adoptPuuid(userId, riotPuuid);
     }
 
     private static MemberIdentity toIdentity(User user) {
