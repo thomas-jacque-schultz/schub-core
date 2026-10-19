@@ -1,6 +1,5 @@
 package schultz.thomas.schub.core.team.api.controller;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,28 +8,30 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
+import schultz.thomas.schub.core.augur.api.dto.FindingDto;
+import schultz.thomas.schub.core.augur.api.mapper.AugurDtoMapper;
+import schultz.thomas.schub.core.augur.business.service.AugurService;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.team.api.dto.CompositionRecordDto;
+import schultz.thomas.schub.core.team.api.dto.DraftAdviceDto;
 import schultz.thomas.schub.core.team.api.dto.StatsRefreshDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
 import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
 import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
-import schultz.thomas.schub.core.team.api.dto.CompositionRecordDto;
-import schultz.thomas.schub.core.team.api.dto.DraftAdviceDto;
 import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
-import schultz.thomas.schub.core.augur.api.dto.FindingDto;
-import schultz.thomas.schub.core.augur.business.service.AugurService;
-import schultz.thomas.schub.core.team.business.service.TeamService;
 import schultz.thomas.schub.core.team.business.service.CompositionRecordService;
 import schultz.thomas.schub.core.team.business.service.DraftAdviceService;
-import schultz.thomas.schub.core.team.business.service.TeamSynergyService;
+import schultz.thomas.schub.core.team.business.service.StatsWindows;
 import schultz.thomas.schub.core.team.business.service.TeamGamesStatsService;
 import schultz.thomas.schub.core.team.business.service.TeamOppositionService;
 import schultz.thomas.schub.core.team.business.service.TeamPlayerStatsService;
+import schultz.thomas.schub.core.team.business.service.TeamService;
 import schultz.thomas.schub.core.team.business.service.TeamStatsRefreshService;
-import schultz.thomas.schub.core.team.business.service.StatsWindows;
+import schultz.thomas.schub.core.team.business.service.TeamSynergyService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/teams/{teamId}/stats")
@@ -45,6 +46,7 @@ public class TeamStatsController {
     private final StatsWindows windows;
     private final TeamSynergyService synergy;
     private final AugurService augur;
+    private final AugurDtoMapper findingDtos;
     private final TeamService teamService;
     private final DraftAdviceService draftAdvice;
     private final CompositionRecordService compositionRecords;
@@ -98,7 +100,7 @@ public class TeamStatsController {
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
         teamService.requireVisible(userService.requireActor(actorId), teamId);
-        return augur.team(teamId, windows.days(days, patches));
+        return findingDtos.toFindingDtos(augur.team(teamId, windows.days(days, patches)));
     }
 
     @GetMapping("/players")

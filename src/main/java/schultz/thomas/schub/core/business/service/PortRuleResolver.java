@@ -1,16 +1,16 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.api.dto.PortRule;
-import schultz.thomas.schub.core.api.dto.PortRuleKey;
-import schultz.thomas.schub.core.api.dto.Protocol;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import schultz.thomas.schub.core.business.model.PortRule;
+import schultz.thomas.schub.core.business.model.PortRuleKey;
 import schultz.thomas.schub.core.business.model.PortRuleResolution;
+import schultz.thomas.schub.core.business.model.Protocol;
 import schultz.thomas.schub.core.config.PortForwardingProperties;
 import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.GameServerPort;
 import schultz.thomas.schub.core.data.model.GameServerStatus;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

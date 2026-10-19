@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.business.mapper.GameServerMapper;
+import schultz.thomas.schub.core.business.mapper.GameServerMerger;
 import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.GameServerStatusHistoryEntry;
 import schultz.thomas.schub.core.data.repository.GameServerRepository;
@@ -30,7 +30,7 @@ public class GameServerService {
             Set.of("_id", "_class", "status", "lastStatusCheckAt", "lastStatusChangeAt", "statusHistory");
 
     private final GameServerRepository repository;
-    private final GameServerMapper mapper;
+    private final GameServerMerger mapper;
     private final DiscordNotifier discordNotifier;
     private final MongoTemplate mongo;
 

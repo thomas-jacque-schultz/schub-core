@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.api.dto;
+package schultz.thomas.schub.core.business.model;
 
 import java.util.List;
 

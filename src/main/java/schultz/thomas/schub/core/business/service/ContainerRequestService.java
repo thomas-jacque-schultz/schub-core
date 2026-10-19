@@ -1,10 +1,11 @@
 package schultz.thomas.schub.core.business.service;
 
-import java.util.List;
-import schultz.thomas.schub.core.api.dto.PortainerStack;
-import schultz.thomas.schub.core.business.model.DockerContainerState;
-
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.business.model.DockerContainerState;
+import schultz.thomas.schub.core.business.model.PortainerStack;
+
+import java.util.List;
+
 @Service
 public interface ContainerRequestService {
 

@@ -4,7 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import schultz.thomas.schub.core.api.dto.MeDto;
-import schultz.thomas.schub.core.api.dto.RiotAccountDto;
+import schultz.thomas.schub.core.api.mapper.AccountDtoMapperImpl;
+import schultz.thomas.schub.core.api.mapper.UserDtoMapper;
+import schultz.thomas.schub.core.business.model.RiotAccount;
 import schultz.thomas.schub.core.business.model.RiotAccountState;
 import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.Role;
@@ -31,6 +33,7 @@ class UserServiceDisplayNameTest {
     private PermissionEvaluator permissionEvaluator;
     private RiotAccountService riotAccountService;
     private UserService userService;
+    private UserDtoMapper users;
 
     private User acteur;
 
@@ -40,7 +43,8 @@ class UserServiceDisplayNameTest {
         roleRepository = mock(RoleRepository.class);
         permissionEvaluator = mock(PermissionEvaluator.class);
         riotAccountService = mock(RiotAccountService.class);
-        userService = new UserService(userRepository, roleRepository, permissionEvaluator, riotAccountService);
+        userService = new UserService(userRepository, roleRepository, permissionEvaluator);
+        users = new UserDtoMapper(userService, permissionEvaluator, riotAccountService, new AccountDtoMapperImpl());
 
         acteur = new User();
         acteur.setId("user-1");
@@ -111,9 +115,9 @@ class UserServiceDisplayNameTest {
         when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(role));
         when(permissionEvaluator.rolePermissions(acteur)).thenReturn(Set.of(Permission.SERVER_VIEW));
         when(riotAccountService.of(acteur)).thenReturn(
-                new RiotAccountDto(RiotAccountState.ABSENT, null, null, null, null, null, null));
+                new RiotAccount(RiotAccountState.ABSENT, null, null, null, null, null, null));
 
-        MeDto me = userService.toMeDto(acteur);
+        MeDto me = users.toMeDto(acteur);
 
         assertThat(me.userId()).isEqualTo("user-1");
         assertThat(me.discord().id()).isEqualTo("discord-1");
@@ -133,12 +137,12 @@ class UserServiceDisplayNameTest {
         role.setName(SystemRole.VISITEUR.roleName());
         when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(role));
         when(riotAccountService.of(acteur)).thenReturn(
-                new RiotAccountDto(RiotAccountState.ABSENT, null, null, null, null, null, null));
+                new RiotAccount(RiotAccountState.ABSENT, null, null, null, null, null, null));
         acteur.setDisplayName("Le Thomas");
 
-        assertThat(userService.toMeDto(acteur).displayNameChosen()).isTrue();
+        assertThat(users.toMeDto(acteur).displayNameChosen()).isTrue();
 
         acteur.setDisplayName("   ");
-        assertThat(userService.toMeDto(acteur).displayNameChosen()).isFalse();
+        assertThat(users.toMeDto(acteur).displayNameChosen()).isFalse();
     }
 }

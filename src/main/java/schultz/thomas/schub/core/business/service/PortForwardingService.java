@@ -1,16 +1,16 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.api.dto.PortForwardingReport.Outcome;
-import schultz.thomas.schub.core.api.dto.PortForwardingReport.RuleOutcome;
-import schultz.thomas.schub.core.api.dto.PortForwardingReport;
-import schultz.thomas.schub.core.api.dto.PortRule;
-import schultz.thomas.schub.core.api.dto.PortRuleKey;
-import schultz.thomas.schub.core.business.model.PortRuleResolution;
-import schultz.thomas.schub.core.config.PortForwardingProperties;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.business.model.PortForwardingReport.Outcome;
+import schultz.thomas.schub.core.business.model.PortForwardingReport.RuleOutcome;
+import schultz.thomas.schub.core.business.model.PortForwardingReport;
+import schultz.thomas.schub.core.business.model.PortRule;
+import schultz.thomas.schub.core.business.model.PortRuleKey;
+import schultz.thomas.schub.core.business.model.PortRuleResolution;
+import schultz.thomas.schub.core.config.PortForwardingProperties;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

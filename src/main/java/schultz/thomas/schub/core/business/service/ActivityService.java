@@ -8,8 +8,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-
-import schultz.thomas.schub.core.api.dto.UserStatsDto;
+import schultz.thomas.schub.core.business.model.UserStats;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 
 import java.time.Duration;
@@ -56,18 +55,18 @@ public class ActivityService {
                 new Update().setOnInsert("day", jour).setOnInsert("at", maintenant), RECHERCHE);
     }
 
-    public UserStatsDto stats() {
+    public UserStats stats() {
         Instant maintenant = Instant.now();
-        Map<String, UserStatsDto.Active> parApplication = new LinkedHashMap<>();
+        Map<String, UserStats.Active> parApplication = new LinkedHashMap<>();
         for (String app : List.of("schub", "premadelab")) {
             parApplication.put(app, actifs(maintenant, app));
         }
-        return new UserStatsDto(users.count(), users.countByRiotPuuidNotNull(), actifs(maintenant, null),
+        return new UserStats(users.count(), users.countByRiotPuuidNotNull(), actifs(maintenant, null),
                 parApplication, courbe(maintenant));
     }
 
-    private UserStatsDto.Active actifs(Instant maintenant, String app) {
-        return new UserStatsDto.Active(
+    private UserStats.Active actifs(Instant maintenant, String app) {
+        return new UserStats.Active(
                 distincts(maintenant.minus(Duration.ofHours(24)), app),
                 distincts(maintenant.minus(Duration.ofDays(7)), app),
                 distincts(maintenant.minus(Duration.ofDays(30)), app));
@@ -81,7 +80,7 @@ public class ActivityService {
         return mongo.findDistinct(Query.query(critere), "userId", ACTIVITE, String.class).size();
     }
 
-    private List<UserStatsDto.Day> courbe(Instant maintenant) {
+    private List<UserStats.Day> courbe(Instant maintenant) {
         LocalDate aujourdhui = LocalDate.ofInstant(maintenant, PARIS);
         String premier = aujourdhui.minusDays(JOURS_COURBE - 1L).toString();
 
@@ -93,10 +92,10 @@ public class ActivityService {
                 new Document("$match", new Document("day", new Document("$gte", premier))),
                 new Document("$group", new Document("_id", "$day").append("n", new Document("$sum", 1))))));
 
-        List<UserStatsDto.Day> jours = new ArrayList<>();
+        List<UserStats.Day> jours = new ArrayList<>();
         for (int i = JOURS_COURBE - 1; i >= 0; i--) {
             String jour = aujourdhui.minusDays(i).toString();
-            jours.add(new UserStatsDto.Day(jour, actifs.getOrDefault(jour, 0L), chercheurs.getOrDefault(jour, 0L)));
+            jours.add(new UserStats.Day(jour, actifs.getOrDefault(jour, 0L), chercheurs.getOrDefault(jour, 0L)));
         }
         return jours;
     }

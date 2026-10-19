@@ -39,8 +39,7 @@ class UserServiceAssignRoleTest {
         userRepository = mock(UserRepository.class);
         roleRepository = mock(RoleRepository.class);
         permissionEvaluator = mock(PermissionEvaluator.class);
-        userService = new UserService(userRepository, roleRepository, permissionEvaluator,
-                mock(RiotAccountService.class));
+        userService = new UserService(userRepository, roleRepository, permissionEvaluator);
 
         acteur = utilisateur("acteur", "role-admin");
         cible = utilisateur("cible", "role-visiteur");

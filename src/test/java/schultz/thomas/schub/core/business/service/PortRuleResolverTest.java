@@ -1,20 +1,19 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.api.dto.PortRule;
-import schultz.thomas.schub.core.api.dto.Protocol;
-import schultz.thomas.schub.core.business.model.PortRuleResolution;
-import schultz.thomas.schub.core.business.service.GameServerService;
-import schultz.thomas.schub.core.config.PortForwardingProperties;
-import schultz.thomas.schub.core.data.model.GameServer;
-import schultz.thomas.schub.core.data.model.GameServerPort;
-import schultz.thomas.schub.core.data.model.GameServerStatus;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import schultz.thomas.schub.core.business.model.PortRule;
+import schultz.thomas.schub.core.business.model.PortRuleResolution;
+import schultz.thomas.schub.core.business.model.Protocol;
+import schultz.thomas.schub.core.config.PortForwardingProperties;
+import schultz.thomas.schub.core.data.model.GameServer;
+import schultz.thomas.schub.core.data.model.GameServerPort;
+import schultz.thomas.schub.core.data.model.GameServerStatus;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;

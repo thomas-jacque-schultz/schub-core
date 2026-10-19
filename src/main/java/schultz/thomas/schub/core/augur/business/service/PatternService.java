@@ -5,11 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.augur.api.dto.ImpactDto;
-import schultz.thomas.schub.core.augur.api.dto.PatternDto;
-import schultz.thomas.schub.core.augur.api.dto.PatternRequest;
 import schultz.thomas.schub.core.augur.business.engine.Evaluator;
 import schultz.thomas.schub.core.augur.business.engine.Signals;
+import schultz.thomas.schub.core.augur.business.model.Impact;
+import schultz.thomas.schub.core.augur.business.model.PatternDraft;
 import schultz.thomas.schub.core.augur.data.model.FindingRecord;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 import schultz.thomas.schub.core.augur.data.repository.FindingRecordRepository;
@@ -46,22 +45,22 @@ public class PatternService {
     private final Sensors sensors;
     private final PatternRefresher refresher;
 
-    public List<PatternDto> list(User actor) {
+    public List<PatternVersion> list(User actor) {
         permissionEvaluator.require(actor, Permission.AUGUR_PATTERN_EDIT, null);
         Map<String, PatternVersion> derniere = new LinkedHashMap<>();
         patterns.findAll().stream()
                 .sorted(Comparator.comparing(PatternVersion::getKey).thenComparing(PatternVersion::getVersion))
                 .forEach(p -> derniere.put(p.getKey(), p));
-        return derniere.values().stream().map(PatternDto::of).toList();
+        return List.copyOf(derniere.values());
     }
 
-    public List<PatternDto> history(User actor, String key) {
+    public List<PatternVersion> history(User actor, String key) {
         permissionEvaluator.require(actor, Permission.AUGUR_PATTERN_EDIT, null);
-        return patterns.findByKeyOrderByVersionDesc(key).stream().map(PatternDto::of).toList();
+        return patterns.findByKeyOrderByVersionDesc(key);
     }
 
     // Un brouillon existant est remplacé ; sinon la version suivante naît en brouillon.
-    public PatternDto draft(User actor, PatternRequest request) {
+    public PatternVersion draft(User actor, PatternDraft request) {
         permissionEvaluator.require(actor, Permission.AUGUR_PATTERN_EDIT, null);
         valide(request);
         List<PatternVersion> versions = patterns.findByKeyOrderByVersionDesc(request.key());
@@ -93,11 +92,11 @@ public class PatternService {
         brouillon.setAuthor(actor.getId());
         brouillon.setComment(request.comment());
         brouillon.setCreatedAt(Instant.now());
-        return PatternDto.of(patterns.save(brouillon));
+        return patterns.save(brouillon);
     }
 
     // Recalcule, sur des sujets déjà évalués, ce que la version active et la version donnée concluent.
-    public ImpactDto impact(User actor, String key, int version) {
+    public Impact impact(User actor, String key, int version) {
         permissionEvaluator.require(actor, Permission.AUGUR_PATTERN_EDIT, null);
         PatternVersion candidat = version(key, version);
         Optional<PatternVersion> actif = patterns.findFirstByKeyAndStatus(key, PatternVersion.Status.ACTIVE);
@@ -112,7 +111,7 @@ public class PatternService {
         int disparaissent = 0;
         int inchanges = 0;
         Map<String, int[]> parPalier = new LinkedHashMap<>();
-        List<ImpactDto.Example> exemples = new ArrayList<>();
+        List<Impact.Example> exemples = new ArrayList<>();
         Map<String, Map<String, Signals>> parties = new LinkedHashMap<>();
         for (FindingRecord sujet : sujets) {
             Optional<Signals> signaux = switch (candidat.getScope()) {
@@ -144,14 +143,14 @@ public class PatternService {
                 inchanges++;
             }
             if (exemples.size() < 10 && etait != apres.emitted()) {
-                exemples.add(new ImpactDto.Example(sujet.subject(), palier, avant == null ? 0 : avant.degree(),
+                exemples.add(new Impact.Example(sujet.subject(), palier, avant == null ? 0 : avant.degree(),
                         apres.degree()));
             }
         }
-        return new ImpactDto(sujets.size(), apparaissent, disparaissent, inchanges, parPalier, exemples);
+        return new Impact(sujets.size(), apparaissent, disparaissent, inchanges, parPalier, exemples);
     }
 
-    public PatternDto activate(User actor, String key, int version, String comment) {
+    public PatternVersion activate(User actor, String key, int version, String comment) {
         permissionEvaluator.require(actor, Permission.AUGUR_PATTERN_EDIT, null);
         if (comment == null || comment.isBlank()) {
             throw new IllegalArgumentException("Un commentaire dit pourquoi cette version devient la règle");
@@ -169,11 +168,11 @@ public class PatternService {
         PatternVersion active = patterns.save(cible);
         refresher.markStaleAndRefresh(key);
         log.info("Pattern {} : version {} active, par {} ({})", key, version, actor.getId(), comment);
-        return PatternDto.of(active);
+        return active;
     }
 
     // Le retour arrière réactive la version précédente, avec la même invalidation.
-    public PatternDto rollback(User actor, String key, String comment) {
+    public PatternVersion rollback(User actor, String key, String comment) {
         PatternVersion actif = patterns.findFirstByKeyAndStatus(key, PatternVersion.Status.ACTIVE)
                 .orElseThrow(() -> new NoSuchElementException("Aucune version active du pattern " + key));
         PatternVersion precedente = patterns.findByKeyOrderByVersionDesc(key).stream()
@@ -188,7 +187,7 @@ public class PatternService {
                 .orElseThrow(() -> new NoSuchElementException("Aucune version " + version + " du pattern " + key));
     }
 
-    private static void valide(PatternRequest request) {
+    private static void valide(PatternDraft request) {
         if (request.key() == null || !request.key().matches("[a-z0-9-]{3,60}")) {
             throw new IllegalArgumentException("Clé : 3 à 60 caractères, minuscules, chiffres et tirets");
         }

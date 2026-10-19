@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.augur.api.dto.FindingDto;
+import schultz.thomas.schub.core.augur.api.mapper.AugurDtoMapper;
 import schultz.thomas.schub.core.augur.business.engine.Evaluator;
 import schultz.thomas.schub.core.augur.business.service.AugurService;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
@@ -39,6 +40,7 @@ public class PlayerController {
     private final CompanionsService companions;
     private final StatsWindows windows;
     private final AugurService augur;
+    private final AugurDtoMapper findingDtos;
     private final UserService userService;
     private final PermissionEvaluator permissionEvaluator;
 
@@ -79,13 +81,14 @@ public class PlayerController {
     public List<FindingDto> findings(@PathVariable String riotId,
                                      @RequestParam(required = false) Integer days,
                                      @RequestParam(required = false) Integer patches) {
-        return augur.habit(players.resolve(riotId).puuid(), windows.days(days, patches),
-                AugurService.Visibility.NEUTRAL);
+        return findingDtos.toFindingDtos(augur.habit(players.resolve(riotId).puuid(), windows.days(days, patches),
+                AugurService.Visibility.NEUTRAL));
     }
 
     @GetMapping("/games/{matchId}/findings")
     public List<FindingDto> gameFindings(@PathVariable String riotId, @PathVariable String matchId) {
-        return augur.game(matchId, players.resolve(riotId).puuid(), AugurService.Visibility.NEUTRAL);
+        return findingDtos.toFindingDtos(
+                augur.game(matchId, players.resolve(riotId).puuid(), AugurService.Visibility.NEUTRAL));
     }
 
     // La trace complète du moteur, pour régler les seuils : section « Débogage des calculs » de Schub.

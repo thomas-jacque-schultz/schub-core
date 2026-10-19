@@ -1,6 +1,6 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.api.dto.PortRule;
+import schultz.thomas.schub.core.business.model.PortRule;
 
 import java.util.List;
 

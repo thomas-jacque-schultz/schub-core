@@ -4,10 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.api.dto.AccountLinksDto;
-import schultz.thomas.schub.core.api.dto.MeDto;
-import schultz.thomas.schub.core.api.dto.UserDto;
-import schultz.thomas.schub.core.api.dto.UserIdentityDto;
 import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.Role;
 import schultz.thomas.schub.core.data.model.SessionSummaryPreferences;
@@ -33,7 +29,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionEvaluator permissionEvaluator;
-    private final RiotAccountService riotAccountService;
 
     private static final int DISPLAY_NAME_MAX = 32;
 
@@ -109,22 +104,6 @@ public class UserService {
         return userRepository.save(actor);
     }
 
-    public MeDto toMeDto(User user) {
-        Role role = user.getRoleId() == null ? null : roleRepository.findById(user.getRoleId()).orElse(null);
-        return new MeDto(
-                user.getId(),
-                new MeDto.DiscordIdentityDto(user.getDiscordId(), user.getDiscordUsername(), user.getAvatarUrl()),
-                displayNameOf(user),
-                user.getDisplayName() != null && !user.getDisplayName().isBlank(),
-                new MeDto.RoleSummaryDto(role == null ? null : role.getName(),
-                        permissionEvaluator.rolePermissions(user)),
-                riotAccountService.of(user),
-                AccountLinksDto.of(user),
-                new MeDto.SessionSummariesDto(SessionSummaryPreferences.of(user).planned(),
-                        SessionSummaryPreferences.of(user).free()),
-                user.getDmUnreachableAt() != null);
-    }
-
     public User changeSessionSummaries(User actor, boolean planned, boolean free) {
         actor.setSessionSummaries(new SessionSummaryPreferences(planned, free));
         return userRepository.save(actor);
@@ -177,38 +156,12 @@ public class UserService {
                         "Le rôle système '" + name + "' est absent de la base — la migration n'a pas tourné"));
     }
 
-    public UserIdentityDto toIdentityDto(User user) {
-        return new UserIdentityDto(toDto(user), permissionEvaluator.rolePermissions(user));
+    public Optional<Role> roleOf(User user) {
+        return user.getRoleId() == null ? Optional.empty() : roleRepository.findById(user.getRoleId());
     }
 
-    public UserDto toDto(User user) {
-        String roleName = user.getRoleId() == null ? null
-                : roleRepository.findById(user.getRoleId()).map(Role::getName).orElse(null);
-        return toDto(user, roleName);
-    }
-
-    public List<UserDto> toDtos(List<User> users) {
-        Map<String, String> roleNames = roleRepository.findAll().stream()
-                .collect(Collectors.toMap(Role::getId, Role::getName));
-        return users.stream()
-                .map(user -> toDto(user, roleNames.get(user.getRoleId())))
-                .toList();
-    }
-
-    private UserDto toDto(User user, String roleName) {
-        return new UserDto(
-                user.getId(),
-                user.getDiscordId(),
-                user.getDiscordUsername(),
-                displayNameOf(user),
-                user.getAvatarUrl(),
-                user.getRoleId(),
-                roleName,
-                user.getRiotGameName(),
-                user.getRiotTagLine(),
-                user.getCreatedAt(),
-                user.getLastLoginAt(),
-                AccountLinksDto.of(user));
+    public Map<String, String> roleNamesById() {
+        return roleRepository.findAll().stream().collect(Collectors.toMap(Role::getId, Role::getName));
     }
 
     public Map<String, User> byIds(Set<String> ids) {

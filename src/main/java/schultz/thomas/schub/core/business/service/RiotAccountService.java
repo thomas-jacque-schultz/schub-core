@@ -1,14 +1,14 @@
 package schultz.thomas.schub.core.business.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.api.dto.RiotAccountChangeDto;
-import schultz.thomas.schub.core.api.dto.RiotAccountDto;
-import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
-import schultz.thomas.schub.core.api.dto.RiotIngestDto;
+import schultz.thomas.schub.core.business.model.RiotAccount;
+import schultz.thomas.schub.core.business.model.RiotAccountChange;
 import schultz.thomas.schub.core.business.model.RiotAccountState;
+import schultz.thomas.schub.core.business.model.RiotAccountSuggestion;
+import schultz.thomas.schub.core.business.model.RiotIngest;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 
@@ -40,11 +40,11 @@ public class RiotAccountService {
     private final RiotConnectorService riotConnectorService;
     private final ApplicationEventPublisher events;
 
-    public RiotAccountDto of(User actor) {
+    public RiotAccount of(User actor) {
         return toDto(actor).withIngest(ingestOf(actor));
     }
 
-    public RiotAccountDto link(User actor, String riotIdSaisi, boolean confirmChange) {
+    public RiotAccount link(User actor, String riotIdSaisi, boolean confirmChange) {
         RiotId riotId = RiotId.parse(riotIdSaisi);
         RiotIdResolution resolution = riotIdResolver.resolve(riotId.gameName(), riotId.tagLine());
         if (resolution.isNotFound()) {
@@ -91,7 +91,7 @@ public class RiotAccountService {
             log.info("Riot ID {} lié au compte {}", riotId.riotId(), actor.getId());
         }
 
-        RiotAccountDto dto = toDto(enregistre).withIngest(ingestOf(enregistre));
+        RiotAccount dto = toDto(enregistre).withIngest(ingestOf(enregistre));
         return remplacement ? dto.withChange(changement(ancienRiotId, riotId, collecteDemandee)) : dto;
     }
 
@@ -148,7 +148,7 @@ public class RiotAccountService {
                 enregistre.getId(), enregistre.getRiotGameName(), enregistre.getRiotTagLine());
     }
 
-    public List<RiotAccountSuggestionDto> suggestions(User actor, String query, int limit) {
+    public List<RiotAccountSuggestion> suggestions(User actor, String query, int limit) {
         RiotId aVerifier = RiotId.completOuNull(query);
         if (aVerifier != null) {
             verifieAupresDeRiot(aVerifier);
@@ -171,13 +171,13 @@ public class RiotAccountService {
         return trouves.stream().map(joueur -> {
             User proprietaire = revendiques.get(joueur.puuid());
             boolean mien = proprietaire != null && proprietaire.getId().equals(actor.getId());
-            return new RiotAccountSuggestionDto(
+            return new RiotAccountSuggestion(
                     joueur.riotId(),
                     joueur.gameName(),
                     joueur.tagLine(),
                     joueur.matchCount(),
                     joueur.positions().stream()
-                            .map(poste -> new RiotAccountSuggestionDto.PositionPlayedDto(
+                            .map(poste -> new RiotAccountSuggestion.PositionPlayed(
                                     poste.position(), poste.matches()))
                             .toList(),
                     joueur.lastPlayedAt(),
@@ -234,8 +234,8 @@ public class RiotAccountService {
         return demandee;
     }
 
-    private RiotAccountChangeDto changement(RiotId ancien, RiotId nouveau, boolean collecteDemandee) {
-        return new RiotAccountChangeDto(
+    private RiotAccountChange changement(RiotId ancien, RiotId nouveau, boolean collecteDemandee) {
+        return new RiotAccountChange(
                 ancien == null ? null : ancien.riotId(),
                 nouveau.riotId(),
                 true,
@@ -245,27 +245,27 @@ public class RiotAccountService {
                 true);
     }
 
-    private RiotIngestDto ingestOf(User user) {
+    private RiotIngest ingestOf(User user) {
         String puuid = trimOrNull(user.getRiotPuuid());
         if (puuid == null) {
             return null;
         }
         return riotConnectorService.ingestOf(puuid)
-                .map(ingest -> new RiotIngestDto(ingest.pending(), ingest.running(), ingest.estimatedReadyAt(),
-                        ingest.backfill() == null ? null : new RiotIngestDto.Backfill(ingest.backfill().since(),
+                .map(ingest -> new RiotIngest(ingest.pending(), ingest.running(), ingest.estimatedReadyAt(),
+                        ingest.backfill() == null ? null : new RiotIngest.Backfill(ingest.backfill().since(),
                                 ingest.backfill().found(), ingest.backfill().collected())))
                 .orElse(null);
     }
 
-    private RiotAccountDto toDto(User user) {
+    private RiotAccount toDto(User user) {
         RiotId riotId = RiotId.deOuNull(user.getRiotGameName(), user.getRiotTagLine());
         if (riotId == null) {
-            return new RiotAccountDto(RiotAccountState.ABSENT, null, null, null, null, null, null);
+            return new RiotAccount(RiotAccountState.ABSENT, null, null, null, null, null, null);
         }
         RiotAccountState state = trimOrNull(user.getRiotPuuid()) == null
                 ? RiotAccountState.EN_ATTENTE_DE_RESOLUTION
                 : RiotAccountState.RESOLU;
-        return new RiotAccountDto(state, riotId.riotId(), riotId.gameName(), riotId.tagLine(),
+        return new RiotAccount(state, riotId.riotId(), riotId.gameName(), riotId.tagLine(),
                 user.getRiotLinkedAt(), null, null);
     }
 
