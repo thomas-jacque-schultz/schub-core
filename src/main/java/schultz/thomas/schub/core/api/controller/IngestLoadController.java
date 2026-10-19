@@ -18,7 +18,7 @@ import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWi
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.Permission;
-import schultz.thomas.schub.core.team.api.client.ConnectorRiotSeoGateway;
+import schultz.thomas.schub.core.lol.seo.api.client.ConnectorRiotSeoGateway;
 
 import java.util.List;
 

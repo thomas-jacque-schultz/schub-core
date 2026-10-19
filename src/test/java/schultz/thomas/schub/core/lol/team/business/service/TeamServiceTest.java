@@ -1,0 +1,576 @@
+package schultz.thomas.schub.core.lol.team.business.service;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import schultz.thomas.schub.core.business.service.GameServerService;
+import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.business.service.RiotIdResolution;
+import schultz.thomas.schub.core.business.service.RiotIdResolver;
+import schultz.thomas.schub.core.data.model.Permission;
+import schultz.thomas.schub.core.data.model.Role;
+import schultz.thomas.schub.core.data.model.SystemRole;
+import schultz.thomas.schub.core.data.model.User;
+import schultz.thomas.schub.core.data.repository.RoleRepository;
+import schultz.thomas.schub.core.data.repository.UserRepository;
+import schultz.thomas.schub.core.lol.team.data.model.GameRole;
+import schultz.thomas.schub.core.lol.team.data.model.MemberStatus;
+import schultz.thomas.schub.core.lol.team.data.model.Team;
+import schultz.thomas.schub.core.lol.team.data.model.TeamChampionPool;
+import schultz.thomas.schub.core.lol.team.data.model.TeamMember;
+import schultz.thomas.schub.core.lol.team.data.repository.CompositionRepository;
+import schultz.thomas.schub.core.lol.team.data.repository.TeamChampionPoolRepository;
+import schultz.thomas.schub.core.lol.team.data.repository.TeamRepository;
+
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class TeamServiceTest {
+
+    private TeamRepository teamRepository;
+    private RoleRepository roleRepository;
+    private CompositionRepository compositionRepository;
+    private MemberDirectory memberDirectory;
+    private RiotIdResolver riotIdResolver;
+    private TeamChampionPoolRepository championPoolRepository;
+    private TeamService teamService;
+
+    private User capitaine;
+    private User membre;
+    private User etranger;
+    private User coach;
+
+    @BeforeEach
+    void setUp() {
+        teamRepository = mock(TeamRepository.class);
+        compositionRepository = mock(CompositionRepository.class);
+        championPoolRepository = mock(TeamChampionPoolRepository.class);
+        memberDirectory = mock(MemberDirectory.class);
+        riotIdResolver = mock(RiotIdResolver.class);
+
+        UserRepository userRepository = mock(UserRepository.class);
+        roleRepository = mock(RoleRepository.class);
+        GameServerService gameServerService = mock(GameServerService.class);
+        when(gameServerService.findBySlug(anyString())).thenReturn(Optional.empty());
+
+        Role visiteur = new Role();
+        visiteur.setId("role-visiteur");
+        visiteur.setName(SystemRole.VISITEUR.roleName());
+        visiteur.setPermissions(EnumSet.copyOf(SystemRole.VISITEUR.permissions()));
+        when(roleRepository.findById("role-visiteur")).thenReturn(Optional.of(visiteur));
+
+        Role sansDroits = new Role();
+        sansDroits.setId("role-muet");
+        sansDroits.setName("MUET");
+        sansDroits.setPermissions(EnumSet.noneOf(Permission.class));
+        when(roleRepository.findById("role-muet")).thenReturn(Optional.of(sansDroits));
+
+        PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
+                List.of(new TeamScopedAuthority(teamRepository)));
+
+        teamService = new TeamService(teamRepository, compositionRepository,
+                championPoolRepository, evaluator,
+                memberDirectory, riotIdResolver);
+
+        capitaine = compte("capitaine", "role-visiteur");
+        membre = compte("membre", "role-visiteur");
+        etranger = compte("etranger", "role-visiteur");
+        coach = compte("coach", "role-visiteur");
+
+        when(teamRepository.save(any(Team.class))).thenAnswer(invocation -> {
+            Team team = invocation.getArgument(0);
+            if (team.getId() == null) {
+                team.setId("equipe-1");
+            }
+            return team;
+        });
+        when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
+        when(memberDirectory.byRiotPuuid(anyString())).thenReturn(Optional.empty());
+        when(memberDirectory.pendingByRiotId(anyString(), anyString())).thenReturn(Optional.empty());
+    }
+
+    @Test
+    @DisplayName("un VISITEUR crée une équipe — sans ça, l'outil n'a aucun utilisateur")
+    void creationParUnVisiteur() {
+        Team equipe = teamService.create(capitaine, "  Les cinq  ");
+
+        assertThat(equipe.getName()).isEqualTo("Les cinq");
+        assertThat(equipe.getCreatedBy()).isEqualTo("capitaine");
+        assertThat(equipe.getMembers()).isEmpty();
+        ArgumentCaptor<TeamChampionPool> pool = ArgumentCaptor.forClass(TeamChampionPool.class);
+        verify(championPoolRepository).save(pool.capture());
+        assertThat(pool.getValue().isStartingSelection()).isTrue();
+        assertThat(pool.getValue().championKeys(GameRole.JGL)).contains("LeeSin", "Graves");
+    }
+
+    @Test
+    @DisplayName("sans TEAM_CREATE, pas d'équipe")
+    void creationRefusee() {
+        User muet = compte("muet", "role-muet");
+
+        assertThatThrownBy(() -> teamService.create(muet, "Les cinq"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("TEAM_CREATE");
+        verify(teamRepository, never()).save(any(Team.class));
+    }
+
+    @Test
+    @DisplayName("une équipe a un nom")
+    void nomObligatoire() {
+        assertThatThrownBy(() -> teamService.create(capitaine, "   "))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("un membre ne renomme pas l'équipe de son capitaine")
+    void unMembreNeRenommePas() {
+        donneLEquipe();
+
+        assertThatThrownBy(() -> teamService.rename(membre, "equipe-1", "Autre nom"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("TEAM_MANAGE");
+    }
+
+    @Test
+    @DisplayName("un étranger ne voit même pas l'équipe")
+    void unEtrangerNeVoitPas() {
+        donneLEquipe();
+
+        assertThatThrownBy(() -> teamService.requireVisible(etranger, "equipe-1"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("TEAM_VIEW");
+    }
+
+    @Test
+    @DisplayName("un membre voit l'équipe")
+    void unMembreVoit() {
+        donneLEquipe();
+
+        assertThat(teamService.requireVisible(membre, "equipe-1").getName()).isEqualTo("Les cinq");
+    }
+
+    @Test
+    @DisplayName("le capitaine renomme son équipe")
+    void leCapitaineRenomme() {
+        donneLEquipe();
+
+        assertThat(teamService.rename(capitaine, "equipe-1", "Renommée").getName()).isEqualTo("Renommée");
+    }
+
+    @Test
+    @DisplayName("un OWNER renomme n'importe quelle équipe — par son rôle, pas par sa place")
+    void lOwnerRenommeAussi() {
+        donneLEquipe();
+        Role ownerRole = new Role();
+        ownerRole.setId("role-owner");
+        ownerRole.setName(SystemRole.OWNER.roleName());
+        ownerRole.setPermissions(EnumSet.copyOf(SystemRole.OWNER.permissions()));
+        when(roleRepository.findById("role-owner")).thenReturn(Optional.of(ownerRole));
+
+        assertThat(teamService.rename(compte("owner", "role-owner"), "equipe-1", "Renommée par le patron")
+                .getName()).isEqualTo("Renommée par le patron");
+    }
+
+    @Test
+    @DisplayName("un membre ne retire personne de l'effectif")
+    void unMembreNeRetirePersonne() {
+        donneLEquipe();
+
+        assertThatThrownBy(() -> teamService.removeMember(membre, "equipe-1", "m-1"))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("un membre n'ajoute personne à l'effectif")
+    void unMembreNAjoutePersonne() {
+        donneLEquipe();
+
+        assertThatThrownBy(() -> teamService.addMember(membre, "equipe-1", nouveau()))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("ROSTER_EDIT");
+    }
+
+    @Test
+    @DisplayName("un coach recrute, mais ne renomme ni ne supprime l'équipe")
+    void unCoachRecrute() {
+        donneLEquipeAvecUnCoach();
+
+        assertThat(teamService.addMember(coach, "equipe-1", nouveau()).getMembers()).hasSize(3);
+        assertThatThrownBy(() -> teamService.rename(coach, "equipe-1", "Autre nom"))
+                .isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> teamService.delete(coach, "equipe-1"))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("un titulaire marqué coach recrute aussi")
+    void unTitulaireCoachRecrute() {
+        Team equipe = equipe();
+        equipe.getMembers().getFirst().setCoach(true);
+        when(teamRepository.findById("equipe-1")).thenReturn(Optional.of(equipe));
+
+        assertThat(teamService.addMember(membre, "equipe-1", nouveau()).getMembers()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("supprimer une équipe emporte ses compositions")
+    void suppressionEmporteLesCompositions() {
+        donneLEquipe();
+
+        teamService.delete(capitaine, "equipe-1");
+
+        verify(compositionRepository).deleteByTeamId("equipe-1");
+        verify(teamRepository).delete(any(Team.class));
+    }
+
+    @Test
+    @DisplayName("on ajoute un joueur qui n'a pas de compte Schub — il reste libre")
+    void ajouteUnMembreLibre() {
+        donneLEquipe();
+
+        Team equipe = teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), MemberStatus.TITULAIRE, false));
+
+        TeamMember ajoute = equipe.getMembers().get(equipe.getMembers().size() - 1);
+        assertThat(ajoute.isLinked()).isFalse();
+        assertThat(ajoute.getUserId()).isNull();
+        assertThat(ajoute.riotId()).isEqualTo("Bibi#EUW");
+        assertThat(ajoute.getMemberId()).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("un Riot ID déjà revendiqué par un compte donne un membre lié d'emblée")
+    void ajouteUnMembreDejaInscrit() {
+        donneLEquipe();
+        when(riotIdResolver.resolve("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
+        when(memberDirectory.byRiotPuuid("puuid-bibi")).thenReturn(Optional.of(
+                new MemberDirectory.MemberIdentity("bibi", "Bibi", null, "puuid-bibi", "Bibi", "EUW")));
+
+        Team equipe = teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null, false));
+
+        TeamMember ajoute = equipe.getMembers().get(equipe.getMembers().size() - 1);
+        assertThat(ajoute.isLinked()).isTrue();
+        assertThat(ajoute.getUserId()).isEqualTo("bibi");
+        assertThat(ajoute.getStatus()).isEqualTo(MemberStatus.TITULAIRE);
+    }
+
+    @Test
+    @DisplayName("un compte au puuid effacé est relié par le Riot ID qu'il a déclaré, et reçoit le puuid (schub-core#47)")
+    void ajouteUnMembreAuCompteEnAttente() {
+        donneLEquipe();
+        when(riotIdResolver.resolve("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
+        when(memberDirectory.pendingByRiotId("Bibi", "EUW")).thenReturn(Optional.of(
+                new MemberDirectory.MemberIdentity("bibi", "Bibi", null, null, "Bibi", "EUW")));
+
+        Team equipe = teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null, false));
+
+        TeamMember ajoute = equipe.getMembers().get(equipe.getMembers().size() - 1);
+        assertThat(ajoute.getUserId()).isEqualTo("bibi");
+        verify(memberDirectory).adoptPuuid("bibi", "puuid-bibi");
+    }
+
+    @Test
+    @DisplayName("le puuid fourni par l'appelant évite l'appel au connecteur Riot")
+    void puuidFourniEviteLAppel() {
+        donneLEquipe();
+
+        teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Bibi", "EUW", "puuid-bibi", List.of(GameRole.ADC), null, false));
+
+        verify(riotIdResolver, never()).resolve(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("un Riot ID incomplet est refusé — un pseudo seul ne désigne personne")
+    void riotIdIncomplet() {
+        donneLEquipe();
+
+        assertThatThrownBy(() -> teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Bibi", "  ", null, List.of(GameRole.TOP), null, false)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Riot ID");
+    }
+
+    @Test
+    @DisplayName("deux fois le même joueur dans la même équipe, non")
+    void refuseUnDoublon() {
+        donneLEquipe();
+        teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null, false));
+
+        assertThatThrownBy(() -> teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("bibi", "euw", null, List.of(GameRole.TOP), null, false)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("déjà");
+    }
+
+    @Test
+    @DisplayName("un coach ne tient pas de poste")
+    void refuseUnCoachAvecPoste() {
+        donneLEquipe();
+
+        assertThatThrownBy(() -> teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Coach", "EUW", null, List.of(GameRole.SUP), MemberStatus.COACH, false)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("coach");
+    }
+
+    @Test
+    @DisplayName("une équipe n'est pas limitée à cinq — un roster a des remplaçants et un coach")
+    void pasDeLimiteACinq() {
+        donneLEquipe();
+        for (int i = 0; i < 6; i++) {
+            teamService.addMember(capitaine, "equipe-1",
+                    new TeamService.NewMember("Joueur" + i, "EUW", null, null, MemberStatus.REMPLACANT, false));
+        }
+        Team equipe = teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Coach", "EUW", null, List.of(), MemberStatus.COACH, false));
+
+        assertThat(equipe.getMembers()).hasSize(8);
+    }
+
+    @Test
+    @DisplayName("Remplaçant et coach se cumulent, et un remplaçant-coach garde ses postes")
+    void remplacantCoach() {
+        donneLEquipe();
+        Team equipe = teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Mentor", "EUW", null, List.of(GameRole.JGL), MemberStatus.REMPLACANT, true));
+
+        TeamMember mentor = equipe.getMembers().getLast();
+        assertThat(mentor.coaches()).isTrue();
+        assertThat(mentor.getStatus()).isEqualTo(MemberStatus.REMPLACANT);
+        assertThat(mentor.getRoles()).containsExactly(GameRole.JGL);
+    }
+
+    @Test
+    @DisplayName("un membre libre devient lié quand la personne revendique son Riot ID")
+    void revendicationParRiotId() {
+        Team equipe = equipe();
+        equipe.getMembers().add(membreLibre("m-libre", "Bibi", "EUW", null));
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotGameName("bibi");
+        bibi.setRiotTagLine("euw");
+
+        List<Team> liees = teamService.claim(bibi);
+
+        assertThat(liees).hasSize(1);
+        TeamMember place = liees.get(0).findMember("m-libre").orElseThrow();
+        assertThat(place.isLinked()).isTrue();
+        assertThat(place.getUserId()).isEqualTo("bibi");
+        assertThat(place.getLinkedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("une équipe modifiée pendant la revendication est relue : le membre ajouté entre-temps reste")
+    void revendicationRelitApresConflit() {
+        Team lue = equipe();
+        lue.getMembers().add(membreLibre("m-libre", "Bibi", "EUW", null));
+        Team relue = equipe();
+        relue.getMembers().add(membreLibre("m-libre", "Bibi", "EUW", null));
+        relue.getMembers().add(membreLibre("m-ajoute", "Nouveau", "EUW", null));
+        when(teamRepository.findAll()).thenReturn(List.of(lue));
+        when(teamRepository.findById(lue.getId())).thenReturn(Optional.of(relue));
+        when(teamRepository.save(lue)).thenThrow(new OptimisticLockingFailureException("version dépassée"));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotGameName("Bibi");
+        bibi.setRiotTagLine("EUW");
+
+        List<Team> liees = teamService.claim(bibi);
+
+        assertThat(liees).singleElement().satisfies(equipe -> {
+            assertThat(equipe.findMember("m-ajoute")).isPresent();
+            assertThat(equipe.findMember("m-libre").orElseThrow().getUserId()).isEqualTo("bibi");
+        });
+    }
+
+    @Test
+    @DisplayName("la revendication par puuid l'emporte, et complète le puuid manquant")
+    void revendicationParPuuid() {
+        Team equipe = equipe();
+        equipe.getMembers().add(membreLibre("m-libre", "AncienPseudo", "EUW", "puuid-bibi"));
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotPuuid("puuid-bibi");
+        bibi.setRiotGameName("NouveauPseudo");
+        bibi.setRiotTagLine("EUW");
+
+        List<Team> liees = teamService.claim(bibi);
+
+        assertThat(liees).hasSize(1);
+        assertThat(liees.get(0).findMember("m-libre").orElseThrow().getUserId()).isEqualTo("bibi");
+    }
+
+    @Test
+    @DisplayName("on ne revendique jamais la place de quelqu'un d'autre")
+    void neVolePasUnePlaceDejaLiee() {
+        Team equipe = equipe();
+        TeamMember deja = membreLibre("m-pris", "Bibi", "EUW", null);
+        deja.setUserId("quelquun-dautre");
+        equipe.getMembers().add(deja);
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotGameName("Bibi");
+        bibi.setRiotTagLine("EUW");
+
+        assertThat(teamService.claim(bibi)).isEmpty();
+        assertThat(equipe.findMember("m-pris").orElseThrow().getUserId()).isEqualTo("quelquun-dautre");
+    }
+
+    @Test
+    @DisplayName("revendiquer deux fois ne change rien la seconde fois")
+    void revendicationIdempotente() {
+        Team equipe = equipe();
+        equipe.getMembers().add(membreLibre("m-libre", "Bibi", "EUW", null));
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotGameName("Bibi");
+        bibi.setRiotTagLine("EUW");
+
+        assertThat(teamService.claim(bibi)).hasSize(1);
+        assertThat(teamService.claim(bibi)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("sans compte Riot lié, il n'y a rien à revendiquer — et on le dit")
+    void revendicationSansCompteRiot() {
+        assertThatThrownBy(() -> teamService.claim(etranger))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Riot");
+    }
+
+    @Test
+    @DisplayName("après un changement de compte Riot, la place déjà liée suit le nouveau compte")
+    void resynchroniseLaPlaceApresUnChangementDeCompte() {
+        Team equipe = equipe();
+        TeamMember place = membreLibre("m-bibi", "AncienPseudo", "EUW", "ancien-puuid");
+        place.setUserId("bibi");
+        equipe.getMembers().add(place);
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotPuuid("nouveau-puuid");
+        bibi.setRiotGameName("NouveauCompte");
+        bibi.setRiotTagLine("FR1");
+
+        List<Team> liees = teamService.claim(bibi);
+
+        TeamMember apres = liees.get(0).findMember("m-bibi").orElseThrow();
+        assertThat(apres.getRiotPuuid()).isEqualTo("nouveau-puuid");
+        assertThat(apres.riotId()).isEqualTo("NouveauCompte#FR1");
+        assertThat(apres.getUserId()).isEqualTo("bibi");
+    }
+
+    @Test
+    @DisplayName("un puuid connu n'est jamais remplacé par une déclaration non résolue")
+    void neRemplacePasUnPuuidParRien() {
+        Team equipe = equipe();
+        TeamMember place = membreLibre("m-bibi", "Bibi", "EUW", "puuid-bibi");
+        place.setUserId("bibi");
+        equipe.getMembers().add(place);
+        when(teamRepository.findAll()).thenReturn(List.of(equipe));
+
+        User bibi = compte("bibi", "role-visiteur");
+        bibi.setRiotGameName("Bibi");
+        bibi.setRiotTagLine("EUW2");
+
+        teamService.claim(bibi);
+
+        assertThat(equipe.findMember("m-bibi").orElseThrow().getRiotPuuid()).isEqualTo("puuid-bibi");
+        assertThat(equipe.findMember("m-bibi").orElseThrow().getRiotTagLine()).isEqualTo("EUW2");
+    }
+
+    @Test
+    @DisplayName("mes équipes : celles où je figure et celles que j'ai créées, sans doublon")
+    void mesEquipes() {
+        Team equipe = equipe();
+        when(teamRepository.findByMembersUserId("capitaine")).thenReturn(List.of(equipe));
+        when(teamRepository.findByCreatedBy("capitaine")).thenReturn(List.of(equipe));
+
+        assertThat(teamService.mine(capitaine)).containsExactly(equipe);
+    }
+
+    @Test
+    @DisplayName("une équipe créée sans s'y mettre reste visible de son capitaine")
+    void equipeCreeeSansSYMettre() {
+        Team equipe = equipe();
+        when(teamRepository.findByMembersUserId("capitaine")).thenReturn(List.of());
+        when(teamRepository.findByCreatedBy("capitaine")).thenReturn(List.of(equipe));
+
+        assertThat(teamService.mine(capitaine)).containsExactly(equipe);
+    }
+
+    private void donneLEquipeAvecUnCoach() {
+        Team equipe = equipe();
+        TeamMember leCoach = new TeamMember();
+        leCoach.setMemberId("m-coach");
+        leCoach.setUserId("coach");
+        leCoach.setRiotGameName("Coach");
+        leCoach.setRiotTagLine("EUW");
+        leCoach.setStatus(MemberStatus.COACH);
+        equipe.getMembers().add(leCoach);
+        when(teamRepository.findById("equipe-1")).thenReturn(Optional.of(equipe));
+    }
+
+    private static TeamService.NewMember nouveau() {
+        return new TeamService.NewMember("Nouveau", "EUW", "puuid-nouveau", List.of(), MemberStatus.REMPLACANT, false);
+    }
+
+    private void donneLEquipe() {
+        when(teamRepository.findById("equipe-1")).thenReturn(Optional.of(equipe()));
+    }
+
+    private Team equipe() {
+        Team team = new Team();
+        team.setId("equipe-1");
+        team.setName("Les cinq");
+        team.setCreatedBy("capitaine");
+
+        TeamMember leMembre = new TeamMember();
+        leMembre.setMemberId("m-1");
+        leMembre.setUserId("membre");
+        leMembre.setRiotGameName("Membre");
+        leMembre.setRiotTagLine("EUW");
+        leMembre.setStatus(MemberStatus.TITULAIRE);
+        team.getMembers().add(leMembre);
+        return team;
+    }
+
+    private TeamMember membreLibre(String memberId, String gameName, String tagLine, String puuid) {
+        TeamMember member = new TeamMember();
+        member.setMemberId(memberId);
+        member.setRiotGameName(gameName);
+        member.setRiotTagLine(tagLine);
+        member.setRiotPuuid(puuid);
+        member.setStatus(MemberStatus.TITULAIRE);
+        return member;
+    }
+
+    private User compte(String id, String roleId) {
+        User user = new User();
+        user.setId(id);
+        user.setDiscordId("discord-" + id);
+        user.setRoleId(roleId);
+        return user;
+    }
+}

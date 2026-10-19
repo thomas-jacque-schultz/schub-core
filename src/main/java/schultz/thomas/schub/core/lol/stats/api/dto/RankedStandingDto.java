@@ -1,0 +1,17 @@
+package schultz.thomas.schub.core.lol.stats.api.dto;
+
+import java.time.Instant;
+
+public record RankedStandingDto(
+        String queue,
+        String riotQueueType,
+        String tier,
+        String division,
+        int leaguePoints,
+        int wins,
+        int losses,
+        boolean hotStreak,
+        boolean inactive,
+        Instant observedAt
+) {
+}
