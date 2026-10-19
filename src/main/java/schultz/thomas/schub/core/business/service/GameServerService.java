@@ -1,11 +1,5 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.business.mapper.GameServerMapper;
-import schultz.thomas.schub.core.data.model.GameServer;
-import schultz.thomas.schub.core.data.model.GameServerStatusHistoryEntry;
-import schultz.thomas.schub.core.data.repository.GameServerRepository;
-
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -14,6 +8,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.business.mapper.GameServerMapper;
+import schultz.thomas.schub.core.data.model.GameServer;
+import schultz.thomas.schub.core.data.model.GameServerStatusHistoryEntry;
+import schultz.thomas.schub.core.data.repository.GameServerRepository;
+
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;

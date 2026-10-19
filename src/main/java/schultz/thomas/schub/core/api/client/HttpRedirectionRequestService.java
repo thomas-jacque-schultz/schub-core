@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.business.service;
+package schultz.thomas.schub.core.api.client;
 
 import schultz.thomas.schub.core.api.dto.PortRule;
 import schultz.thomas.schub.core.business.model.RouterStatus;
@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.business.service.RedirectionRequestService;
 import java.util.List;
 
 @Slf4j

@@ -7,7 +7,6 @@ import org.springframework.security.access.AccessDeniedException;
 import schultz.thomas.schub.core.business.service.GameServerService;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotIdResolver;
-import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.Role;
 import schultz.thomas.schub.core.data.model.SystemRole;
 import schultz.thomas.schub.core.data.model.User;

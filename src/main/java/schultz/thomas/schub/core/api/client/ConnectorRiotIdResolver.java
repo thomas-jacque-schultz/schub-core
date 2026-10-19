@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.business.service;
+package schultz.thomas.schub.core.api.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -9,6 +9,8 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.business.service.RiotIdResolution;
+import schultz.thomas.schub.core.business.service.RiotIdResolver;
 
 import java.util.Optional;
 

@@ -52,7 +52,7 @@ public class DraftAdviceService {
     private final RiotChampionGateway championGateway;
     private final TeamGamesStatsService gamesStats;
     private final TeamChampionPoolRepository pools;
-    private final ConnectorRiotComboGateway combos;
+    private final RiotComboGateway combos;
 
     // Un choix dans un combo : un membre, à un poste, sur un champion.
     record Choix(String memberId, String position, int championId) {
@@ -236,10 +236,10 @@ public class DraftAdviceService {
             List<DraftAdviceDto.Combo> liste = parType.get(kind);
             List<String> postes = liste.get(0).picks().stream()
                     .map(pick -> GameRole.valueOf(pick.role()).position()).toList();
-            List<ConnectorRiotComboGateway.Slot> slots = new ArrayList<>();
+            List<RiotComboGateway.Slot> slots = new ArrayList<>();
             for (int i = 0; i < postes.size(); i++) {
                 int index = i;
-                slots.add(new ConnectorRiotComboGateway.Slot(postes.get(i), liste.stream()
+                slots.add(new RiotComboGateway.Slot(postes.get(i), liste.stream()
                         .map(c -> c.picks().get(index).championId()).distinct().toList()));
             }
             return combos.combos(slots, 1).orElseGet(List::of);
@@ -307,12 +307,12 @@ public class DraftAdviceService {
                 candidatsParType.put(type, candidats);
             }
         }
-        Map<ComboKind, List<ConnectorRiotComboGateway.GeneralCombo>> generaux = Parallele.parCle(candidatsParType.keySet(),
+        Map<ComboKind, List<RiotComboGateway.GeneralCombo>> generaux = Parallele.parCle(candidatsParType.keySet(),
                 type -> {
                     List<Map<Integer, String>> candidats = candidatsParType.get(type);
-                    List<ConnectorRiotComboGateway.Slot> slots = new ArrayList<>();
+                    List<RiotComboGateway.Slot> slots = new ArrayList<>();
                     for (int i = 0; i < type.positions().size(); i++) {
-                        slots.add(new ConnectorRiotComboGateway.Slot(type.positions().get(i),
+                        slots.add(new RiotComboGateway.Slot(type.positions().get(i),
                                 List.copyOf(candidats.get(i).keySet())));
                     }
                     return combos.combos(slots, REPERE_SOLIDE).orElseGet(List::of);
@@ -325,7 +325,7 @@ public class DraftAdviceService {
                     .filter(general -> ensemble.getOrDefault(cle(type.name(), general.championIds()), 0L) < DEJA_ESSAYE)
                     .filter(general -> !Objects.equals(candidats.get(0).get(general.championIds().get(0)),
                             candidats.get(1).get(general.championIds().get(1))))
-                    .sorted(Comparator.comparingDouble((ConnectorRiotComboGateway.GeneralCombo g) ->
+                    .sorted(Comparator.comparingDouble((RiotComboGateway.GeneralCombo g) ->
                             borneBasse(g.wins(), g.games())).reversed())
                     .limit(RETENUS)
                     .forEach(general -> {

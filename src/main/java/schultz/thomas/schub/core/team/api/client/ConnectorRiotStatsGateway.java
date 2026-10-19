@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.team.business.service;
+package schultz.thomas.schub.core.team.api.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -9,6 +9,7 @@ import org.springframework.web.client.RestClientException;
 
 import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
+import schultz.thomas.schub.core.team.business.service.RiotStatsGateway;
 
 import java.time.Instant;
 import java.util.List;
