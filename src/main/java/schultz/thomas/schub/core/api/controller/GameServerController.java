@@ -36,7 +36,7 @@ public class GameServerController {
 
     private final GameServerService gameServerService;
     private final DeploymentService deploymentService;
-    private final GameServerProjection projectionService;
+    private final GameServerProjection projection;
     private final PermissionEvaluator permissionEvaluator;
     private final UserService userService;
     private final GameServerMapper mapper;
@@ -46,7 +46,7 @@ public class GameServerController {
     public List<?> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         Optional<User> actor = readActor(actorId);
         actor.ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
-        return projectionService.project(gameServerService.findAll(), actor.orElse(null));
+        return projection.project(gameServerService.findAll(), actor.orElse(null));
     }
 
     @GetMapping("/public-status")
@@ -65,7 +65,7 @@ public class GameServerController {
         Optional<User> actor = readActor(actorId);
         actor.ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
         return gameServerService.findById(id)
-                .map(server -> projectionService.project(server, actor.orElse(null)))
+                .map(server -> projection.project(server, actor.orElse(null)))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -77,7 +77,7 @@ public class GameServerController {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.SERVER_CREATE, null);
         GameServer created = gameServerService.create(withKnownReferents(mapper.toEntity(dto)));
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toInfraDto(created, actor));
+        return ResponseEntity.status(HttpStatus.CREATED).body(projection.toInfraDto(created, actor));
     }
 
     @PutMapping("/{id}")
@@ -88,7 +88,7 @@ public class GameServerController {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.SERVER_EDIT, null);
         GameServer updated = gameServerService.update(id, withKnownReferents(mapper.toEntity(dto)));
-        return ResponseEntity.ok(projectionService.toInfraDto(updated, actor));
+        return ResponseEntity.ok(projection.toInfraDto(updated, actor));
     }
 
     @PostMapping("/{slug}/start")

@@ -2,16 +2,15 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
-import schultz.thomas.schub.core.team.api.dto.TeamGameDto;
-import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
-import schultz.thomas.schub.core.team.api.dto.TeamMemberPresenceDto;
-import schultz.thomas.schub.core.team.api.dto.TeamRecordDto;
 import schultz.thomas.schub.core.team.business.model.GameModes;
 import schultz.thomas.schub.core.team.business.model.StatsState;
+import schultz.thomas.schub.core.team.business.model.TeamGame;
+import schultz.thomas.schub.core.team.business.model.TeamGameDetail;
+import schultz.thomas.schub.core.team.business.model.TeamGamesStats;
+import schultz.thomas.schub.core.team.business.model.TeamMemberPresence;
+import schultz.thomas.schub.core.team.business.model.TeamRecord;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
@@ -64,7 +63,7 @@ public class TeamGamesStatsService {
                 .findFirst();
     }
 
-    public TeamGamesStatsDto of(User actor, String teamId, Integer days, Integer limit) {
+    public TeamGamesStats of(User actor, String teamId, Integer days, Integer limit) {
         Team team = teamService.requireVisible(actor, teamId);
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
@@ -87,12 +86,12 @@ public class TeamGamesStatsService {
             return vide(team, actor, joueurs, noms, days, etatSansPartie(couverture), couverture);
         }
 
-        List<TeamGameDto> rendues = views.parties(parties, parPuuid, noms);
+        List<TeamGame> rendues = views.parties(parties, parPuuid, noms);
         List<RiotStatsGateway.SharedMatch> decidees = parties.stream()
                 .filter(partie -> partie.win() != null)
                 .toList();
 
-        return new TeamGamesStatsDto(
+        return new TeamGamesStats(
                 team.getId(),
                 team.getName(),
                 days,
@@ -103,7 +102,7 @@ public class TeamGamesStatsService {
                 bilans(decidees, partie -> GameModes.de(partie.queue()), partie -> null),
                 bilans(decidees, partie -> String.valueOf(VueDePartie.de(partie).cote()), partie -> null),
                 bilans(decidees, RiotStatsGateway.SharedMatch::patch, partie -> null).stream()
-                        .sorted(Comparator.comparing(TeamRecordDto::key, TeamGamesStatsService::parVersion).reversed())
+                        .sorted(Comparator.comparing(TeamRecord::key, TeamGamesStatsService::parVersion).reversed())
                         .limit(PATCHS_RENDUS)
                         .toList(),
                 presences(joueurs, parties, noms, couverture),
@@ -119,7 +118,7 @@ public class TeamGamesStatsService {
                 Instant.now());
     }
 
-    public TeamGameDetailDto detail(User actor, String teamId, String matchId, Integer days) {
+    public TeamGameDetail detail(User actor, String teamId, String matchId, Integer days) {
         Team team = teamService.requireVisible(actor, teamId);
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
@@ -142,10 +141,10 @@ public class TeamGamesStatsService {
         return index;
     }
 
-    private TeamGamesStatsDto vide(Team team, User actor, List<TeamMember> joueurs, Map<String, String> noms,
+    private TeamGamesStats vide(Team team, User actor, List<TeamMember> joueurs, Map<String, String> noms,
                                    Integer days, StatsState state,
                                    Map<String, RiotStatsGateway.Coverage> couverture) {
-        return new TeamGamesStatsDto(team.getId(), team.getName(), days, MINIMUM_MEMBRES,
+        return new TeamGamesStats(team.getId(), team.getName(), days, MINIMUM_MEMBRES,
                 joueurs.size(), state, bilan("", null, List.of()), List.of(), List.of(), List.of(),
                 presences(joueurs, List.of(), noms, couverture), List.of(), 0, 0,
                 false, null, null, TeamPlayerStatsService.placeDuLecteur(team, actor),
@@ -164,18 +163,18 @@ public class TeamGamesStatsService {
                 : StatsState.AUCUNE_PARTIE;
     }
 
-    private static TeamRecordDto bilan(String key, String label,
+    private static TeamRecord bilan(String key, String label,
                                        List<RiotStatsGateway.SharedMatch> parties) {
         long games = parties.size();
         long wins = parties.stream().filter(partie -> Boolean.TRUE.equals(partie.win())).count();
         long secondes = parties.stream()
                 .mapToLong(RiotStatsGateway.SharedMatch::durationSeconds).sum();
-        return new TeamRecordDto(key, label, games, wins, games - wins,
+        return new TeamRecord(key, label, games, wins, games - wins,
                 games == 0 ? null : (double) wins / games,
                 games == 0 ? null : (double) secondes / games);
     }
 
-    private static List<TeamRecordDto> bilans(
+    private static List<TeamRecord> bilans(
             List<RiotStatsGateway.SharedMatch> parties,
             Function<RiotStatsGateway.SharedMatch, String> cle,
             Function<RiotStatsGateway.SharedMatch, String> libelle) {
@@ -187,7 +186,7 @@ public class TeamGamesStatsService {
         return groupes.entrySet().stream()
                 .map(entree -> bilan(entree.getKey(),
                         libelle.apply(entree.getValue().getFirst()), entree.getValue()))
-                .sorted(Comparator.comparingLong(TeamRecordDto::games).reversed())
+                .sorted(Comparator.comparingLong(TeamRecord::games).reversed())
                 .toList();
     }
 
@@ -207,10 +206,10 @@ public class TeamGamesStatsService {
         }
     }
 
-    private static List<TeamMemberPresenceDto> presences(
+    private static List<TeamMemberPresence> presences(
             List<TeamMember> joueurs, List<RiotStatsGateway.SharedMatch> parties,
             Map<String, String> noms, Map<String, RiotStatsGateway.Coverage> couverture) {
-        List<TeamMemberPresenceDto> presences = new ArrayList<>();
+        List<TeamMemberPresence> presences = new ArrayList<>();
         for (TeamMember membre : joueurs) {
             String puuid = membre.getRiotPuuid();
             long games = 0;
@@ -226,7 +225,7 @@ public class TeamGamesStatsService {
                     }
                 }
             }
-            presences.add(new TeamMemberPresenceDto(
+            presences.add(new TeamMemberPresence(
                     membre.getMemberId(),
                     noms.getOrDefault(membre.getMemberId(), membre.riotId()),
                     membre.getStatus(),

@@ -1,7 +1,7 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.api.dto.EarlyGameDto;
-import schultz.thomas.schub.core.team.api.dto.TeamEarlyGameDto;
+import schultz.thomas.schub.core.team.business.model.EarlyGame;
+import schultz.thomas.schub.core.team.business.model.TeamEarlyGame;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
@@ -20,28 +20,28 @@ final class EarlyGames {
     private EarlyGames() {
     }
 
-    static EarlyGameDto vue(RiotStatsGateway.EarlyGame early, int notreCote, Map<String, TeamMember> parPuuid) {
+    static EarlyGame vue(RiotStatsGateway.EarlyGame early, int notreCote, Map<String, TeamMember> parPuuid) {
         if (early == null) {
             return null;
         }
-        List<EarlyGameDto.GankDto> ganks = early.ganks().stream()
+        List<EarlyGame.Gank> ganks = early.ganks().stream()
                 .map(gank -> {
                     boolean nous = gank.attackerSide() == notreCote;
-                    return new EarlyGameDto.GankDto(gank.second(), gank.lane(), nous, gank.outcome(), gank.decisive(),
+                    return new EarlyGame.Gank(gank.second(), gank.lane(), nous, gank.outcome(), gank.decisive(),
                             gank.objectiveFollowUp(), membres(gank.targetPuuids(), parPuuid),
                             membres(gank.casualtyPuuids(), parPuuid),
                             nous ? gank.attackersLost() : gank.defendersLost(),
                             nous ? gank.defendersLost() : gank.attackersLost());
                 })
                 .toList();
-        return new EarlyGameDto(ganks,
+        return new EarlyGame(ganks,
                 presence(jungler(early, notreCote, true), parPuuid),
                 presence(jungler(early, notreCote, false), parPuuid),
                 objectifs(early, notreCote, true),
                 objectifs(early, notreCote, false));
     }
 
-    static TeamEarlyGameDto bilan(List<RiotStatsGateway.SharedMatch> parties,
+    static TeamEarlyGame bilan(List<RiotStatsGateway.SharedMatch> parties,
                                   Map<String, RiotStatsGateway.Insight> insights,
                                   Map<String, TeamMember> parPuuid, Map<String, String> noms) {
         Map<String, Membre> parMembre = new LinkedHashMap<>();
@@ -80,7 +80,7 @@ final class EarlyGames {
             parCote.get(fort).ajoute(partie, early, notreCote, fort);
         }
 
-        return new TeamEarlyGameDto(analysees,
+        return new TeamEarlyGame(analysees,
                 parMembre.values().stream().map(membre -> membre.dto(noms)).toList(),
                 parCote.entrySet().stream()
                         .filter(entree -> entree.getValue().parties > 0)
@@ -113,23 +113,23 @@ final class EarlyGames {
                 .orElse(null);
     }
 
-    private static EarlyGameDto.JunglePresenceDto presence(RiotStatsGateway.JunglePresence presence,
+    private static EarlyGame.JunglePresence presence(RiotStatsGateway.JunglePresence presence,
                                                            Map<String, TeamMember> parPuuid) {
         if (presence == null) {
             return null;
         }
         TeamMember membre = parPuuid.get(presence.puuid());
-        return new EarlyGameDto.JunglePresenceDto(membre == null ? null : membre.getMemberId(),
+        return new EarlyGame.JunglePresence(membre == null ? null : membre.getMemberId(),
                 presence.topMinutes(), presence.midMinutes(), presence.botMinutes(), coteFort(presence));
     }
 
-    private static EarlyGameDto.ObjectivesDto objectifs(RiotStatsGateway.EarlyGame early, int notreCote,
+    private static EarlyGame.Objectives objectifs(RiotStatsGateway.EarlyGame early, int notreCote,
                                                         boolean notre) {
         return early.objectives().stream()
                 .filter(o -> (o.side() == notreCote) == notre)
                 .findFirst()
-                .map(o -> new EarlyGameDto.ObjectivesDto(o.dragons(), o.grubs(), o.heralds()))
-                .orElse(new EarlyGameDto.ObjectivesDto(0, 0, 0));
+                .map(o -> new EarlyGame.Objectives(o.dragons(), o.grubs(), o.heralds()))
+                .orElse(new EarlyGame.Objectives(0, 0, 0));
     }
 
     private static List<String> membres(List<String> puuids, Map<String, TeamMember> parPuuid) {
@@ -197,11 +197,11 @@ final class EarlyGames {
             }
         }
 
-        TeamEarlyGameDto.MemberEarlyDto dto(Map<String, String> noms) {
-            return new TeamEarlyGameDto.MemberEarlyDto(membre.getMemberId(), noms.get(membre.getMemberId()),
+        TeamEarlyGame.MemberEarly dto(Map<String, String> noms) {
+            return new TeamEarlyGame.MemberEarly(membre.getMemberId(), noms.get(membre.getMemberId()),
                     couloirs, subis, tenus, morts, jungles, faits, decisifs, contres, haut, milieu, bas,
                     aupres.entrySet().stream()
-                            .map(e -> new TeamEarlyGameDto.PresenceWithDto(e.getKey(), noms.get(e.getKey()),
+                            .map(e -> new TeamEarlyGame.PresenceWith(e.getKey(), noms.get(e.getKey()),
                                     e.getValue()[0], e.getValue()[1], e.getValue()[2]))
                             .toList());
         }
@@ -226,8 +226,8 @@ final class EarlyGames {
             }
         }
 
-        TeamEarlyGameDto.StrongSideDto dto(String cote) {
-            return new TeamEarlyGameDto.StrongSideDto(cote, parties, victoires, ganksAdverses, surCoteFaible);
+        TeamEarlyGame.StrongSide dto(String cote) {
+            return new TeamEarlyGame.StrongSide(cote, parties, victoires, ganksAdverses, surCoteFaible);
         }
     }
 }

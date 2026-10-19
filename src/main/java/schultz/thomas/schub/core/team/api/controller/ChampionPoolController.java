@@ -14,6 +14,7 @@ import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.team.api.dto.ChampionPoolDto;
 import schultz.thomas.schub.core.team.api.dto.PoolChampionsRequest;
 import schultz.thomas.schub.core.team.api.dto.PoolMasteryFloorRequest;
+import schultz.thomas.schub.core.team.api.mapper.LolDtoMapper;
 import schultz.thomas.schub.core.team.business.service.ChampionPoolService;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 
@@ -24,13 +25,14 @@ public class ChampionPoolController {
 
     private final ChampionPoolService championPoolService;
     private final UserService userService;
+    private final LolDtoMapper dtos;
 
     @GetMapping
     public ChampionPoolDto byTeam(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestParam(required = false) Integer masteryFloor) {
-        return championPoolService.of(userService.requireActor(actorId), teamId, masteryFloor);
+        return dtos.toDto(championPoolService.of(userService.requireActor(actorId), teamId, masteryFloor));
     }
 
     @PutMapping("/roles/{role}")
@@ -39,8 +41,8 @@ public class ChampionPoolController {
             @PathVariable String teamId,
             @PathVariable GameRole role,
             @RequestBody PoolChampionsRequest request) {
-        return championPoolService.setChampions(userService.requireActor(actorId), teamId, role,
-                request == null ? null : request.championKeys());
+        return dtos.toDto(championPoolService.setChampions(userService.requireActor(actorId), teamId, role,
+                request == null ? null : request.championKeys()));
     }
 
     @PutMapping("/mastery-floor")
@@ -48,7 +50,7 @@ public class ChampionPoolController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId,
             @RequestBody PoolMasteryFloorRequest request) {
-        return championPoolService.setMasteryFloor(userService.requireActor(actorId), teamId,
-                request == null ? 0 : request.masteryFloor());
+        return dtos.toDto(championPoolService.setMasteryFloor(userService.requireActor(actorId), teamId,
+                request == null ? 0 : request.masteryFloor()));
     }
 }

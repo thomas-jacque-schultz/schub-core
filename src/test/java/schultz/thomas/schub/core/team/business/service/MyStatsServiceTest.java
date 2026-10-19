@@ -3,10 +3,9 @@ package schultz.thomas.schub.core.team.business.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.MyStatsDto;
+import schultz.thomas.schub.core.team.business.model.MyStats;
 import schultz.thomas.schub.core.team.business.model.StatsState;
 
 import java.time.Instant;
@@ -51,7 +50,7 @@ class MyStatsServiceTest {
     @Test
     @DisplayName("Sans compte Riot lié : pas d'erreur, un état qui dit pourquoi, aucun appel")
     void sansCompteRiot() {
-        MyStatsDto stats = service.of(compte(null), null, null);
+        MyStats stats = service.of(compte(null), null, null);
 
         assertThat(stats.state()).isEqualTo(StatsState.COMPTE_RIOT_ABSENT);
         assertThat(stats.overall()).isNull();
@@ -66,7 +65,7 @@ class MyStatsServiceTest {
         when(riotConnector.ingestOf(PUUID)).thenReturn(Optional.of(
                 new RiotConnectorService.PlayerIngest(430, 1, QUAND)));
 
-        MyStatsDto stats = service.of(compte(PUUID), null, null);
+        MyStats stats = service.of(compte(PUUID), null, null);
 
         assertThat(stats.state()).isEqualTo(StatsState.INGESTION_EN_COURS);
         assertThat(stats.ingest().pending()).isEqualTo(430);
@@ -76,7 +75,7 @@ class MyStatsServiceTest {
     @Test
     @DisplayName("La fenêtre demandée est celle qui part au connecteur, et elle est redite dans la réponse")
     void fenetreDemandee() {
-        MyStatsDto stats = service.of(compte(PUUID), 30, null);
+        MyStats stats = service.of(compte(PUUID), 30, null);
 
         assertThat(stats.days()).isEqualTo(30);
         verify(statsGateway).aggregate(eq(List.of(PUUID)),

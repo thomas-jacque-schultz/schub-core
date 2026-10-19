@@ -3,13 +3,12 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import schultz.thomas.schub.core.augur.data.repository.FindingRecordRepository;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
-import schultz.thomas.schub.core.team.api.dto.IngestPauseDto;
-import schultz.thomas.schub.core.team.api.dto.RiotDataInvalidationDto;
-import schultz.thomas.schub.core.team.api.dto.RiotDataInventoryDto;
+import schultz.thomas.schub.core.team.business.model.IngestPauseState;
+import schultz.thomas.schub.core.team.business.model.RiotDataInvalidation;
+import schultz.thomas.schub.core.team.business.model.RiotDataInventory;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
@@ -34,22 +33,22 @@ public class RiotDataInvalidationService {
     private final UserRepository users;
     private final TeamRepository teams;
 
-    public IngestPauseDto pause() {
-        return riotData.pause().map(IngestPauseDto::from).orElseGet(IngestPauseDto::unavailable);
+    public IngestPauseState pause() {
+        return riotData.pause().map(IngestPauseState::from).orElseGet(IngestPauseState::unavailable);
     }
 
-    public IngestPauseDto setPause(boolean paused) {
-        return IngestPauseDto.from(riotData.setPause(paused));
+    public IngestPauseState setPause(boolean paused) {
+        return IngestPauseState.from(riotData.setPause(paused));
     }
 
-    public RiotDataInventoryDto inventory() {
+    public RiotDataInventory inventory() {
         Optional<RiotDataGateway.Inventory> connecteur = riotData.inventory();
-        return new RiotDataInventoryDto(connecteur.isPresent(),
+        return new RiotDataInventory(connecteur.isPresent(),
                 connecteur.map(inventaire -> somme(inventaire.purged())).orElse(0L), findings.count(),
                 users.countByRiotPuuidNotNull(), placesSuivies(), teams.count());
     }
 
-    public RiotDataInvalidationDto invalidate(User actor, String confirmation) {
+    public RiotDataInvalidation invalidate(User actor, String confirmation) {
         if (!CONFIRMATION.equals(confirmation)) {
             throw new IllegalArgumentException("Saisis " + CONFIRMATION + " pour confirmer l'invalidation.");
         }
@@ -60,7 +59,7 @@ public class RiotDataInvalidationService {
         log.warn("Données Riot invalidées par l'utilisateur {} : {} documents Riot et {} constats effacés, "
                 + "{} puuid à résoudre de nouveau", actor.getId(), documents, constats, suivis.size());
         repair.resoutTout(suivis);
-        return new RiotDataInvalidationDto(documents, constats, suivis.size());
+        return new RiotDataInvalidation(documents, constats, suivis.size());
     }
 
     private long placesSuivies() {

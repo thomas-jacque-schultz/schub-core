@@ -17,9 +17,8 @@ import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.CompositionDto;
 import schultz.thomas.schub.core.team.api.dto.CompositionRequest;
-import schultz.thomas.schub.core.team.api.dto.CompositionSlotRequest;
+import schultz.thomas.schub.core.team.api.mapper.TeamProjection;
 import schultz.thomas.schub.core.team.business.service.CompositionService;
-import schultz.thomas.schub.core.team.business.service.TeamProjectionService;
 import schultz.thomas.schub.core.team.business.service.TeamService;
 import schultz.thomas.schub.core.team.data.model.CompositionSlot;
 
@@ -32,7 +31,7 @@ public class CompositionController {
 
     private final CompositionService compositionService;
     private final TeamService teamService;
-    private final TeamProjectionService projectionService;
+    private final TeamProjection projection;
     private final UserService userService;
 
     @GetMapping
@@ -40,7 +39,7 @@ public class CompositionController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDtos(
+        return projection.toDtos(
                 compositionService.ofTeam(actor, teamId), teamService.require(teamId), actor);
     }
 
@@ -50,7 +49,7 @@ public class CompositionController {
             @PathVariable String teamId,
             @PathVariable String compositionId) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(
+        return projection.toDto(
                 compositionService.require(actor, teamId, compositionId), teamService.require(teamId), actor);
     }
 
@@ -60,7 +59,7 @@ public class CompositionController {
             @PathVariable String teamId,
             @RequestBody CompositionRequest request) {
         User actor = userService.requireActor(actorId);
-        CompositionDto dto = projectionService.toDto(
+        CompositionDto dto = projection.toDto(
                 compositionService.create(actor, teamId, toDraft(request)), teamService.require(teamId), actor);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
@@ -72,7 +71,7 @@ public class CompositionController {
             @PathVariable String compositionId,
             @RequestBody CompositionRequest request) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(
+        return projection.toDto(
                 compositionService.update(actor, teamId, compositionId, toDraft(request)),
                 teamService.require(teamId), actor);
     }

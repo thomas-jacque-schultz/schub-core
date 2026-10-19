@@ -2,13 +2,12 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
-import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.business.model.MyGames;
 import schultz.thomas.schub.core.team.business.model.PlayerRef;
 import schultz.thomas.schub.core.team.business.model.StatsState;
+import schultz.thomas.schub.core.team.business.model.TeamGameDetail;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
 import java.time.Instant;
@@ -30,15 +29,15 @@ public class MyGamesService {
     private final MemberDirectory memberDirectory;
     private final GameViews views;
 
-    public MyGamesDto games(User actor, Integer days, Integer limit) {
+    public MyGames games(User actor, Integer days, Integer limit) {
         return games(joueur(actor), days, limit);
     }
 
-    public TeamGameDetailDto game(User actor, String matchId, Integer days) {
+    public TeamGameDetail game(User actor, String matchId, Integer days) {
         return game(joueur(actor), matchId, days);
     }
 
-    public MyGamesDto games(PlayerRef joueur, Integer days, Integer limit) {
+    public MyGames games(PlayerRef joueur, Integer days, Integer limit) {
         String puuid = puuid(joueur);
         if (puuid == null) {
             return vide(joueur, days, StatsState.COMPTE_RIOT_ABSENT);
@@ -52,12 +51,12 @@ public class MyGamesService {
         if (parties.get().matches().isEmpty()) {
             return vide(joueur, days, etatSansPartie(puuid));
         }
-        return new MyGamesDto(days, StatsState.STATISTIQUES_CONNUES,
+        return new MyGames(days, StatsState.STATISTIQUES_CONNUES,
                 views.parties(parties.get().matches(), soi(joueur), noms(joueur)),
                 parties.get().totalMatches(), parties.get().truncated(), joueur.id(), Instant.now());
     }
 
-    public TeamGameDetailDto game(PlayerRef joueur, String matchId, Integer days) {
+    public TeamGameDetail game(PlayerRef joueur, String matchId, Integer days) {
         String puuid = puuid(joueur);
         if (puuid == null || matchId == null || matchId.isBlank()) {
             throw new NoSuchElementException("Aucune partie « " + matchId + " » pour ce compte");
@@ -86,8 +85,8 @@ public class MyGamesService {
         return new PlayerRef(actor.getId(), nom, actor.getRiotPuuid(), actor.getRiotGameName(), actor.getRiotTagLine());
     }
 
-    private static MyGamesDto vide(PlayerRef joueur, Integer days, StatsState state) {
-        return new MyGamesDto(days, state, List.of(), 0, false, joueur.id(), Instant.now());
+    private static MyGames vide(PlayerRef joueur, Integer days, StatsState state) {
+        return new MyGames(days, state, List.of(), 0, false, joueur.id(), Instant.now());
     }
 
     private static String puuid(PlayerRef joueur) {

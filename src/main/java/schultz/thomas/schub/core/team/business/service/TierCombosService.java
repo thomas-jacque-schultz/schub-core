@@ -3,8 +3,8 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
-import schultz.thomas.schub.core.team.api.dto.TierCombosDto;
 import schultz.thomas.schub.core.team.business.model.ComboKind;
+import schultz.thomas.schub.core.team.business.model.TierCombos;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,7 @@ public class TierCombosService {
     private final RiotComboGateway combos;
     private final RiotChampionGateway championGateway;
 
-    public TierCombosDto of(String tier, String kind) {
+    public TierCombos of(String tier, String kind) {
         if (!PALIERS.contains(tier) || !TYPES.contains(kind)) {
             throw new NoSuchElementException("Aucune page de combos pour " + tier + " / " + kind);
         }
@@ -35,19 +35,19 @@ public class TierCombosService {
                 .orElseThrow(RiotConnectorUnavailableException::new);
         Map<Integer, RiotChampionGateway.Champion> catalogue = championGateway.catalogue()
                 .map(RiotChampionGateway.Catalogue::parId).orElseGet(Map::of);
-        List<TierCombosDto.Line> lignes = lus.combos().stream()
-                .map(combo -> new TierCombosDto.Line(
+        List<TierCombos.Line> lignes = lus.combos().stream()
+                .map(combo -> new TierCombos.Line(
                         combo.championIds().stream().map(id -> champion(catalogue, id)).toList(),
                         combo.games(), combo.wins(), (double) combo.wins() / combo.games(), combo.lowerBound()))
                 .toList();
-        return new TierCombosDto(tier, kind, ComboKind.valueOf(kind).positions(), lus.computedAt(), lus.games(),
+        return new TierCombos(tier, kind, ComboKind.valueOf(kind).positions(), lus.computedAt(), lus.games(),
                 PARTIES_MINIMUM, lignes);
     }
 
-    private static TierCombosDto.Champion champion(Map<Integer, RiotChampionGateway.Champion> catalogue, int id) {
+    private static TierCombos.Champion champion(Map<Integer, RiotChampionGateway.Champion> catalogue, int id) {
         RiotChampionGateway.Champion connu = catalogue.get(id);
         return connu == null
-                ? new TierCombosDto.Champion(id, null, null, null)
-                : new TierCombosDto.Champion(id, connu.key(), connu.name(), connu.iconUrl());
+                ? new TierCombos.Champion(id, null, null, null)
+                : new TierCombos.Champion(id, connu.key(), connu.name(), connu.iconUrl());
     }
 }

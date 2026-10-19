@@ -3,12 +3,12 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.PositionOppositionDto;
-import schultz.thomas.schub.core.team.api.dto.TeamEarlyGameDto;
-import schultz.thomas.schub.core.team.api.dto.TeamLevelDto;
-import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
-import schultz.thomas.schub.core.team.api.dto.TeamRecordDto;
+import schultz.thomas.schub.core.team.business.model.PositionOpposition;
 import schultz.thomas.schub.core.team.business.model.StatsState;
+import schultz.thomas.schub.core.team.business.model.TeamEarlyGame;
+import schultz.thomas.schub.core.team.business.model.TeamLevel;
+import schultz.thomas.schub.core.team.business.model.TeamOpposition;
+import schultz.thomas.schub.core.team.business.model.TeamRecord;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -40,7 +40,7 @@ public class TeamOppositionService {
     private final RiotStatsGateway statsGateway;
     private final TeamGamesStatsService gamesStats;
 
-    public TeamOppositionDto of(User actor, String teamId, Integer days) {
+    public TeamOpposition of(User actor, String teamId, Integer days) {
         Team team = teamService.requireVisible(actor, teamId);
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
@@ -65,9 +65,9 @@ public class TeamOppositionService {
                 TeamLevels.of(decidees, insights, statsGateway.teamGrid().orElse(null)));
     }
 
-    static TeamOppositionDto calcule(String teamId, Integer days, List<RiotStatsGateway.SharedMatch> parties,
+    static TeamOpposition calcule(String teamId, Integer days, List<RiotStatsGateway.SharedMatch> parties,
                                      Map<String, RiotStatsGateway.Insight> insights, Set<String> membres,
-                                     TeamEarlyGameDto early, TeamLevelDto level) {
+                                     TeamEarlyGame early, TeamLevel level) {
         Map<String, List<RiotStatsGateway.SharedMatch>> parPalier = new LinkedHashMap<>();
         Map<String, List<RiotStatsGateway.SharedMatch>> parEcart = new LinkedHashMap<>();
         Map<String, Poste> parPoste = new LinkedHashMap<>();
@@ -102,17 +102,17 @@ public class TeamOppositionService {
             }
         }
 
-        List<TeamRecordDto> paliers = parPalier.entrySet().stream()
+        List<TeamRecord> paliers = parPalier.entrySet().stream()
                 .map(entree -> bilan(entree.getKey(), entree.getValue()))
                 .sorted(Comparator.comparingInt(TeamOppositionService::ordre))
                 .toList();
         String plafond = paliers.stream()
                 .filter(bilan -> bilan.games() >= PLAFOND_MINIMUM && bilan.winRate() != null && bilan.winRate() >= 0.5)
                 .max(Comparator.comparingInt(TeamOppositionService::ordre))
-                .map(TeamRecordDto::key)
+                .map(TeamRecord::key)
                 .orElse(null);
 
-        return new TeamOppositionDto(
+        return new TeamOpposition(
                 teamId, days,
                 avecRangs == 0 ? StatsState.INGESTION_EN_COURS : StatsState.STATISTIQUES_CONNUES,
                 parties.size(), avecRangs, mediane(retards),
@@ -144,15 +144,15 @@ public class TeamOppositionService {
         return divisions < 4 ? "WEAKER" : "MUCH_WEAKER";
     }
 
-    private static int ordre(TeamRecordDto bilan) {
+    private static int ordre(TeamRecord bilan) {
         int apex = Rangs.APEX.indexOf(bilan.key());
         return apex >= 0 ? Rangs.PALIERS.size() + apex : Rangs.PALIERS.indexOf(bilan.key());
     }
 
-    private static TeamRecordDto bilan(String key, List<RiotStatsGateway.SharedMatch> parties) {
+    private static TeamRecord bilan(String key, List<RiotStatsGateway.SharedMatch> parties) {
         long wins = parties.stream().filter(partie -> Boolean.TRUE.equals(partie.win())).count();
         long secondes = parties.stream().mapToLong(RiotStatsGateway.SharedMatch::durationSeconds).sum();
-        return new TeamRecordDto(key, null, parties.size(), wins, parties.size() - wins,
+        return new TeamRecord(key, null, parties.size(), wins, parties.size() - wins,
                 parties.isEmpty() ? null : (double) wins / parties.size(),
                 parties.isEmpty() ? null : (double) secondes / parties.size());
     }
@@ -166,8 +166,8 @@ public class TeamOppositionService {
         return tries.size() % 2 == 1 ? tries.get(milieu) : (tries.get(milieu - 1) + tries.get(milieu)) / 2;
     }
 
-    private TeamOppositionDto vide(Team team, Integer days, StatsState state) {
-        return new TeamOppositionDto(team.getId(), days, state, 0, 0, null, List.of(), List.of(), List.of(),
+    private TeamOpposition vide(Team team, Integer days, StatsState state) {
+        return new TeamOpposition(team.getId(), days, state, 0, 0, null, List.of(), List.of(), List.of(),
                 null, PLAFOND_MINIMUM, null, null, Instant.now());
     }
 
@@ -199,8 +199,8 @@ public class TeamOppositionService {
             }
         }
 
-        PositionOppositionDto dto(String poste) {
-            return new PositionOppositionDto(poste, ecarts.size(),
+        PositionOpposition dto(String poste) {
+            return new PositionOpposition(poste, ecarts.size(),
                     ecarts.isEmpty() ? null : ecarts.stream().mapToDouble(Double::doubleValue).average().orElseThrow(),
                     bilan("STRONGER", plusForts), bilan("WEAKER", plusFaibles),
                     couloirs,

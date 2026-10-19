@@ -22,12 +22,13 @@ public class PremadeLabSettingsController {
 
     @GetMapping
     public PremadeLabSettingsDto get(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
-        return settings.view(userService.requireActor(actorId));
+        return PremadeLabSettingsDto.of(settings.view(userService.requireActor(actorId)));
     }
 
     @PutMapping
     public PremadeLabSettingsDto update(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                         @RequestBody PremadeLabSettingsDto request) {
-        return settings.update(userService.requireActor(actorId), request);
+        return PremadeLabSettingsDto.of(settings.update(userService.requireActor(actorId),
+                request.unknownPlayerBudget(), request.budgetWindowMinutes()));
     }
 }

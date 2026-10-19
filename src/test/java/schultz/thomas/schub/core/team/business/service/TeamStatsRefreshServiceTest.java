@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.StatsRefreshDto;
+import schultz.thomas.schub.core.team.business.model.StatsRefresh;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
@@ -52,7 +52,7 @@ class TeamStatsRefreshServiceTest {
         when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
                 eq(Team.class))).thenReturn(equipe);
 
-        StatsRefreshDto reponse = service.refresh(lecteur, "equipe-1");
+        StatsRefresh reponse = service.refresh(lecteur, "equipe-1");
 
         assertThat(reponse.triggered()).isTrue();
         assertThat(reponse.playersQueued()).isEqualTo(2);
@@ -68,7 +68,7 @@ class TeamStatsRefreshServiceTest {
         when(mongo.findAndModify(any(Query.class), any(Update.class), any(FindAndModifyOptions.class),
                 eq(Team.class))).thenReturn(null);
 
-        StatsRefreshDto reponse = service.refresh(lecteur, "equipe-1");
+        StatsRefresh reponse = service.refresh(lecteur, "equipe-1");
 
         assertThat(reponse.triggered()).isFalse();
         assertThat(reponse.nextAllowedAt()).isAfter(Instant.now().plusSeconds(100));

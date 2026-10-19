@@ -7,7 +7,7 @@ import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RiotIdResolution;
 import schultz.thomas.schub.core.business.service.RiotIdResolver;
 import schultz.thomas.schub.core.business.service.UnknownRiotAccountException;
-import schultz.thomas.schub.core.team.api.dto.PlayerCollectDto;
+import schultz.thomas.schub.core.team.business.model.PlayerCollect;
 import schultz.thomas.schub.core.team.business.model.PlayerRef;
 
 import java.time.Instant;
@@ -72,7 +72,7 @@ class SearchedPlayerServiceTest {
         when(stats.coverage(List.of("p1"))).thenReturn(Optional.of(List.of(
                 new RiotStatsGateway.Coverage("p1", true, 120, 120, null, null, Instant.now()))));
 
-        assertThat(service.collect("Le Nom-Composé-EUW", "ip:1").lane()).isEqualTo(PlayerCollectDto.Lane.KNOWN);
+        assertThat(service.collect("Le Nom-Composé-EUW", "ip:1").lane()).isEqualTo(PlayerCollect.Lane.KNOWN);
         verify(connector, never()).requestPreview(anyString(), anyBoolean());
     }
 
@@ -82,8 +82,8 @@ class SearchedPlayerServiceTest {
         when(stats.coverage(List.of("p1"))).thenReturn(Optional.of(List.of()));
         when(budget.consume(any(), any())).thenReturn(true, false);
 
-        assertThat(service.collect("Le Nom-Composé-EUW", "ip:1").lane()).isEqualTo(PlayerCollectDto.Lane.FAST);
-        assertThat(service.collect("Le Nom-Composé-EUW", "ip:1").lane()).isEqualTo(PlayerCollectDto.Lane.SLOW);
+        assertThat(service.collect("Le Nom-Composé-EUW", "ip:1").lane()).isEqualTo(PlayerCollect.Lane.FAST);
+        assertThat(service.collect("Le Nom-Composé-EUW", "ip:1").lane()).isEqualTo(PlayerCollect.Lane.SLOW);
         verify(connector).requestPreview("p1", false);
         verify(connector).requestPreview("p1", true);
     }

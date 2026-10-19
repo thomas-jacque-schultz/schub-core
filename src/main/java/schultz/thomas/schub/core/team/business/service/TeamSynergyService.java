@@ -3,7 +3,7 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
+import schultz.thomas.schub.core.team.business.model.TeamSynergy;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -29,20 +29,20 @@ public class TeamSynergyService {
     private final RiotStatsGateway statsGateway;
     private final TeamGamesStatsService gamesStats;
 
-    public TeamSynergyDto of(User actor, String teamId, Integer days) {
+    public TeamSynergy of(User actor, String teamId, Integer days) {
         return of(teamService.requireVisible(actor, teamId), days);
     }
 
     // Sans contrôle d'accès : pour les capteurs du moteur, appelés derrière une route qui l'a fait.
-    public TeamSynergyDto of(String teamId, Integer days) {
+    public TeamSynergy of(String teamId, Integer days) {
         return of(teamService.require(teamId), days);
     }
 
-    private TeamSynergyDto of(Team team, Integer days) {
+    private TeamSynergy of(Team team, Integer days) {
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
         if (parPuuid.size() < TeamGamesStatsService.MINIMUM_MEMBRES) {
-            return new TeamSynergyDto(0, DUO_MINIMUM, List.of(), List.of());
+            return new TeamSynergy(0, DUO_MINIMUM, List.of(), List.of());
         }
         List<RiotStatsGateway.SharedMatch> parties = statsGateway.sharedMatches(List.copyOf(parPuuid.keySet()),
                         TeamGamesStatsService.MINIMUM_MEMBRES, PlayerStatsService.depuis(days),
@@ -50,14 +50,14 @@ public class TeamSynergyService {
                 .map(RiotStatsGateway.SharedMatches::matches).orElseGet(List::of).stream()
                 .filter(p -> p.win() != null && !p.splitSides())
                 .toList();
-        return new TeamSynergyDto(parties.size(), DUO_MINIMUM,
+        return new TeamSynergy(parties.size(), DUO_MINIMUM,
                 duos(parties, parPuuid, gamesStats.noms(joueurs)), ressources(parties));
     }
 
-    static List<TeamSynergyDto.Duo> duos(List<RiotStatsGateway.SharedMatch> parties,
+    static List<TeamSynergy.Duo> duos(List<RiotStatsGateway.SharedMatch> parties,
                                          Map<String, TeamMember> parPuuid, Map<String, String> noms) {
         List<String> puuids = new ArrayList<>(parPuuid.keySet());
-        List<TeamSynergyDto.Duo> duos = new ArrayList<>();
+        List<TeamSynergy.Duo> duos = new ArrayList<>();
         for (int i = 0; i < puuids.size(); i++) {
             for (int j = i + 1; j < puuids.size(); j++) {
                 String a = puuids.get(i);
@@ -91,12 +91,12 @@ public class TeamSynergyService {
                         : null;
                 TeamMember ma = parPuuid.get(a);
                 TeamMember mb = parPuuid.get(b);
-                duos.add(new TeamSynergyDto.Duo(ma.getMemberId(), noms.get(ma.getMemberId()), mb.getMemberId(),
+                duos.add(new TeamSynergy.Duo(ma.getMemberId(), noms.get(ma.getMemberId()), mb.getMemberId(),
                         noms.get(mb.getMemberId()), ensemble[0], ensemble[1], taux, attendu,
                         attendu == null ? null : taux - attendu));
             }
         }
-        duos.sort(Comparator.comparing((TeamSynergyDto.Duo d) -> d.delta() == null ? Double.NEGATIVE_INFINITY : d.delta())
+        duos.sort(Comparator.comparing((TeamSynergy.Duo d) -> d.delta() == null ? Double.NEGATIVE_INFINITY : d.delta())
                 .reversed());
         return duos;
     }
@@ -104,7 +104,7 @@ public class TeamSynergyService {
     private record Part(String position, double or, double degats, boolean victoire) {
     }
 
-    static List<TeamSynergyDto.Resource> ressources(List<RiotStatsGateway.SharedMatch> parties) {
+    static List<TeamSynergy.Resource> ressources(List<RiotStatsGateway.SharedMatch> parties) {
         Map<String, List<Part>> parPoste = new LinkedHashMap<>();
         for (RiotStatsGateway.SharedMatch partie : parties) {
             if (partie.players().isEmpty()) {
@@ -125,13 +125,13 @@ public class TeamSynergyService {
                         Boolean.TRUE.equals(partie.win())));
             }
         }
-        List<TeamSynergyDto.Resource> lignes = new ArrayList<>();
+        List<TeamSynergy.Resource> lignes = new ArrayList<>();
         parPoste.forEach((poste, parts) -> {
             List<Double> ors = parts.stream().map(Part::or).sorted().toList();
             double mediane = ors.get(ors.size() / 2);
             List<Part> dessus = parts.stream().filter(p -> p.or() > mediane).toList();
             List<Part> dessous = parts.stream().filter(p -> p.or() <= mediane).toList();
-            lignes.add(new TeamSynergyDto.Resource(poste, parts.size(),
+            lignes.add(new TeamSynergy.Resource(poste, parts.size(),
                     moyenne(parts, true, Part::or), moyenne(parts, false, Part::or),
                     moyenne(parts, true, Part::degats), moyenne(parts, false, Part::degats),
                     mediane, dessus.size(), taux(dessus), dessous.size(), taux(dessous),

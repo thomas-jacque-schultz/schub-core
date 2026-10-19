@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
+import schultz.thomas.schub.core.team.api.mapper.LolDtoMapper;
 import schultz.thomas.schub.core.team.business.service.RiotStatsGateway;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 
@@ -24,10 +25,12 @@ public class ReferenceController {
     private static final Set<String> PORTEES = Set.of("GAME", "MEAN");
 
     private final RiotStatsGateway statsGateway;
+    private final LolDtoMapper dtos;
 
     @GetMapping("/champions/{championId}")
     public ResponseEntity<ChampionGridDto> champion(@PathVariable int championId, @RequestParam String tier) {
         return statsGateway.championGrid(championId, tier)
+                .map(dtos::toDto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
@@ -42,6 +45,7 @@ public class ReferenceController {
             return ResponseEntity.badRequest().build();
         }
         return statsGateway.referenceGrid(position, scope, tier, patch)
+                .map(dtos::toDto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }

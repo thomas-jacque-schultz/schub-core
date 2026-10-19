@@ -6,9 +6,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-
-import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
-import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
+import schultz.thomas.schub.core.team.business.model.ChampionGrid;
+import schultz.thomas.schub.core.team.business.model.ReferenceGrid;
 import schultz.thomas.schub.core.team.business.service.RiotStatsGateway;
 
 import java.time.Instant;
@@ -107,7 +106,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
 
     // 404 = pas encore de référence pour ce poste : « on ne sait pas », comme une panne.
     @Override
-    public Optional<ReferenceGridDto> referenceGrid(String position, String scope, String tier, String patch) {
+    public Optional<ReferenceGrid> referenceGrid(String position, String scope, String tier, String patch) {
         try {
             return Optional.ofNullable(restClient.get()
                     .uri(uri -> {
@@ -121,7 +120,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                         return uri.build(position);
                     })
                     .retrieve()
-                    .body(ReferenceGridDto.class));
+                    .body(ReferenceGrid.class));
         } catch (RestClientException e) {
             log.warn("Référentiel {} {} non obtenu ({})", position, scope, e.getMessage());
             return Optional.empty();
@@ -129,13 +128,13 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     }
 
     @Override
-    public Optional<ChampionGridDto> championGrid(int championId, String tier) {
+    public Optional<ChampionGrid> championGrid(int championId, String tier) {
         try {
             return Optional.ofNullable(restClient.get()
                     .uri(uri -> uri.path("/stats/references/champions/{championId}").queryParam("tier", tier)
                             .build(championId))
                     .retrieve()
-                    .body(ChampionGridDto.class));
+                    .body(ChampionGrid.class));
         } catch (RestClientException e) {
             log.debug("Référentiel du champion {} non obtenu ({})", championId, e.getMessage());
             return Optional.empty();
@@ -143,12 +142,12 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     }
 
     @Override
-    public Optional<ReferenceGridDto> teamGrid() {
+    public Optional<ReferenceGrid> teamGrid() {
         try {
             return Optional.ofNullable(restClient.get()
                     .uri("/stats/references/team")
                     .retrieve()
-                    .body(ReferenceGridDto.class));
+                    .body(ReferenceGrid.class));
         } catch (RestClientException e) {
             log.warn("Référentiel d'équipe non obtenu ({})", e.getMessage());
             return Optional.empty();

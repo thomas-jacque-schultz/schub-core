@@ -2,9 +2,8 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import schultz.thomas.schub.core.team.api.dto.EarlyGameDto;
-import schultz.thomas.schub.core.team.api.dto.TeamEarlyGameDto;
+import schultz.thomas.schub.core.team.business.model.EarlyGame;
+import schultz.thomas.schub.core.team.business.model.TeamEarlyGame;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
 import java.time.Instant;
@@ -57,15 +56,15 @@ class EarlyGamesTest {
     @Test
     @DisplayName("Vue d'une partie : chaque gank dit depuis notre camp, pertes comprises")
     void vue() {
-        EarlyGameDto vue = EarlyGames.vue(early(), 100, PAR_PUUID);
+        EarlyGame vue = EarlyGames.vue(early(), 100, PAR_PUUID);
 
-        assertThat(vue.ganks()).extracting(EarlyGameDto.GankDto::ours).containsExactly(false, false, true);
-        EarlyGameDto.GankDto subi = vue.ganks().getFirst();
+        assertThat(vue.ganks()).extracting(EarlyGame.Gank::ours).containsExactly(false, false, true);
+        EarlyGame.Gank subi = vue.ganks().getFirst();
         assertThat(subi.targetMemberIds()).containsExactly("m-top");
         assertThat(subi.fallenMemberIds()).containsExactly("m-top");
         assertThat(subi.alliesLost()).isEqualTo(1);
         assertThat(subi.enemiesLost()).isZero();
-        EarlyGameDto.GankDto fait = vue.ganks().getLast();
+        EarlyGame.Gank fait = vue.ganks().getLast();
         assertThat(fait.alliesLost()).isEqualTo(1);
         assertThat(fait.enemiesLost()).isZero();
         assertThat(vue.ourJungler().memberId()).isEqualTo("m-jgl");
@@ -77,16 +76,16 @@ class EarlyGamesTest {
     @Test
     @DisplayName("Bilan : le top a encaissé un gank sur deux, le jungler n'a rien fait de décisif")
     void bilan() {
-        TeamEarlyGameDto bilan = EarlyGames.bilan(List.of(partie(true)), Map.of("g1", insight()), PAR_PUUID,
+        TeamEarlyGame bilan = EarlyGames.bilan(List.of(partie(true)), Map.of("g1", insight()), PAR_PUUID,
                 Map.of("m-top", "Top", "m-jgl", "Jungle"));
 
         assertThat(bilan.games()).isEqualTo(1);
-        TeamEarlyGameDto.MemberEarlyDto top = bilan.members().stream()
+        TeamEarlyGame.MemberEarly top = bilan.members().stream()
                 .filter(m -> m.memberId().equals("m-top")).findFirst().orElseThrow();
         assertThat(top.ganksFaced()).isEqualTo(2);
         assertThat(top.ganksHeld()).isEqualTo(1);
         assertThat(top.deathsOnGank()).isEqualTo(1);
-        TeamEarlyGameDto.MemberEarlyDto jungler = bilan.members().stream()
+        TeamEarlyGame.MemberEarly jungler = bilan.members().stream()
                 .filter(m -> m.memberId().equals("m-jgl")).findFirst().orElseThrow();
         assertThat(jungler.ganksMade()).isEqualTo(1);
         assertThat(jungler.ganksDecisive()).isZero();

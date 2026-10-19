@@ -14,6 +14,7 @@ import schultz.thomas.schub.core.api.dto.MeDto;
 import schultz.thomas.schub.core.api.mapper.UserDtoMapper;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.User;
+import schultz.thomas.schub.core.team.api.mapper.SessionSummaryDtoMapper;
 import schultz.thomas.schub.core.team.business.service.SessionSummaryService;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class MeController {
     private final UserService userService;
     private final UserDtoMapper users;
     private final SessionSummaryService sessionSummaries;
+    private final SessionSummaryDtoMapper summaryDtos;
 
     // L'aperçu du résumé de session qu'aurait reçu ce compte pour ce jour (Schub#99) : rien n'est envoyé.
     @GetMapping("/session-summary")
@@ -34,7 +36,7 @@ public class MeController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestParam LocalDate day) {
         return sessionSummaries.preview(userService.requireActor(actorId), day)
-                .map(encadres -> ResponseEntity.ok(Map.<String, Object>of("embeds", encadres)))
+                .map(encadres -> ResponseEntity.ok(Map.<String, Object>of("embeds", summaryDtos.toEmbedDtos(encadres))))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 

@@ -1,7 +1,7 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
-import schultz.thomas.schub.core.team.api.dto.TeamLevelDto;
+import schultz.thomas.schub.core.team.business.model.ReferenceGrid;
+import schultz.thomas.schub.core.team.business.model.TeamLevel;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,8 +17,8 @@ final class TeamLevels {
     private TeamLevels() {
     }
 
-    static TeamLevelDto of(List<RiotStatsGateway.SharedMatch> parties, Map<String, RiotStatsGateway.Insight> insights,
-                           ReferenceGridDto grille) {
+    static TeamLevel of(List<RiotStatsGateway.SharedMatch> parties, Map<String, RiotStatsGateway.Insight> insights,
+                           ReferenceGrid grille) {
         Map<String, Cumul> cumuls = new LinkedHashMap<>();
         CLES.forEach(cle -> cumuls.put(cle, new Cumul()));
         List<Double> rangs = new ArrayList<>();
@@ -49,7 +49,7 @@ final class TeamLevels {
         }
         String palierEquipe = rangs.isEmpty() ? null
                 : Rangs.palier(rangs.stream().mapToDouble(Double::doubleValue).average().orElseThrow());
-        return new TeamLevelDto(analysees, palierEquipe, grille == null ? List.of() : grille.patches(),
+        return new TeamLevel(analysees, palierEquipe, grille == null ? List.of() : grille.patches(),
                 CLES.stream().map(cle -> cumuls.get(cle).dto(cle, grille)).toList());
     }
 
@@ -99,14 +99,14 @@ final class TeamLevels {
             sommeChangement += fin - a15;
         }
 
-        void ajoute(int valeur, String cle, String palier, ReferenceGridDto grille) {
+        void ajoute(int valeur, String cle, String palier, ReferenceGrid grille) {
             parties++;
             somme += valeur;
-            ReferenceGridDto.Metric metrique = grille == null ? null : grille.metrics().get(cle);
+            ReferenceGrid.Metric metrique = grille == null ? null : grille.metrics().get(cle);
             if (metrique == null) {
                 return;
             }
-            ReferenceGridDto.Tier sien = palier == null ? null : metrique.tiers().get(palier);
+            ReferenceGrid.Tier sien = palier == null ? null : metrique.tiers().get(palier);
             if (sien != null) {
                 notees++;
                 sommeDansPalier += Notes.sens(Notes.repartition(grille.percentiles(), sien.values(), valeur),
@@ -114,10 +114,10 @@ final class TeamLevels {
             }
         }
 
-        TeamLevelDto.Metric dto(String cle, ReferenceGridDto grille) {
-            ReferenceGridDto.Metric metrique = grille == null ? null : grille.metrics().get(cle);
+        TeamLevel.Metric dto(String cle, ReferenceGrid grille) {
+            ReferenceGrid.Metric metrique = grille == null ? null : grille.metrics().get(cle);
             Double moyenne = parties == 0 ? null : somme / parties;
-            return new TeamLevelDto.Metric(cle, metrique == null ? null : metrique.polarity(), parties, moyenne,
+            return new TeamLevel.Metric(cle, metrique == null ? null : metrique.polarity(), parties, moyenne,
                     notees == 0 ? null : sommeDansPalier / notees,
                     metrique == null ? null : Notes.niveau(moyenne, metrique.rankMeans()),
                     fins, fins == 0 ? null : sommeFin / fins, fins == 0 ? null : sommeChangement / fins);

@@ -21,6 +21,7 @@ import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
 import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
 import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
 import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
+import schultz.thomas.schub.core.team.api.mapper.LolDtoMapper;
 import schultz.thomas.schub.core.team.business.service.CompositionRecordService;
 import schultz.thomas.schub.core.team.business.service.DraftAdviceService;
 import schultz.thomas.schub.core.team.business.service.StatsWindows;
@@ -50,6 +51,7 @@ public class TeamStatsController {
     private final TeamService teamService;
     private final DraftAdviceService draftAdvice;
     private final CompositionRecordService compositionRecords;
+    private final LolDtoMapper dtos;
 
     @GetMapping("/draft")
     public DraftAdviceDto draft(
@@ -57,7 +59,7 @@ public class TeamStatsController {
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return draftAdvice.of(userService.requireActor(actorId), teamId, windows.days(days, patches));
+        return dtos.toDto(draftAdvice.of(userService.requireActor(actorId), teamId, windows.days(days, patches)));
     }
 
     @GetMapping("/compositions")
@@ -66,21 +68,21 @@ public class TeamStatsController {
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return compositionRecords.of(userService.requireActor(actorId), teamId, windows.days(days, patches));
+        return dtos.toCompositionRecordDtos(compositionRecords.of(userService.requireActor(actorId), teamId, windows.days(days, patches)));
     }
 
     @GetMapping("/refresh")
     public StatsRefreshDto refreshStatus(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId) {
-        return refresh.status(userService.requireActor(actorId), teamId);
+        return dtos.toDto(refresh.status(userService.requireActor(actorId), teamId));
     }
 
     @PostMapping("/refresh")
     public StatsRefreshDto refresh(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String teamId) {
-        return refresh.refresh(userService.requireActor(actorId), teamId);
+        return dtos.toDto(refresh.refresh(userService.requireActor(actorId), teamId));
     }
 
     @GetMapping("/synergy")
@@ -89,7 +91,7 @@ public class TeamStatsController {
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return synergy.of(userService.requireActor(actorId), teamId, windows.days(days, patches));
+        return dtos.toDto(synergy.of(userService.requireActor(actorId), teamId, windows.days(days, patches)));
     }
 
     // Les constats d'équipe du moteur : duos, ressources.
@@ -110,7 +112,7 @@ public class TeamStatsController {
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer champions) {
-        return playersStats.of(userService.requireActor(actorId), teamId, windows.days(days, patches), champions);
+        return dtos.toDto(playersStats.of(userService.requireActor(actorId), teamId, windows.days(days, patches), champions));
     }
 
     @GetMapping("/team")
@@ -120,7 +122,7 @@ public class TeamStatsController {
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer limit) {
-        return gamesStats.of(userService.requireActor(actorId), teamId, windows.days(days, patches), limit);
+        return dtos.toDto(gamesStats.of(userService.requireActor(actorId), teamId, windows.days(days, patches), limit));
     }
 
     @GetMapping("/games/{matchId}")
@@ -130,7 +132,7 @@ public class TeamStatsController {
             @PathVariable String matchId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return gamesStats.detail(userService.requireActor(actorId), teamId, matchId, windows.days(days, patches));
+        return dtos.toDto(gamesStats.detail(userService.requireActor(actorId), teamId, matchId, windows.days(days, patches)));
     }
 
     @GetMapping("/opposition")
@@ -139,6 +141,6 @@ public class TeamStatsController {
             @PathVariable String teamId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return opposition.of(userService.requireActor(actorId), teamId, windows.days(days, patches));
+        return dtos.toDto(opposition.of(userService.requireActor(actorId), teamId, windows.days(days, patches)));
     }
 }

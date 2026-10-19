@@ -17,9 +17,9 @@ import schultz.thomas.schub.core.data.model.SystemRole;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
-import schultz.thomas.schub.core.team.api.dto.ChampionPoolColumnDto;
-import schultz.thomas.schub.core.team.api.dto.ChampionPoolDto;
-import schultz.thomas.schub.core.team.api.dto.ChampionPoolEntryDto;
+import schultz.thomas.schub.core.team.business.model.ChampionPool;
+import schultz.thomas.schub.core.team.business.model.ChampionPoolColumn;
+import schultz.thomas.schub.core.team.business.model.ChampionPoolEntry;
 import schultz.thomas.schub.core.team.business.model.PoolState;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.MemberStatus;
@@ -170,7 +170,7 @@ class ChampionPoolServiceTest {
     @Test
     @DisplayName("Sous un champion retenu, ceux qui tiennent le poste, du plus maîtrisé au moins")
     void listeLesJoueursDuPosteParMaitrise() {
-        ChampionPoolEntryDto jax = champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "Jax");
+        ChampionPoolEntry jax = champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "Jax");
 
         assertThat(jax.name()).isEqualTo("Jax");
         assertThat(jax.players()).extracting("memberId").containsExactly("m-top", "m-poly");
@@ -184,7 +184,7 @@ class ChampionPoolServiceTest {
                 .thenReturn(Optional.of(List.of(new RiotStatsGateway.Bucket(PUUID_TOP, String.valueOf(JAX), "Jax",
                         40, 26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40 * 1800, null, null, null))));
 
-        ChampionPoolEntryDto jax = champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "Jax");
+        ChampionPoolEntry jax = champion(service.of(capitaine, "equipe-1", null), GameRole.TOP, "Jax");
 
         assertThat(jax.players()).extracting("games").containsExactly(40L, null);
         assertThat(jax.players().getFirst().winRate()).isEqualTo(0.65);
@@ -196,7 +196,7 @@ class ChampionPoolServiceTest {
     void unMembreCompteDansChacunDeSesPostes() {
         pool.setChampionKeys(GameRole.MID, List.of("Ahri"));
 
-        ChampionPoolDto reponse = service.of(capitaine, "equipe-1", null);
+        ChampionPool reponse = service.of(capitaine, "equipe-1", null);
 
         assertThat(champion(reponse, GameRole.TOP, "Jax").players())
                 .extracting("memberId").contains("m-poly");
@@ -209,7 +209,7 @@ class ChampionPoolServiceTest {
     void unChampionSansPersonneEstMasqueEtCompte() {
         pool.setChampionKeys(GameRole.TOP, List.of("Jax", "LeeSin"));
 
-        ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
+        ChampionPoolColumn top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
 
         assertThat(top.champions()).extracting("championKey").doesNotContain("LeeSin");
         assertThat(top.hiddenByFloor()).isEqualTo(1);
@@ -219,7 +219,7 @@ class ChampionPoolServiceTest {
     @Test
     @DisplayName("Un membre sans compte Riot lié ne disparaît pas : il est dit au niveau du poste")
     void unMembreSansCompteRiotEstDit() {
-        ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
+        ChampionPoolColumn top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
 
         assertThat(top.unavailableMembers()).extracting("memberId").containsExactly("m-libre");
         assertThat(top.unavailableMembers()).extracting("state")
@@ -237,7 +237,7 @@ class ChampionPoolServiceTest {
         when(championGateway.masteries(PUUID_POLYVALENT)).thenReturn(Optional.of(List.of(
                 maitrise(JAX, 4, 20_000), maitrise(AHRI, 6, 200_000))));
 
-        ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
+        ChampionPoolColumn top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
 
         assertThat(top.champions()).extracting("championKey").containsExactly("Ahri", "Jax");
     }
@@ -247,7 +247,7 @@ class ChampionPoolServiceTest {
     void lePlancherMasqueEtLeDit() {
         pool.setMasteryFloor(300_000);
 
-        ChampionPoolColumnDto top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
+        ChampionPoolColumn top = colonne(service.of(capitaine, "equipe-1", null), GameRole.TOP);
 
         assertThat(top.champions()).extracting("championKey").doesNotContain("Jax");
         assertThat(top.hiddenByFloor()).isPositive();
@@ -259,7 +259,7 @@ class ChampionPoolServiceTest {
     void leplancherDemandeNEcritRien() {
         pool.setMasteryFloor(1_000);
 
-        ChampionPoolDto reponse = service.of(capitaine, "equipe-1", 100_000);
+        ChampionPool reponse = service.of(capitaine, "equipe-1", 100_000);
 
         assertThat(reponse.masteryFloor()).isEqualTo(100_000);
         assertThat(reponse.teamMasteryFloor()).isEqualTo(1_000);
@@ -289,7 +289,7 @@ class ChampionPoolServiceTest {
     @Test
     @DisplayName("Le même champion deux fois ne fait pas échouer : il est retenu une fois")
     void dedoublonneLaSelection() {
-        ChampionPoolDto reponse =
+        ChampionPool reponse =
                 service.setChampions(capitaine, "equipe-1", GameRole.MID, List.of("Ahri", "Ahri"));
 
         assertThat(colonne(reponse, GameRole.MID).champions()).hasSize(1);
@@ -300,7 +300,7 @@ class ChampionPoolServiceTest {
     void quitteLaSelectionDeDepart() {
         pool.setStartingSelection(true);
 
-        ChampionPoolDto reponse = service.setChampions(capitaine, "equipe-1", GameRole.MID, List.of("Ahri"));
+        ChampionPool reponse = service.setChampions(capitaine, "equipe-1", GameRole.MID, List.of("Ahri"));
 
         assertThat(reponse.startingSelection()).isFalse();
     }
@@ -315,7 +315,7 @@ class ChampionPoolServiceTest {
     @Test
     @DisplayName("Le catalogue entier accompagne le panneau, trié par nom")
     void sertLeCatalogueEntier() {
-        ChampionPoolDto reponse = service.of(capitaine, "equipe-1", null);
+        ChampionPool reponse = service.of(capitaine, "equipe-1", null);
 
         assertThat(reponse.patch()).isEqualTo("16.18.1");
         assertThat(reponse.catalog()).extracting("championKey")
@@ -327,7 +327,7 @@ class ChampionPoolServiceTest {
     void sansCatalogueAucunChampion() {
         when(championGateway.catalogue()).thenReturn(Optional.empty());
 
-        ChampionPoolDto reponse = service.of(capitaine, "equipe-1", null);
+        ChampionPool reponse = service.of(capitaine, "equipe-1", null);
 
         assertThat(reponse.patch()).isNull();
         assertThat(reponse.catalog()).isEmpty();
@@ -347,14 +347,14 @@ class ChampionPoolServiceTest {
         verify(championGateway, times(1)).masteries(PUUID_POLYVALENT);
     }
 
-    private static ChampionPoolColumnDto colonne(ChampionPoolDto pool, GameRole role) {
+    private static ChampionPoolColumn colonne(ChampionPool pool, GameRole role) {
         return pool.columns().stream()
                 .filter(colonne -> colonne.role() == role)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("aucune colonne au poste " + role));
     }
 
-    private static ChampionPoolEntryDto champion(ChampionPoolDto pool, GameRole role, String key) {
+    private static ChampionPoolEntry champion(ChampionPool pool, GameRole role, String key) {
         return colonne(pool, role).champions().stream()
                 .filter(entree -> key.equals(entree.championKey()))
                 .findFirst()

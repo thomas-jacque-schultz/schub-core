@@ -18,6 +18,7 @@ import schultz.thomas.schub.core.team.api.dto.IngestPauseRequest;
 import schultz.thomas.schub.core.team.api.dto.RiotDataInvalidationDto;
 import schultz.thomas.schub.core.team.api.dto.RiotDataInvalidationRequest;
 import schultz.thomas.schub.core.team.api.dto.RiotDataInventoryDto;
+import schultz.thomas.schub.core.team.api.mapper.LolDtoMapper;
 import schultz.thomas.schub.core.team.business.service.RiotDataInvalidationService;
 
 // ROLE_MANAGE n'est jamais attribuable : seul l'OWNER invalide les données Riot.
@@ -29,24 +30,25 @@ public class RiotDataController {
     private final RiotDataInvalidationService invalidation;
     private final PermissionEvaluator permissionEvaluator;
     private final UserService userService;
+    private final LolDtoMapper dtos;
 
     @GetMapping("/pause")
     public IngestPauseDto pause(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_VIEW, null);
-        return invalidation.pause();
+        return dtos.toDto(invalidation.pause());
     }
 
     @PutMapping("/pause")
     public IngestPauseDto updatePause(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                       @RequestBody IngestPauseRequest request) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
-        return invalidation.setPause(request.paused());
+        return dtos.toDto(invalidation.setPause(request.paused()));
     }
 
     @GetMapping("/riot-data")
     public RiotDataInventoryDto inventory(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.ROLE_MANAGE, null);
-        return invalidation.inventory();
+        return dtos.toDto(invalidation.inventory());
     }
 
     @PostMapping("/riot-data/invalidate")
@@ -54,6 +56,6 @@ public class RiotDataController {
                                               @RequestBody RiotDataInvalidationRequest request) {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.ROLE_MANAGE, null);
-        return invalidation.invalidate(actor, request.confirmation());
+        return dtos.toDto(invalidation.invalidate(actor, request.confirmation()));
     }
 }

@@ -6,13 +6,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.GamePlayerMetricsDto;
-import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
-import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.business.model.GamePlayerMetrics;
+import schultz.thomas.schub.core.team.business.model.MyGames;
 import schultz.thomas.schub.core.team.business.model.StatsState;
+import schultz.thomas.schub.core.team.business.model.TeamGameDetail;
 
 import java.time.Instant;
 import java.util.List;
@@ -70,7 +69,7 @@ class MyGamesServiceTest {
         when(statsGateway.playerMatches(eq(MOI), any(), eq(MyGamesService.PARTIES_DEFAUT)))
                 .thenReturn(Optional.of(new RiotStatsGateway.SharedMatches(1, 1, false, List.of(partie()))));
 
-        MyGamesDto historique = service.games(actor, null, null);
+        MyGames historique = service.games(actor, null, null);
 
         assertThat(historique.state()).isEqualTo(StatsState.STATISTIQUES_CONNUES);
         assertThat(historique.games()).singleElement().satisfies(partie -> {
@@ -124,11 +123,11 @@ class MyGamesServiceTest {
                         moyenne(MOI, "MIDDLE", 10, 7 * 600, 36_000),
                         moyenne(MOI, "TOP", 3, 30, 5_400))));
 
-        TeamGameDetailDto detail = service.game(actor, "EUW1_1", 30);
+        TeamGameDetail detail = service.game(actor, "EUW1_1", 30);
 
         assertThat(detail.days()).isEqualTo(30);
         assertThat(detail.viewerMemberId()).isEqualTo("user-1");
-        GamePlayerMetricsDto moi = detail.metrics().getFirst();
+        GamePlayerMetrics moi = detail.metrics().getFirst();
         assertThat(moi.game()).containsEntry("csPerMinute", 8.0);
         assertThat(moi.tier()).isEqualTo("GOLD");
         assertThat(moi.average().key()).isEqualTo("MIDDLE");

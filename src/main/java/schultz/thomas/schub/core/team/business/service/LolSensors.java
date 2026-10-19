@@ -6,9 +6,9 @@ import org.springframework.stereotype.Component;
 import schultz.thomas.schub.core.augur.business.engine.Percentiles;
 import schultz.thomas.schub.core.augur.business.engine.Signals;
 import schultz.thomas.schub.core.augur.business.service.Sensors;
-import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
-import schultz.thomas.schub.core.team.api.dto.StatLineDto;
-import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
+import schultz.thomas.schub.core.team.business.model.ReferenceGrid;
+import schultz.thomas.schub.core.team.business.model.StatLine;
+import schultz.thomas.schub.core.team.business.model.TeamSynergy;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 
 import java.time.Duration;
@@ -33,14 +33,14 @@ public class LolSensors implements Sensors {
     private final TeamSynergyService synergy;
     private final Map<String, Cached> grilles = new ConcurrentHashMap<>();
 
-    private record Cached(Optional<ReferenceGridDto> grille, Instant lu) {
+    private record Cached(Optional<ReferenceGrid> grille, Instant lu) {
     }
 
     @Override
     public Map<String, Signals> game(String matchId) {
         Map<String, Signals> joueurs = new LinkedHashMap<>();
         statsGateway.matchMetrics(matchId).orElseGet(List::of).forEach(joueur -> {
-            Optional<ReferenceGridDto> grille = grille(joueur.position(), "GAME", joueur.tier());
+            Optional<ReferenceGrid> grille = grille(joueur.position(), "GAME", joueur.tier());
             Signals signaux = contexte(joueur.position(), joueur.tier());
             joueur.values().forEach((cle, valeur) -> {
                 if (valeur != null) {
@@ -67,9 +67,9 @@ public class LolSensors implements Sensors {
                 .findFirst()
                 .map(RiotStatsGateway.References::tier)
                 .orElse(null);
-        Optional<ReferenceGridDto> grille = grille(poste, "MEAN", palier);
+        Optional<ReferenceGrid> grille = grille(poste, "MEAN", palier);
 
-        StatLineDto ligne = StatLines.of(principal.get(), poste, null, null);
+        StatLine ligne = StatLines.of(principal.get(), poste, null, null);
         Optional<RiotStatsGateway.TimelineHabits> timeline = statsGateway.timelineHabits(puuid, since);
         Signals signaux = contexte(poste, palier).put("games", ligne.games(), null);
         objectMapper.convertValue(ligne, Map.class).forEach((cle, valeur) -> {
@@ -91,19 +91,19 @@ public class LolSensors implements Sensors {
     @Override
     public Optional<Signals> team(String teamId, Instant since) {
         Integer jours = since == null ? null : (int) Duration.between(since, Instant.now()).toDays();
-        TeamSynergyDto equipe = synergy.of(teamId, jours);
+        TeamSynergy equipe = synergy.of(teamId, jours);
         if (equipe.games() == 0) {
             return Optional.empty();
         }
         Signals signaux = new Signals().put("games", equipe.games(), null);
         equipe.duos().stream().filter(d -> d.delta() != null)
-                .max(Comparator.comparingDouble(TeamSynergyDto.Duo::delta))
+                .max(Comparator.comparingDouble(TeamSynergy.Duo::delta))
                 .ifPresent(d -> signaux.put("bestDuoDelta", d.delta(), null).context("bestDuo", d.nameA() + " & " + d.nameB()));
         equipe.duos().stream().filter(d -> d.delta() != null)
-                .min(Comparator.comparingDouble(TeamSynergyDto.Duo::delta))
+                .min(Comparator.comparingDouble(TeamSynergy.Duo::delta))
                 .ifPresent(d -> signaux.put("worstDuoDelta", d.delta(), null).context("worstDuo", d.nameA() + " & " + d.nameB()));
         equipe.resources().stream().filter(r -> r.conversion() != null)
-                .min(Comparator.comparingDouble(TeamSynergyDto.Resource::conversion))
+                .min(Comparator.comparingDouble(TeamSynergy.Resource::conversion))
                 .ifPresent(r -> signaux.put("worstConversion", r.conversion(), null).context("position", r.position()));
         equipe.resources().stream()
                 .filter(r -> r.winRateAbove() != null && r.winRateBelow() != null
@@ -121,15 +121,15 @@ public class LolSensors implements Sensors {
                 .put("isSupport", GameRole.SUP.position().equals(poste) ? 1 : 0, null);
     }
 
-    private static Double centile(Optional<ReferenceGridDto> grille, String metrique, String palier, double valeur) {
+    private static Double centile(Optional<ReferenceGrid> grille, String metrique, String palier, double valeur) {
         return grille.map(g -> {
-            ReferenceGridDto.Metric m = g.metrics() == null ? null : g.metrics().get(metrique);
-            ReferenceGridDto.Tier t = m == null || m.tiers() == null || palier == null ? null : m.tiers().get(palier);
+            ReferenceGrid.Metric m = g.metrics() == null ? null : g.metrics().get(metrique);
+            ReferenceGrid.Tier t = m == null || m.tiers() == null || palier == null ? null : m.tiers().get(palier);
             return t == null ? null : Percentiles.of(valeur, g.percentiles(), t.values());
         }).orElse(null);
     }
 
-    private Optional<ReferenceGridDto> grille(String poste, String portee, String palier) {
+    private Optional<ReferenceGrid> grille(String poste, String portee, String palier) {
         if (poste == null || palier == null) {
             return Optional.empty();
         }
@@ -138,7 +138,7 @@ public class LolSensors implements Sensors {
         if (lu != null && lu.lu().plus(FRAICHEUR_REFERENTIEL).isAfter(Instant.now())) {
             return lu.grille();
         }
-        Optional<ReferenceGridDto> grille = statsGateway.referenceGrid(poste, portee, palier, null);
+        Optional<ReferenceGrid> grille = statsGateway.referenceGrid(poste, portee, palier, null);
         grilles.put(cle, new Cached(grille, Instant.now()));
         return grille;
     }

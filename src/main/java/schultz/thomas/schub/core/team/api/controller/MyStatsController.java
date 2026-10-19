@@ -16,6 +16,7 @@ import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.team.api.dto.MyStatsDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.api.mapper.LolDtoMapper;
 import schultz.thomas.schub.core.team.business.service.MyGamesService;
 import schultz.thomas.schub.core.team.business.service.MyStatsService;
 import schultz.thomas.schub.core.team.business.service.StatsWindows;
@@ -34,6 +35,7 @@ public class MyStatsController {
     private final StatsWindows windows;
     private final AugurService augur;
     private final AugurDtoMapper findingDtos;
+    private final LolDtoMapper dtos;
 
     @GetMapping
     public MyStatsDto mine(
@@ -41,7 +43,7 @@ public class MyStatsController {
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer champions) {
-        return myStatsService.of(userService.requireActor(actorId), windows.days(days, patches), champions);
+        return dtos.toDto(myStatsService.of(userService.requireActor(actorId), windows.days(days, patches), champions));
     }
 
     @GetMapping("/games")
@@ -50,7 +52,7 @@ public class MyStatsController {
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches,
             @RequestParam(required = false) Integer limit) {
-        return myGames.games(userService.requireActor(actorId), windows.days(days, patches), limit);
+        return dtos.toDto(myGames.games(userService.requireActor(actorId), windows.days(days, patches), limit));
     }
 
     // Ses constats d'habitude : forces, faiblesses et style, avec leur preuve.
@@ -80,6 +82,6 @@ public class MyStatsController {
             @PathVariable String matchId,
             @RequestParam(required = false) Integer days,
             @RequestParam(required = false) Integer patches) {
-        return myGames.game(userService.requireActor(actorId), matchId, windows.days(days, patches));
+        return dtos.toDto(myGames.game(userService.requireActor(actorId), matchId, windows.days(days, patches)));
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.StatsRefreshDto;
+import schultz.thomas.schub.core.team.business.model.StatsRefresh;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
@@ -30,12 +30,12 @@ public class TeamStatsRefreshService {
     private final RiotConnectorService riotConnector;
     private final MongoTemplate mongo;
 
-    public StatsRefreshDto status(User actor, String teamId) {
+    public StatsRefresh status(User actor, String teamId) {
         Team team = teamService.requireVisible(actor, teamId);
-        return new StatsRefreshDto(false, 0, prochaine(team.getStatsRefreshedAt(), Instant.now()));
+        return new StatsRefresh(false, 0, prochaine(team.getStatsRefreshedAt(), Instant.now()));
     }
 
-    public StatsRefreshDto refresh(User actor, String teamId) {
+    public StatsRefresh refresh(User actor, String teamId) {
         Team team = teamService.requireVisible(actor, teamId);
         Instant maintenant = Instant.now();
 
@@ -48,7 +48,7 @@ public class TeamStatsRefreshService {
                 FindAndModifyOptions.options().returnNew(true),
                 Team.class);
         if (reservee == null) {
-            return new StatsRefreshDto(false, 0, prochaine(team.getStatsRefreshedAt(), maintenant));
+            return new StatsRefresh(false, 0, prochaine(team.getStatsRefreshedAt(), maintenant));
         }
 
         int demandes = (int) TeamPlayerStatsService.joueursDe(team).stream()
@@ -60,7 +60,7 @@ public class TeamStatsRefreshService {
                 .count();
         log.info("Mise à jour des stats de l'équipe « {} » : collecte demandée pour {} joueur(s)",
                 team.getName(), demandes);
-        return new StatsRefreshDto(true, demandes, maintenant.plus(DELAI));
+        return new StatsRefresh(true, demandes, maintenant.plus(DELAI));
     }
 
     private static Instant prochaine(Instant derniere, Instant maintenant) {

@@ -2,11 +2,10 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import schultz.thomas.schub.core.team.api.dto.AverageRankDto;
-import schultz.thomas.schub.core.team.api.dto.PositionOppositionDto;
-import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
-import schultz.thomas.schub.core.team.api.dto.TeamRecordDto;
+import schultz.thomas.schub.core.team.business.model.AverageRank;
+import schultz.thomas.schub.core.team.business.model.PositionOpposition;
+import schultz.thomas.schub.core.team.business.model.TeamOpposition;
+import schultz.thomas.schub.core.team.business.model.TeamRecord;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ class TeamOppositionServiceTest {
     @Test
     @DisplayName("Moyenne des classés seulement : un non-classé ne tire pas la moyenne vers le Fer")
     void moyenneDesClasses() {
-        AverageRankDto moyenne = Rangs.moyenne(Arrays.asList(solo("DIAMOND", "IV"), null, null));
+        AverageRank moyenne = Rangs.moyenne(Arrays.asList(solo("DIAMOND", "IV"), null, null));
         assertThat(moyenne.tier()).isEqualTo("DIAMOND");
         assertThat(moyenne.counted()).isEqualTo(1);
     }
@@ -73,16 +72,16 @@ class TeamOppositionServiceTest {
         }
         parties.add(partie("sans-rangs", true));
 
-        TeamOppositionDto dto = TeamOppositionService.calcule("equipe-1", null, parties, insights, MEMBRES, null, null);
+        TeamOpposition dto = TeamOppositionService.calcule("equipe-1", null, parties, insights, MEMBRES, null, null);
 
         assertThat(dto.games()).isEqualTo(12);
         assertThat(dto.gamesWithRanks()).isEqualTo(11);
         assertThat(dto.medianLagDays()).isCloseTo(3.0, within(1e-9));
-        assertThat(dto.byEnemyTier()).extracting(TeamRecordDto::key).containsExactly("GOLD", "PLATINUM");
+        assertThat(dto.byEnemyTier()).extracting(TeamRecord::key).containsExactly("GOLD", "PLATINUM");
         assertThat(dto.ceilingTier()).isEqualTo("GOLD");
-        assertThat(dto.byGap()).extracting(TeamRecordDto::key).containsExactly("MUCH_STRONGER", "EVEN");
+        assertThat(dto.byGap()).extracting(TeamRecord::key).containsExactly("MUCH_STRONGER", "EVEN");
 
-        PositionOppositionDto top = dto.byPosition().getFirst();
+        PositionOpposition top = dto.byPosition().getFirst();
         assertThat(top.position()).isEqualTo("TOP");
         assertThat(top.laneGames()).isEqualTo(11);
         assertThat(top.laneWinRate()).isCloseTo(6 / 11.0, within(1e-9));
