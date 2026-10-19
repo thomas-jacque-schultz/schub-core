@@ -80,7 +80,7 @@ public class TeamOppositionService {
             if (insight == null || insight.ranksObservedAt() == null) {
                 continue;
             }
-            int notreCote = TeamGamesStatsService.cote(partie);
+            int notreCote = VueDePartie.de(partie).cote();
             Double nous = moyenne(insight, true, notreCote);
             Double eux = moyenne(insight, false, notreCote);
             if (eux == null) {

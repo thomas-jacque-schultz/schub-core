@@ -11,6 +11,7 @@ import schultz.thomas.schub.core.team.api.dto.SideRanksDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamePlayerDto;
+import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
 import java.time.Instant;
@@ -25,8 +26,6 @@ import java.util.function.Function;
 @Service
 @RequiredArgsConstructor
 public class GameViews {
-
-    static final List<String> POSTES = List.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
 
     private final RiotStatsGateway statsGateway;
     private final RiotChampionGateway championGateway;
@@ -48,7 +47,7 @@ public class GameViews {
                 insight != null && insight.timelineAvailable(),
                 insight == null ? null : insight.ranksObservedAt(),
                 insight == null || partie.splitSides() ? null
-                        : EarlyGames.vue(insight.early(), cote(partie), parPuuid),
+                        : EarlyGames.vue(insight.early(), VueDePartie.de(partie).cote(), parPuuid),
                 viewerMemberId,
                 days,
                 indicateurs(partie, PlayerStatsService.depuis(days)));
@@ -60,10 +59,6 @@ public class GameViews {
                 .orElseGet(List::of)
                 .forEach(insight -> index.put(insight.matchId(), insight));
         return index;
-    }
-
-    static int cote(RiotStatsGateway.SharedMatch partie) {
-        return partie.players().isEmpty() ? 0 : partie.players().getFirst().side();
     }
 
     // La partie elle-même, puis la moyenne du joueur au même poste sur la période : une valeur n'a de sens qu'à son poste.
@@ -91,11 +86,9 @@ public class GameViews {
 
     private static List<MatchupDto> faceAFace(Partie partie) {
         List<MatchupDto> lignes = new ArrayList<>();
-        for (String poste : POSTES) {
-            Optional<Joueur> allie = partie.notreCamp().stream()
-                    .filter(j -> poste.equals(j.source().position())).findFirst();
-            Optional<Joueur> adverse = partie.adverses().stream()
-                    .filter(j -> poste.equals(j.source().position())).findFirst();
+        for (String poste : GameRole.POSITIONS) {
+            Optional<Joueur> allie = VueDePartie.auPoste(partie.notreCamp(), poste);
+            Optional<Joueur> adverse = VueDePartie.auPoste(partie.adverses(), poste);
             if (allie.isEmpty() && adverse.isEmpty()) {
                 continue;
             }
@@ -114,7 +107,22 @@ public class GameViews {
     }
 
     record Joueur(RiotStatsGateway.SharedMatchPlayer source, RiotStatsGateway.InsightPlayer insight,
-                  TeamGamePlayerDto dto) {
+                  TeamGamePlayerDto dto) implements RiotStatsGateway.Participant {
+
+        @Override
+        public String puuid() {
+            return source.puuid();
+        }
+
+        @Override
+        public int side() {
+            return source.side();
+        }
+
+        @Override
+        public String position() {
+            return source.position();
+        }
 
         Double rang() {
             return insight == null ? null : Rangs.reference(insight.solo(), insight.flex());
@@ -136,19 +144,19 @@ public class GameViews {
         if (insight != null) {
             insight.participants().forEach(p -> parJoueur.put(p.puuid(), p));
         }
-        int notreCote = cote(partie);
+        VueDePartie vue = VueDePartie.de(partie);
         Function<RiotStatsGateway.SharedMatchPlayer, Joueur> projette = joueur ->
                 joueur(joueur, parPuuid, noms, catalogue, parJoueur.get(joueur.puuid()));
 
         List<Joueur> membres = partie.players().stream().map(projette).toList();
-        List<Joueur> allies = partie.others().stream().filter(j -> j.side() == notreCote).map(projette).toList();
-        List<Joueur> adverses = partie.others().stream().filter(j -> j.side() != notreCote).map(projette).toList();
+        List<Joueur> allies = vue.allies().stream().map(projette).toList();
+        List<Joueur> adverses = vue.adverses().stream().map(projette).toList();
 
-        List<RiotStatsGateway.InsightPlayer> nous = new ArrayList<>();
-        List<RiotStatsGateway.InsightPlayer> eux = new ArrayList<>();
-        if (insight != null && insight.ranksObservedAt() != null) {
-            insight.participants().forEach(p -> (p.side() == notreCote ? nous : eux).add(p));
-        }
+        boolean rangsReleves = insight != null && insight.ranksObservedAt() != null;
+        List<RiotStatsGateway.InsightPlayer> nous = rangsReleves
+                ? VueDePartie.camp(insight.participants(), vue.cote(), true) : List.of();
+        List<RiotStatsGateway.InsightPlayer> eux = rangsReleves
+                ? VueDePartie.camp(insight.participants(), vue.cote(), false) : List.of();
 
         TeamGameDto dto = new TeamGameDto(partie.matchId(), partie.startedAt(), partie.durationSeconds(),
                 partie.queueId(), partie.queue(), partie.patch(), partie.presentPlayers(),

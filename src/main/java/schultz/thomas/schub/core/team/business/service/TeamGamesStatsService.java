@@ -10,6 +10,7 @@ import schultz.thomas.schub.core.team.api.dto.TeamGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
 import schultz.thomas.schub.core.team.api.dto.TeamMemberPresenceDto;
 import schultz.thomas.schub.core.team.api.dto.TeamRecordDto;
+import schultz.thomas.schub.core.team.business.model.GameModes;
 import schultz.thomas.schub.core.team.business.model.StatsState;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -35,8 +36,6 @@ public class TeamGamesStatsService {
     public static final int PARTIES_DEFAUT = 100;
     public static final int PARTIES_MAX = 500;
     private static final int PATCHS_RENDUS = 6;
-
-    static final List<String> POSTES = GameViews.POSTES;
 
     private final TeamService teamService;
     private final MemberDirectory memberDirectory;
@@ -101,8 +100,8 @@ public class TeamGamesStatsService {
                 joueurs.size(),
                 StatsState.STATISTIQUES_CONNUES,
                 bilan("", null, decidees),
-                bilans(decidees, TeamGamesStatsService::mode, partie -> null),
-                bilans(decidees, partie -> String.valueOf(cote(partie)), partie -> null),
+                bilans(decidees, partie -> GameModes.de(partie.queue()), partie -> null),
+                bilans(decidees, partie -> String.valueOf(VueDePartie.de(partie).cote()), partie -> null),
                 bilans(decidees, RiotStatsGateway.SharedMatch::patch, partie -> null).stream()
                         .sorted(Comparator.comparing(TeamRecordDto::key, TeamGamesStatsService::parVersion).reversed())
                         .limit(PATCHS_RENDUS)
@@ -192,10 +191,6 @@ public class TeamGamesStatsService {
                 .toList();
     }
 
-    private static String mode(RiotStatsGateway.SharedMatch partie) {
-        return partie.queue() == null || partie.queue().isBlank() ? "OTHER" : partie.queue();
-    }
-
     // « 16.9 » précède « 16.18 » : l'ordre alphabétique les inverserait.
     static int parVersion(String a, String b) {
         int[] x = version(a);
@@ -210,10 +205,6 @@ public class TeamGamesStatsService {
         } catch (RuntimeException illisible) {
             return new int[] {-1, -1};
         }
-    }
-
-    static int cote(RiotStatsGateway.SharedMatch partie) {
-        return GameViews.cote(partie);
     }
 
     private static List<TeamMemberPresenceDto> presences(
