@@ -14,8 +14,8 @@ import schultz.thomas.schub.core.api.dto.MeDto;
 import schultz.thomas.schub.core.api.mapper.UserDtoMapper;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.mapper.SessionSummaryDtoMapper;
-import schultz.thomas.schub.core.team.business.service.SessionSummaryService;
+import schultz.thomas.schub.core.lol.session.api.mapper.SessionSummaryDtoMapper;
+import schultz.thomas.schub.core.lol.session.business.service.SessionSummaryService;
 
 import java.time.LocalDate;
 import java.util.Map;

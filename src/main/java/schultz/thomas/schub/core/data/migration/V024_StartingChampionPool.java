@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import schultz.thomas.schub.core.team.data.model.Team;
-import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
+import schultz.thomas.schub.core.lol.team.data.model.Team;
+import schultz.thomas.schub.core.lol.team.data.model.TeamChampionPool;
 
 import java.util.HashSet;
 import java.util.List;
