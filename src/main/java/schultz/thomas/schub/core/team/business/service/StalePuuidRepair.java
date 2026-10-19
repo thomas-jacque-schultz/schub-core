@@ -72,8 +72,16 @@ public class StalePuuidRepair {
     public void releve() {
         Instant debut = Instant.now();
         repare(riotConnector.stalePuuids(dernierReleve.minus(RECOUVREMENT)));
+        resoutLesComptesEnAttente();
         resoutLesPlacesEnAttente();
         dernierReleve = debut;
+    }
+
+    // Sans ce relevé, un compte au puuid effacé n'était résolu qu'à la prochaine connexion du joueur (schub-core#47).
+    void resoutLesComptesEnAttente() {
+        for (User user : users.findByRiotPuuidIsNullAndRiotTagLineIsNotNull()) {
+            riotAccounts.resolvePendingLink(user);
+        }
     }
 
     // Une place ajoutée pendant que le connecteur était occupé n'a pas de puuid : rien d'autre ne la retenterait.
@@ -98,7 +106,7 @@ public class StalePuuidRepair {
             user.setRiotPuuid(null);
             boolean resolu = riotAccounts.resolvePendingLink(users.save(user));
             log.info("Compte lié {} au puuid périmé : {}", user.getId(),
-                    resolu ? "Riot ID résolu de nouveau" : "résolution reportée à sa prochaine connexion");
+                    resolu ? "Riot ID résolu de nouveau" : "résolution reportée au prochain relevé");
         }
         for (Team team : teams.findByMembersRiotPuuidIn(refuses)) {
             repare(team, refuses);

@@ -568,4 +568,27 @@ class RiotAccountServiceTest {
         assertThat(acteur.getRiotPuuid()).isNull();
         verify(userRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("deux comptes déclarent le même Riot ID en attente : aucun n'est relié d'office")
+    void deuxDeclarantsAucunLien() {
+        User autre = compte("user-2", "discord-2");
+        when(userRepository.findByRiotGameNameIgnoreCaseAndRiotTagLineIgnoreCase("Bibi", "EUW"))
+                .thenReturn(List.of(acteur, autre));
+
+        assertThat(service.pendingDeclarer("Bibi", "EUW")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("le compte en attente reçoit le puuid et sa collecte part")
+    void adopteLePuuid() {
+        acteur.setRiotGameName("Bibi");
+        acteur.setRiotTagLine("EUW");
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(acteur));
+
+        service.adoptPuuid("user-1", PUUID);
+
+        assertThat(acteur.getRiotPuuid()).isEqualTo(PUUID);
+        verify(riotConnectorService).requestIngest(PUUID);
+    }
 }

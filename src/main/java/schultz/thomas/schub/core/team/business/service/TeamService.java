@@ -189,8 +189,14 @@ public class TeamService {
         member.setCoach(demande.coach() || member.getStatus() == MemberStatus.COACH);
         member.setAddedAt(Instant.now());
 
+        boolean compteEnAttente = false;
         if (puuid != null) {
-            memberDirectory.byRiotPuuid(puuid).ifPresent(identity -> {
+            Optional<MemberDirectory.MemberIdentity> compte = memberDirectory.byRiotPuuid(puuid);
+            if (compte.isEmpty()) {
+                compte = memberDirectory.pendingByRiotId(gameName, tagLine);
+                compteEnAttente = compte.isPresent();
+            }
+            compte.ifPresent(identity -> {
                 member.setUserId(identity.userId());
                 member.setLinkedAt(Instant.now());
             });
@@ -203,7 +209,11 @@ public class TeamService {
         team.getMembers().add(member);
         log.info("Membre {} ajouté à l'équipe « {} » ({})",
                 member.riotId(), team.getName(), member.isLinked() ? "lié" : "libre");
-        return touch(team);
+        Team enregistree = touch(team);
+        if (compteEnAttente) {
+            memberDirectory.adoptPuuid(member.getUserId(), puuid);
+        }
+        return enregistree;
     }
 
     public Team updateMember(User actor, String teamId, String memberId, List<GameRole> roles,

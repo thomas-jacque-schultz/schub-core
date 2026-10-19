@@ -99,6 +99,7 @@ class TeamServiceTest {
         });
         when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
         when(memberDirectory.byRiotPuuid(anyString())).thenReturn(Optional.empty());
+        when(memberDirectory.pendingByRiotId(anyString(), anyString())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -265,6 +266,22 @@ class TeamServiceTest {
         assertThat(ajoute.isLinked()).isTrue();
         assertThat(ajoute.getUserId()).isEqualTo("bibi");
         assertThat(ajoute.getStatus()).isEqualTo(MemberStatus.TITULAIRE);
+    }
+
+    @Test
+    @DisplayName("un compte au puuid effacé est relié par le Riot ID qu'il a déclaré, et reçoit le puuid (schub-core#47)")
+    void ajouteUnMembreAuCompteEnAttente() {
+        donneLEquipe();
+        when(riotIdResolver.resolve("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
+        when(memberDirectory.pendingByRiotId("Bibi", "EUW")).thenReturn(Optional.of(
+                new MemberDirectory.MemberIdentity("bibi", "Bibi", null, null, "Bibi", "EUW")));
+
+        Team equipe = teamService.addMember(capitaine, "equipe-1",
+                new TeamService.NewMember("Bibi", "EUW", null, List.of(GameRole.MID), null, false));
+
+        TeamMember ajoute = equipe.getMembers().get(equipe.getMembers().size() - 1);
+        assertThat(ajoute.getUserId()).isEqualTo("bibi");
+        verify(memberDirectory).adoptPuuid("bibi", "puuid-bibi");
     }
 
     @Test

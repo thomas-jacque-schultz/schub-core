@@ -21,4 +21,9 @@ public interface MemberDirectory {
     Map<String, MemberIdentity> byIds(Set<String> userIds);
 
     Optional<MemberIdentity> byRiotPuuid(String riotPuuid);
+
+    // Compte qui a déclaré ce Riot ID et attend encore son puuid (changement de clé, connecteur occupé).
+    Optional<MemberIdentity> pendingByRiotId(String riotGameName, String riotTagLine);
+
+    void adoptPuuid(String userId, String riotPuuid);
 }
