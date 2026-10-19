@@ -7,13 +7,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.api.client.riot.AccountsByRankDto;
+import schultz.thomas.schub.core.api.client.riot.CrawlerStatusDto;
+import schultz.thomas.schub.core.api.client.riot.CrawlerToggleRequest;
+import schultz.thomas.schub.core.api.client.riot.HistoryWindowDto;
+import schultz.thomas.schub.core.api.client.riot.IngestStatusDto;
+import schultz.thomas.schub.core.api.client.riot.IngestSummaryDto;
+import schultz.thomas.schub.core.api.client.riot.PlayerIngestStatusDto;
+import schultz.thomas.schub.core.api.client.riot.PlayerSuggestionDto;
+import schultz.thomas.schub.core.api.client.riot.PuuidListRequest;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -22,8 +29,12 @@ public class HttpRiotConnectorService implements RiotConnectorService {
 
     private final RestClient restClient;
 
-    public HttpRiotConnectorService(@Qualifier("connectorRiotRestClient") RestClient restClient) {
+    private final RiotIngestContractMapper contrat;
+
+    public HttpRiotConnectorService(@Qualifier("connectorRiotRestClient") RestClient restClient,
+                                    RiotIngestContractMapper contrat) {
         this.restClient = restClient;
+        this.contrat = contrat;
     }
 
     @Override
@@ -32,13 +43,11 @@ public class HttpRiotConnectorService implements RiotConnectorService {
             return Optional.empty();
         }
         try {
-            IngestResponse response = restClient.get()
+            return Optional.ofNullable(restClient.get()
                     .uri("/ingest/players/{puuid}", puuid)
                     .retrieve()
-                    .body(IngestResponse.class);
-            return Optional.ofNullable(response)
-                    .map(body -> new PlayerIngest(body.pending(), body.running(), body.estimatedReadyAt(),
-                            body.priorityPending(), body.backfill()));
+                    .body(PlayerIngestStatusDto.class))
+                    .map(contrat::toIngest);
         } catch (RestClientException indisponible) {
             log.debug("État d'ingestion indisponible pour {} : {}", puuid, indisponible.getMessage());
             return Optional.empty();
@@ -48,9 +57,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     @Override
     public Optional<IngestLoad> load() {
         try {
-            LoadResponse r = restClient.get().uri("/ingest").retrieve().body(LoadResponse.class);
-            return Optional.ofNullable(r).map(b -> new IngestLoad(b.pending(), b.running(), b.failed(),
-                    b.callsPerMinute(), b.estimatedDrain(), b.estimatedReadyAt(), b.throttledFor()));
+            return Optional.ofNullable(restClient.get().uri("/ingest").retrieve().body(IngestStatusDto.class))
+                    .map(contrat::toLoad);
         } catch (RestClientException indisponible) {
             log.debug("Charge de la collecte indisponible : {}", indisponible.getMessage());
             return Optional.empty();
@@ -60,7 +68,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     @Override
     public Optional<IngestSummary> summary() {
         try {
-            return Optional.ofNullable(restClient.get().uri("/ingest/summary").retrieve().body(IngestSummary.class));
+            return Optional.ofNullable(restClient.get().uri("/ingest/summary").retrieve().body(IngestSummaryDto.class))
+                    .map(contrat::toSummary);
         } catch (RestClientException indisponible) {
             log.debug("Bilan de la collecte indisponible : {}", indisponible.getMessage());
             return Optional.empty();
@@ -70,7 +79,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     @Override
     public Optional<Crawler> crawler() {
         try {
-            return Optional.ofNullable(restClient.get().uri("/ingest/crawler").retrieve().body(Crawler.class));
+            return Optional.ofNullable(restClient.get().uri("/ingest/crawler").retrieve().body(CrawlerStatusDto.class))
+                    .map(contrat::toCrawler);
         } catch (RestClientException indisponible) {
             log.debug("Collecte de fond indisponible : {}", indisponible.getMessage());
             return Optional.empty();
@@ -81,7 +91,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     public Optional<AccountsByRank> accountsByRank() {
         try {
             return Optional.ofNullable(restClient.get().uri("/ingest/accounts-by-rank").retrieve()
-                    .body(AccountsByRank.class));
+                    .body(AccountsByRankDto.class))
+                    .map(contrat::toAccounts);
         } catch (RestClientException indisponible) {
             log.debug("Comptes par rang indisponibles : {}", indisponible.getMessage());
             return Optional.empty();
@@ -91,8 +102,9 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     @Override
     public Crawler toggleCrawler(boolean enabled) {
         try {
-            return restClient.put().uri("/ingest/crawler").body(Map.of("enabled", enabled))
-                    .retrieve().body(Crawler.class);
+            return contrat.toCrawler(restClient.put().uri("/ingest/crawler")
+                    .body(new CrawlerToggleRequest().enabled(enabled))
+                    .retrieve().body(CrawlerStatusDto.class));
         } catch (HttpClientErrorException.Conflict verrouillee) {
             throw new IllegalStateException("La collecte de fond ne se bascule pas dans cet environnement");
         } catch (RestClientException indisponible) {
@@ -119,7 +131,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
             return List.of();
         }
         try {
-            List<String> perimes = restClient.post().uri("/puuids/check").body(Map.of("puuids", List.copyOf(puuids)))
+            List<String> perimes = restClient.post().uri("/puuids/check")
+                    .body(new PuuidListRequest().puuids(List.copyOf(puuids)))
                     .retrieve().body(new ParameterizedTypeReference<List<String>>() { });
             return perimes == null ? List.of() : perimes;
         } catch (RestClientException indisponible) {
@@ -132,7 +145,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     public Optional<HistoryWindow> historyWindow() {
         try {
             return Optional.ofNullable(restClient.get().uri("/ingest/history-window").retrieve()
-                    .body(HistoryWindow.class));
+                    .body(HistoryWindowDto.class))
+                    .map(contrat::toWindow);
         } catch (RestClientException indisponible) {
             log.debug("Fenêtre de relevé indisponible : {}", indisponible.getMessage());
             return Optional.empty();
@@ -142,7 +156,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     @Override
     public HistoryWindow updateHistoryWindow(HistoryWindow window) {
         try {
-            return restClient.put().uri("/ingest/history-window").body(window).retrieve().body(HistoryWindow.class);
+            return contrat.toWindow(restClient.put().uri("/ingest/history-window").body(contrat.toDto(window))
+                    .retrieve().body(HistoryWindowDto.class));
         } catch (HttpClientErrorException.BadRequest horsBornes) {
             throw new IllegalArgumentException("Fenêtre de relevé hors bornes");
         } catch (RestClientException indisponible) {
@@ -196,44 +211,17 @@ public class HttpRiotConnectorService implements RiotConnectorService {
             return List.of();
         }
         try {
-            List<SuggestionResponse> found = restClient.get()
+            List<PlayerSuggestionDto> found = restClient.get()
                     .uri(uri -> uri.path("/players/search")
                             .queryParam("q", query)
                             .queryParam("limit", limit)
                             .build())
                     .retrieve()
-                    .body(new ParameterizedTypeReference<List<SuggestionResponse>>() { });
-            return found == null ? List.of() : found.stream().map(SuggestionResponse::toKnownPlayer).toList();
+                    .body(new ParameterizedTypeReference<List<PlayerSuggestionDto>>() { });
+            return found == null ? List.of() : found.stream().map(contrat::toKnownPlayer).toList();
         } catch (RestClientException indisponible) {
             log.warn("Recherche de compte Riot indisponible ({})", indisponible.getMessage());
             return List.of();
-        }
-    }
-
-    record IngestResponse(long pending, long running, Instant estimatedReadyAt, long priorityPending,
-                          Backfill backfill) {
-    }
-
-    record LoadResponse(long pending, long running, long failed, double callsPerMinute,
-                        Duration estimatedDrain, Instant estimatedReadyAt, Duration throttledFor) {
-    }
-
-    record SuggestionResponse(String puuid, String gameName, String tagLine, String riotId,
-                              long matchCount, List<PositionResponse> positions, Instant lastPlayedAt,
-                              Instant observedAt, String source) {
-
-        KnownPlayer toKnownPlayer() {
-            List<PositionPlayed> postes = positions == null ? List.of()
-                    : positions.stream().map(PositionResponse::toPositionPlayed).toList();
-            return new KnownPlayer(puuid, gameName, tagLine, riotId, matchCount, postes, lastPlayedAt,
-                    observedAt, source);
-        }
-    }
-
-    record PositionResponse(String position, long matches) {
-
-        PositionPlayed toPositionPlayed() {
-            return new PositionPlayed(position, matches);
         }
     }
 }

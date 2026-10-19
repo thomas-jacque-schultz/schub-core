@@ -4,14 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
-import java.time.Duration;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.api.client.riot.PlayerIdentityDto;
 import schultz.thomas.schub.core.business.service.RiotIdResolution;
 import schultz.thomas.schub.core.business.service.RiotIdResolver;
 
+import java.time.Duration;
 import java.util.Optional;
 
 @Slf4j
@@ -42,17 +42,17 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
             return RiotIdResolution.unavailable();
         }
         try {
-            PlayerIdentityResponse identity = restClient.get()
+            PlayerIdentityDto identity = restClient.get()
                     .uri(uri -> uri.path("/players")
                             .queryParam("gameName", gameName)
                             .queryParam("tagLine", tagLine)
                             .queryParamIfPresent("maxAge", java.util.Optional.ofNullable(maxAge))
                             .build())
                     .retrieve()
-                    .body(PlayerIdentityResponse.class);
-            String puuid = identity == null ? null : identity.puuid();
+                    .body(PlayerIdentityDto.class);
+            String puuid = identity == null ? null : identity.getPuuid();
             return puuid == null ? RiotIdResolution.notFound()
-                    : RiotIdResolution.resolved(puuid, identity.gameName(), identity.tagLine());
+                    : RiotIdResolution.resolved(puuid, identity.getGameName(), identity.getTagLine());
         } catch (HttpClientErrorException.NotFound e) {
             return RiotIdResolution.notFound();
         } catch (HttpClientErrorException.TooManyRequests e) {
@@ -70,8 +70,5 @@ public class ConnectorRiotIdResolver implements RiotIdResolver {
         String delai = e.getResponseHeaders() == null ? null
                 : e.getResponseHeaders().getFirst(HttpHeaders.RETRY_AFTER);
         return delai == null ? "" : " dans " + delai + " s";
-    }
-
-    record PlayerIdentityResponse(String puuid, String gameName, String tagLine) {
     }
 }

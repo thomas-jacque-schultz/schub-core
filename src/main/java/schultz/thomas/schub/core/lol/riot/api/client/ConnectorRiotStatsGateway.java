@@ -6,6 +6,23 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.api.client.riot.ChampionReferenceGridDto;
+import schultz.thomas.schub.core.api.client.riot.MatchIdsRequest;
+import schultz.thomas.schub.core.api.client.riot.MatchInsightsDto;
+import schultz.thomas.schub.core.api.client.riot.MatchPlayerMetricsDto;
+import schultz.thomas.schub.core.api.client.riot.ParticipationBucketDto;
+import schultz.thomas.schub.core.api.client.riot.PatchStartDto;
+import schultz.thomas.schub.core.api.client.riot.Player;
+import schultz.thomas.schub.core.api.client.riot.PlayerCoverageDto;
+import schultz.thomas.schub.core.api.client.riot.PlayerReferencesDto;
+import schultz.thomas.schub.core.api.client.riot.PuuidListRequest;
+import schultz.thomas.schub.core.api.client.riot.RankedStandingDto;
+import schultz.thomas.schub.core.api.client.riot.ReferenceGridDto;
+import schultz.thomas.schub.core.api.client.riot.ReferencesQueryDto;
+import schultz.thomas.schub.core.api.client.riot.SharedMatchesDto;
+import schultz.thomas.schub.core.api.client.riot.SharedMatchesQuery;
+import schultz.thomas.schub.core.api.client.riot.StatsQuery;
+import schultz.thomas.schub.core.api.client.riot.TimelineHabitsDto;
 import schultz.thomas.schub.core.lol.riot.business.model.ChampionGrid;
 import schultz.thomas.schub.core.lol.riot.business.model.ReferenceGrid;
 import schultz.thomas.schub.core.lol.riot.business.service.RiotStatsGateway;
@@ -18,32 +35,35 @@ import java.util.Optional;
 @Service
 public class ConnectorRiotStatsGateway implements RiotStatsGateway {
 
-    private static final ParameterizedTypeReference<List<BucketResponse>> BUCKETS =
+    private static final ParameterizedTypeReference<List<ParticipationBucketDto>> BUCKETS =
             new ParameterizedTypeReference<>() {
             };
-    private static final ParameterizedTypeReference<List<CoverageResponse>> COUVERTURE =
+    private static final ParameterizedTypeReference<List<PlayerCoverageDto>> COUVERTURE =
             new ParameterizedTypeReference<>() {
             };
-    private static final ParameterizedTypeReference<List<InsightResponse>> INSIGHTS =
+    private static final ParameterizedTypeReference<List<MatchInsightsDto>> INSIGHTS =
             new ParameterizedTypeReference<>() {
             };
-    private static final ParameterizedTypeReference<List<References>> REFERENTIELS =
+    private static final ParameterizedTypeReference<List<PlayerReferencesDto>> REFERENTIELS =
             new ParameterizedTypeReference<>() {
             };
-    private static final ParameterizedTypeReference<List<StandingResponse>> CLASSEMENTS =
+    private static final ParameterizedTypeReference<List<RankedStandingDto>> CLASSEMENTS =
             new ParameterizedTypeReference<>() {
             };
-    private static final ParameterizedTypeReference<List<PatchStart>> PATCHS =
+    private static final ParameterizedTypeReference<List<PatchStartDto>> PATCHS =
             new ParameterizedTypeReference<>() {
             };
-    private static final ParameterizedTypeReference<List<PlayerMetrics>> METRIQUES =
+    private static final ParameterizedTypeReference<List<MatchPlayerMetricsDto>> METRIQUES =
             new ParameterizedTypeReference<>() {
             };
 
     private final RestClient restClient;
+    private final RiotContractMapper contrat;
 
-    public ConnectorRiotStatsGateway(@Qualifier("connectorRiotRestClient") RestClient restClient) {
+    public ConnectorRiotStatsGateway(@Qualifier("connectorRiotRestClient") RestClient restClient,
+                                     RiotContractMapper contrat) {
         this.restClient = restClient;
+        this.contrat = contrat;
     }
 
     @Override
@@ -59,14 +79,13 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.of(List.of());
         }
         try {
-            List<BucketResponse> reponse = restClient.post()
+            List<ParticipationBucketDto> reponse = restClient.post()
                     .uri("/stats/aggregate")
-                    .body(new AggregateRequest(puuids, groupBy.name(), scope.name(), since, matchIds))
+                    .body(new StatsQuery().puuids(puuids).groupBy(StatsQuery.GroupByEnum.fromValue(groupBy.name()))
+                            .scope(StatsQuery.ScopeEnum.fromValue(scope.name())).since(since).matchIds(matchIds))
                     .retrieve()
                     .body(BUCKETS);
-            return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
-                    .map(ConnectorRiotStatsGateway::toBucket)
-                    .toList());
+            return reponse == null ? Optional.empty() : Optional.of(reponse.stream().map(contrat::toBucket).toList());
         } catch (RestClientException e) {
             log.warn("Agrégats {} non obtenus ({}) — l'écran dira pourquoi il est vide",
                     groupBy, e.getMessage());
@@ -82,9 +101,13 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
         try {
             return Optional.ofNullable(restClient.post()
                     .uri("/stats/references")
-                    .body(new ReferencesRequest(joueurs))
+                    .body(new ReferencesQueryDto().players(joueurs.stream()
+                            .map(j -> new Player().puuid(j.puuid()).position(Player.PositionEnum.fromValue(j.position()))
+                                    .since(j.since()))
+                            .toList()))
                     .retrieve()
-                    .body(REFERENTIELS));
+                    .body(REFERENTIELS))
+                    .map(lus -> lus.stream().map(contrat::toReferences).toList());
         } catch (RestClientException e) {
             log.warn("Référentiels du radar non obtenus ({})", e.getMessage());
             return Optional.empty();
@@ -97,7 +120,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.ofNullable(restClient.get()
                     .uri(uri -> uri.path("/stats/patches").queryParam("count", count).build())
                     .retrieve()
-                    .body(PATCHS));
+                    .body(PATCHS))
+                    .map(lus -> lus.stream().map(contrat::toPatchStart).toList());
         } catch (RestClientException e) {
             log.warn("Calendrier des patchs non obtenu ({})", e.getMessage());
             return Optional.empty();
@@ -120,7 +144,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                         return uri.build(position);
                     })
                     .retrieve()
-                    .body(ReferenceGrid.class));
+                    .body(ReferenceGridDto.class))
+                    .map(contrat::toGrid);
         } catch (RestClientException e) {
             log.warn("Référentiel {} {} non obtenu ({})", position, scope, e.getMessage());
             return Optional.empty();
@@ -134,7 +159,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
                     .uri(uri -> uri.path("/stats/references/champions/{championId}").queryParam("tier", tier)
                             .build(championId))
                     .retrieve()
-                    .body(ChampionGrid.class));
+                    .body(ChampionReferenceGridDto.class))
+                    .map(contrat::toGrid);
         } catch (RestClientException e) {
             log.debug("Référentiel du champion {} non obtenu ({})", championId, e.getMessage());
             return Optional.empty();
@@ -147,7 +173,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.ofNullable(restClient.get()
                     .uri("/stats/references/team")
                     .retrieve()
-                    .body(ReferenceGrid.class));
+                    .body(ReferenceGridDto.class))
+                    .map(contrat::toGrid);
         } catch (RestClientException e) {
             log.warn("Référentiel d'équipe non obtenu ({})", e.getMessage());
             return Optional.empty();
@@ -160,16 +187,12 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.of(List.of());
         }
         try {
-            List<CoverageResponse> reponse = restClient.post()
+            List<PlayerCoverageDto> reponse = restClient.post()
                     .uri("/stats/coverage")
-                    .body(new PuuidsRequest(puuids))
+                    .body(new PuuidListRequest().puuids(puuids))
                     .retrieve()
                     .body(COUVERTURE);
-            return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
-                    .map(row -> new Coverage(row.puuid(), row.tracked(), row.knownMatches(),
-                            row.analysedMatches(), row.firstPlayedAt(), row.lastPlayedAt(),
-                            row.lastSyncAt()))
-                    .toList());
+            return reponse == null ? Optional.empty() : Optional.of(reponse.stream().map(contrat::toCoverage).toList());
         } catch (RestClientException e) {
             log.warn("Couverture non obtenue ({})", e.getMessage());
             return Optional.empty();
@@ -179,8 +202,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
     @Override
     public Optional<SharedMatches> sharedMatches(List<String> puuids, int minimumPlayers,
                                                  Instant since, Integer limit) {
-        return communes(puuids, minimumPlayers, new SharedMatchesRequest(puuids, minimumPlayers, since, limit, true,
-                null));
+        return communes(puuids, minimumPlayers, demande(puuids, minimumPlayers, since, limit, true, null));
     }
 
     @Override
@@ -188,7 +210,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
         if (puuid == null || puuid.isBlank()) {
             return Optional.of(new SharedMatches(1, 0, false, List.of()));
         }
-        return communes(List.of(puuid), 1, new SharedMatchesRequest(List.of(puuid), 1, since, limit, false, null));
+        return communes(List.of(puuid), 1, demande(List.of(puuid), 1, since, limit, false, null));
     }
 
     @Override
@@ -196,8 +218,7 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
         if (matchIds == null || matchIds.isEmpty()) {
             return Optional.of(new SharedMatches(minimumPlayers, 0, false, List.of()));
         }
-        return communes(puuids, minimumPlayers, new SharedMatchesRequest(puuids, minimumPlayers, null,
-                matchIds.size(), true, matchIds));
+        return communes(puuids, minimumPlayers, demande(puuids, minimumPlayers, null, matchIds.size(), true, matchIds));
     }
 
     @Override
@@ -206,30 +227,37 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.ofNullable(restClient.get()
                     .uri("/stats/matches/{matchId}/metrics", matchId)
                     .retrieve()
-                    .body(METRIQUES));
+                    .body(METRIQUES))
+                    .map(lus -> lus.stream().map(contrat::toMetrics).toList());
         } catch (RestClientException e) {
             log.warn("Indicateurs de la partie {} non obtenus ({})", matchId, e.getMessage());
             return Optional.empty();
         }
     }
 
-    private Optional<SharedMatches> communes(List<String> puuids, int minimumPlayers, SharedMatchesRequest demande) {
+    // enrich : toute partie partagée d'ici est une partie d'équipe, dont on veut timeline et rangs.
+    private static SharedMatchesQuery demande(List<String> puuids, int minimumPlayers, Instant since, Integer limit,
+                                              boolean enrich, List<String> matchIds) {
+        return new SharedMatchesQuery().puuids(puuids).minimumPlayers(minimumPlayers).since(since).limit(limit)
+                .enrich(enrich).matchIds(matchIds);
+    }
+
+    private Optional<SharedMatches> communes(List<String> puuids, int minimumPlayers, SharedMatchesQuery demande) {
         if (puuids == null || puuids.size() < minimumPlayers) {
             return Optional.of(new SharedMatches(minimumPlayers, 0, false, List.of()));
         }
         try {
-            SharedMatchesResponse reponse = restClient.post()
+            SharedMatchesDto reponse = restClient.post()
                     .uri("/stats/shared-matches")
                     .body(demande)
                     .retrieve()
-                    .body(SharedMatchesResponse.class);
-            if (reponse == null || reponse.matches() == null) {
+                    .body(SharedMatchesDto.class);
+            if (reponse == null || reponse.getMatches() == null) {
                 return Optional.empty();
             }
-            return Optional.of(new SharedMatches(reponse.minimumPlayers(), reponse.totalMatches(),
-                    reponse.truncated(), reponse.matches().stream()
-                    .map(ConnectorRiotStatsGateway::toSharedMatch)
-                    .toList()));
+            return Optional.of(new SharedMatches(valeur(reponse.getMinimumPlayers()), valeur(reponse.getTotalMatches()),
+                    Boolean.TRUE.equals(reponse.getTruncated()),
+                    reponse.getMatches().stream().map(contrat::toSharedMatch).toList()));
         } catch (RestClientException e) {
             log.warn("Parties communes non obtenues ({})", e.getMessage());
             return Optional.empty();
@@ -242,7 +270,8 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.ofNullable(restClient.get()
                     .uri(uri -> uri.path("/stats/players/{puuid}/timeline-habits")
                             .queryParamIfPresent("since", Optional.ofNullable(since)).build(puuid))
-                    .retrieve().body(TimelineHabits.class));
+                    .retrieve().body(TimelineHabitsDto.class))
+                    .map(contrat::toHabits);
         } catch (RestClientException e) {
             log.warn("Habitudes de timeline non obtenues ({})", e.getMessage());
             return Optional.empty();
@@ -255,15 +284,11 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.of(List.of());
         }
         try {
-            List<StandingResponse> reponse = restClient.get()
+            List<RankedStandingDto> reponse = restClient.get()
                     .uri("/players/{puuid}/rankings", puuid)
                     .retrieve()
                     .body(CLASSEMENTS);
-            return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
-                    .map(row -> new Standing(row.queue(), row.riotQueueType(), row.tier(),
-                            row.division(), row.leaguePoints(), row.wins(), row.losses(),
-                            row.hotStreak(), row.inactive(), row.observedAt()))
-                    .toList());
+            return reponse == null ? Optional.empty() : Optional.of(reponse.stream().map(contrat::toStanding).toList());
         } catch (RestClientException e) {
             log.warn("Classement non obtenu pour un joueur ({})", e.getMessage());
             return Optional.empty();
@@ -276,115 +301,23 @@ public class ConnectorRiotStatsGateway implements RiotStatsGateway {
             return Optional.of(List.of());
         }
         try {
-            List<InsightResponse> reponse = restClient.post()
+            List<MatchInsightsDto> reponse = restClient.post()
                     .uri("/stats/match-insights")
-                    .body(new MatchIdsRequest(matchIds))
+                    .body(new MatchIdsRequest().matchIds(matchIds))
                     .retrieve()
                     .body(INSIGHTS);
-            return reponse == null ? Optional.empty() : Optional.of(reponse.stream()
-                    .map(row -> new Insight(row.matchId(), row.timelineAvailable(), row.ranksObservedAt(), row.early(),
-                            row.participants() == null ? List.of() : row.participants().stream()
-                                    .map(p -> new InsightPlayer(p.puuid(), p.side(), p.position(),
-                                            p.championId(), toStanding(p.solo()), toStanding(p.flex()), p.at15(),
-                                            p.atEnd()))
-                                    .toList(), row.endObjectives()))
-                    .toList());
+            return reponse == null ? Optional.empty() : Optional.of(reponse.stream().map(contrat::toInsight).toList());
         } catch (RestClientException e) {
             log.warn("Rangs et chiffres à 15 minutes non obtenus ({})", e.getMessage());
             return Optional.empty();
         }
     }
 
-    private static Standing toStanding(StandingResponse row) {
-        return row == null ? null : new Standing(row.queue(), row.riotQueueType(), row.tier(),
-                row.division(), row.leaguePoints(), row.wins(), row.losses(), row.hotStreak(),
-                row.inactive(), row.observedAt());
+    private static int valeur(Integer nombre) {
+        return nombre == null ? 0 : nombre;
     }
 
-    private static Bucket toBucket(BucketResponse row) {
-        return new Bucket(row.puuid(), row.key(), row.championName(), row.games(), row.wins(),
-                row.kills(), row.deaths(), row.assists(), row.minionsKilled(), row.goldEarned(),
-                row.damageToChampions(), row.damageTaken(), row.visionScore(), row.teamKills(),
-                row.teamDeaths(), row.afkGames(),
-                row.secondsPlayed(),
-                row.firstPlayedAt(), row.lastPlayedAt(), row.performance());
-    }
-
-    private static SharedMatch toSharedMatch(SharedMatchResponse row) {
-        List<SharedMatchPlayerResponse> tous = row.players() == null ? List.of() : row.players();
-        return new SharedMatch(row.matchId(), row.startedAt(), row.durationSeconds(), row.queueId(),
-                row.queue(), row.patch(), row.presentPlayers(), row.splitSides(), row.win(),
-                tous.stream().filter(SharedMatchPlayerResponse::requested)
-                        .map(ConnectorRiotStatsGateway::toPlayer).toList(),
-                tous.stream().filter(player -> !player.requested())
-                        .map(ConnectorRiotStatsGateway::toPlayer).toList());
-    }
-
-    private static SharedMatchPlayer toPlayer(SharedMatchPlayerResponse player) {
-        return new SharedMatchPlayer(player.puuid(), player.championId(), player.championName(),
-                player.position(), player.win(), player.side(), player.kills(), player.deaths(),
-                player.assists(), player.minionsKilled(), player.goldEarned(),
-                player.damageToChampions(), player.damageTaken(), player.visionScore(), player.afk(),
-                player.riotId());
-    }
-
-    record AggregateRequest(List<String> puuids, String groupBy, String scope, Instant since,
-                            List<String> matchIds) {
-    }
-
-    record PuuidsRequest(List<String> puuids) {
-    }
-
-    // enrich : toute partie partagée d'ici est une partie d'équipe, dont on veut timeline et rangs.
-    record SharedMatchesRequest(List<String> puuids, int minimumPlayers, Instant since,
-                                Integer limit, boolean enrich, List<String> matchIds) {
-    }
-
-    record MatchIdsRequest(List<String> matchIds) {
-    }
-
-    record InsightResponse(String matchId, boolean timelineAvailable, Instant ranksObservedAt, EarlyGame early,
-                           List<EndObjectives> endObjectives, List<InsightPlayerResponse> participants) {
-    }
-
-    record InsightPlayerResponse(String puuid, int side, String position, int championId,
-                                 StandingResponse solo, StandingResponse flex, At15 at15, AtEnd atEnd) {
-    }
-
-    record BucketResponse(String puuid, String key, String championName, long games, long wins,
-                          long kills, long deaths, long assists, long minionsKilled,
-                          long goldEarned, long damageToChampions, long damageTaken, long visionScore,
-                          long teamKills, long teamDeaths, long afkGames, long secondsPlayed, Instant firstPlayedAt,
-                          Instant lastPlayedAt, Performance performance) {
-    }
-
-    record CoverageResponse(String puuid, boolean tracked, long knownMatches, long analysedMatches,
-                            Instant firstPlayedAt, Instant lastPlayedAt, Instant firstSyncAt,
-                            Instant lastSyncAt) {
-    }
-
-    record SharedMatchesResponse(int minimumPlayers, int pool, long totalMatches, boolean truncated,
-                                 List<SharedMatchResponse> matches) {
-    }
-
-    record SharedMatchResponse(String matchId, Instant startedAt, long durationSeconds, int queueId,
-                               String queue, String patch, boolean complete, int presentPlayers,
-                               boolean splitSides, Boolean win,
-                               List<SharedMatchPlayerResponse> players) {
-    }
-
-    record SharedMatchPlayerResponse(String puuid, int championId, String championName,
-                                     String position, boolean win, int side, int kills, int deaths,
-                                     int assists, int minionsKilled, int goldEarned,
-                                     int damageToChampions, int damageTaken, int visionScore,
-                                     boolean afk, boolean requested, String riotId) {
-    }
-
-    record ReferencesRequest(List<ReferenceRequest> players) {
-    }
-
-    record StandingResponse(String queue, String riotQueueType, String tier, String division,
-                            int leaguePoints, int wins, int losses, boolean hotStreak,
-                            boolean inactive, Instant observedAt) {
+    private static long valeur(Long nombre) {
+        return nombre == null ? 0 : nombre;
     }
 }

@@ -36,7 +36,8 @@ public class PlayerSearchController {
     public List<IndexablePlayerDto> indexable(@RequestParam(defaultValue = "50000") int limit) {
         try {
             return seoGateway.indexable(Math.clamp(limit, 1, 50_000)).stream()
-                    .map(joueur -> new IndexablePlayerDto(joueur.riotId(), joueur.featured()))
+                    .map(joueur -> new IndexablePlayerDto(joueur.getGameName() + "#" + joueur.getTagLine(),
+                            Boolean.TRUE.equals(joueur.getFeatured())))
                     .toList();
         } catch (RestClientException indisponible) {
             return List.of();

@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import schultz.thomas.schub.core.api.client.riot.IndexablePlayerDto;
+import schultz.thomas.schub.core.api.client.riot.SeoCreatorsDto;
 
 import java.util.List;
 
@@ -17,29 +19,19 @@ public class ConnectorRiotSeoGateway {
         this.restClient = restClient;
     }
 
-    public SeoCreators creators() {
-        return restClient.get().uri("/seo/creators").retrieve().body(SeoCreators.class);
+    public SeoCreatorsDto creators() {
+        return restClient.get().uri("/seo/creators").retrieve().body(SeoCreatorsDto.class);
     }
 
-    public SeoCreators replaceCreators(List<String> riotIds) {
-        return restClient.put().uri("/seo/creators").body(riotIds).retrieve().body(SeoCreators.class);
+    public SeoCreatorsDto replaceCreators(List<String> riotIds) {
+        return restClient.put().uri("/seo/creators").body(riotIds).retrieve().body(SeoCreatorsDto.class);
     }
 
-    public List<IndexablePlayer> indexable(int limit) {
-        List<IndexablePlayer> joueurs = restClient.get()
+    public List<IndexablePlayerDto> indexable(int limit) {
+        List<IndexablePlayerDto> joueurs = restClient.get()
                 .uri(uri -> uri.path("/players/indexable").queryParam("limit", limit).build())
                 .retrieve()
-                .body(new ParameterizedTypeReference<List<IndexablePlayer>>() { });
+                .body(new ParameterizedTypeReference<List<IndexablePlayerDto>>() { });
         return joueurs == null ? List.of() : joueurs;
-    }
-
-    public record SeoCreators(List<String> creators, List<String> unknown) {
-    }
-
-    public record IndexablePlayer(String gameName, String tagLine, boolean featured) {
-
-        public String riotId() {
-            return gameName + "#" + tagLine;
-        }
     }
 }

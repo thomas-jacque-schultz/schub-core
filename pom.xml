@@ -128,6 +128,46 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!-- Les modèles de fil des services appelés, générés depuis leurs contrats recopiés (scripts/contrats.sh). -->
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>7.12.0</version>
+                <executions>
+                    <execution>
+                        <id>connector-riot</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/openapi/connector-riot.json</inputSpec>
+                            <generatorName>java</generatorName>
+                            <library>resttemplate</library>
+                            <modelPackage>schultz.thomas.schub.core.api.client.riot</modelPackage>
+                            <generateApis>false</generateApis>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateSupportingFiles>false</generateSupportingFiles>
+                            <typeMappings>
+                                <typeMapping>DateTime=Instant</typeMapping>
+                            </typeMappings>
+                            <importMappings>
+                                <importMapping>Instant=java.time.Instant</importMapping>
+                            </importMappings>
+                            <configOptions>
+                                <useJakartaEe>true</useJakartaEe>
+                                <openApiNullable>false</openApiNullable>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                                <dateLibrary>java8</dateLibrary>
+                                <annotationLibrary>none</annotationLibrary>
+                                <useBeanValidation>false</useBeanValidation>
+                                <enumUnknownDefaultCase>true</enumUnknownDefaultCase>
+                                <containerDefaultToNull>true</containerDefaultToNull>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Sans cette déclaration, Maven ne résout pas le préfixe sonar:. -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
