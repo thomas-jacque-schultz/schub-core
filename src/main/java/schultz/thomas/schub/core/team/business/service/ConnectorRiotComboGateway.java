@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +33,26 @@ public class ConnectorRiotComboGateway {
             log.warn("Repère général des combos indisponible : {}", indisponible.getMessage());
             return Optional.empty();
         }
+    }
+
+    // Lecture de la table du jour : vide si le connecteur ne l'a pas encore calculée, ou ne répond pas.
+    public Optional<TierCombos> tierCombos(String tier, String kind, int minGames, int limit) {
+        try {
+            return Optional.ofNullable(restClient.get()
+                    .uri(uri -> uri.path("/stats/tier-combos").queryParam("tier", tier).queryParam("kind", kind)
+                            .queryParam("minGames", minGames).queryParam("limit", limit).build())
+                    .retrieve()
+                    .body(TierCombos.class));
+        } catch (RestClientException indisponible) {
+            log.warn("Combos du palier {} ({}) indisponibles : {}", tier, kind, indisponible.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public record TierCombos(String tier, String kind, Instant computedAt, long games, List<Ranked> combos) {
+    }
+
+    public record Ranked(List<Integer> championIds, long games, long wins, double lowerBound) {
     }
 
     // position : celle de Riot (TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY).
