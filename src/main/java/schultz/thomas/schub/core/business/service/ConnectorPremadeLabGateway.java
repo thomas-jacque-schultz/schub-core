@@ -3,6 +3,7 @@ package schultz.thomas.schub.core.business.service;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -31,6 +32,28 @@ public class ConnectorPremadeLabGateway {
             log.warn("Connecteur PremadeLab injoignable : {}", indisponible.getMessage());
             return new Result(Status.FAILED, "Connecteur PremadeLab injoignable");
         }
+    }
+
+    // La forme <:Gnar:123> de chaque champion ; un champion absent s'écrit en toutes lettres.
+    public Map<String, String> championEmojis(List<ChampionIcon> champions) {
+        if (champions.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            Map<String, String> emojis = restClient.post().uri("/emojis/champions")
+                    .body(Map.of("champions", champions))
+                    .retrieve().body(EMOJIS);
+            return emojis == null ? Map.of() : emojis;
+        } catch (RestClientException indisponible) {
+            log.warn("Emojis de champion non obtenus : {}", indisponible.getMessage());
+            return Map.of();
+        }
+    }
+
+    private static final ParameterizedTypeReference<Map<String, String>> EMOJIS = new ParameterizedTypeReference<>() {
+    };
+
+    public record ChampionIcon(String key, String iconUrl) {
     }
 
     public enum Status {
