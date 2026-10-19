@@ -39,8 +39,9 @@ public class SessionSummaryTestController {
     @PostMapping
     public ResponseEntity<SessionSummaryService.TestResult> send(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
-            @RequestParam LocalDate day) {
-        return sessionSummaries.sendTest(autorise(actorId), day)
+            @RequestParam LocalDate day,
+            @RequestParam(defaultValue = "true") boolean send) {
+        return sessionSummaries.sendTest(autorise(actorId), day, send)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
