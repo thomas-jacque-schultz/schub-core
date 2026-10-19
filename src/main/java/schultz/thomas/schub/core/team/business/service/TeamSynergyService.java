@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
+import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
@@ -23,8 +24,6 @@ public class TeamSynergyService {
     static final int DUO_MINIMUM = 10;
     // Sous ce nombre de parties sans le partenaire, l'attendu n'a pas de sens.
     static final int ATTENDU_MINIMUM = 3;
-    // Les parties hors Faille (ARAM, Arène) n'ont pas de poste : elles n'entrent pas dans la répartition.
-    static final Set<String> POSTES = Set.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
 
     private final TeamService teamService;
     private final RiotStatsGateway statsGateway;
@@ -111,16 +110,14 @@ public class TeamSynergyService {
             if (partie.players().isEmpty()) {
                 continue;
             }
-            int camp = partie.players().get(0).side();
-            List<RiotStatsGateway.SharedMatchPlayer> equipe = new ArrayList<>(partie.players());
-            partie.others().stream().filter(o -> o.side() == camp).forEach(equipe::add);
+            List<RiotStatsGateway.SharedMatchPlayer> equipe = VueDePartie.de(partie).notreCamp();
             double orTotal = equipe.stream().mapToDouble(RiotStatsGateway.SharedMatchPlayer::goldEarned).sum();
             double degatsTotal = equipe.stream().mapToDouble(RiotStatsGateway.SharedMatchPlayer::damageToChampions).sum();
             if (orTotal <= 0 || degatsTotal <= 0) {
                 continue;
             }
             for (RiotStatsGateway.SharedMatchPlayer joueur : partie.players()) {
-                if (!POSTES.contains(joueur.position())) {
+                if (!GameRole.estUnPoste(joueur.position())) {
                     continue;
                 }
                 parPoste.computeIfAbsent(joueur.position(), p -> new ArrayList<>()).add(new Part(joueur.position(),
