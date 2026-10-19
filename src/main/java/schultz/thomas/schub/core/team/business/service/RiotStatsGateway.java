@@ -48,8 +48,17 @@ public interface RiotStatsGateway {
     // Les dix joueurs d'une partie, indicateurs calculés comme la grille GAME de leur poste.
     Optional<List<PlayerMetrics>> matchMetrics(String matchId);
 
+    interface Participant {
+
+        String puuid();
+
+        int side();
+
+        String position();
+    }
+
     record PlayerMetrics(String puuid, int side, String position, int championId, String tier, boolean tierEstimated,
-                         Map<String, Double> values) {
+                         Map<String, Double> values) implements Participant {
     }
 
     Optional<List<Standing>> rankings(String puuid);
@@ -82,7 +91,7 @@ public interface RiotStatsGateway {
     }
 
     record InsightPlayer(String puuid, int side, String position, int championId, Standing solo,
-                         Standing flex, At15 at15, AtEnd atEnd) {
+                         Standing flex, At15 at15, AtEnd atEnd) implements Participant {
     }
 
     record AtEnd(int gold, int xp, int kills) {
@@ -214,7 +223,7 @@ public interface RiotStatsGateway {
             int visionScore,
             boolean afk,
             String riotId
-    ) {
+    ) implements Participant {
     }
 
     record Bound(double low, double high) {
