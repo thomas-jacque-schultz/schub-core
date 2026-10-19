@@ -88,10 +88,8 @@ public class CompositionRecordService {
 
     // Affectation : chaque emplacement prend un champion distinct de notre camp.
     static boolean correspond(RiotStatsGateway.SharedMatch partie, List<Set<Integer>> emplacements) {
-        int camp = partie.players().get(0).side();
-        List<Integer> nos = new ArrayList<>();
-        partie.players().forEach(j -> nos.add(j.championId()));
-        partie.others().stream().filter(o -> o.side() == camp).forEach(o -> nos.add(o.championId()));
+        List<Integer> nos = VueDePartie.de(partie).notreCamp().stream()
+                .map(RiotStatsGateway.SharedMatchPlayer::championId).toList();
         return affecte(emplacements, 0, nos, new boolean[nos.size()]);
     }
 
