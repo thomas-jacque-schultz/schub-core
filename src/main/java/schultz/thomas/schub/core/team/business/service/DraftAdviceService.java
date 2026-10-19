@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.team.api.dto.DraftAdviceDto;
+import schultz.thomas.schub.core.team.business.model.ComboKind;
 import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
@@ -42,18 +43,9 @@ public class DraftAdviceService {
     static final double RETARD_SIGNIFICATIF = -300;
     static final double Z = 1.96;
 
-    record Type(String kind, List<String> positions) {
-    }
-
-    static final List<Type> DUOS = List.of(
-            new Type("JGL_TOP", List.of("JUNGLE", "TOP")),
-            new Type("JGL_MID", List.of("JUNGLE", "MIDDLE")),
-            new Type("JGL_SUP", List.of("JUNGLE", "UTILITY")),
-            new Type("ADC_SUP", List.of("BOTTOM", "UTILITY")));
-    static final Type TRIO = new Type("JGL_MID_SUP", List.of("JUNGLE", "MIDDLE", "UTILITY"));
-    static final List<String> ORDRE = List.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
-    static final Map<String, GameRole> ROLES = Map.of("TOP", GameRole.TOP, "JUNGLE", GameRole.JGL,
-            "MIDDLE", GameRole.MID, "BOTTOM", GameRole.ADC, "UTILITY", GameRole.SUP);
+    static final List<ComboKind> DUOS = List.of(ComboKind.JGL_TOP, ComboKind.JGL_MID, ComboKind.JGL_SUP,
+            ComboKind.ADC_SUP);
+    static final ComboKind TRIO = ComboKind.JGL_MID_SUP;
 
     private final TeamService teamService;
     private final RiotStatsGateway statsGateway;
@@ -103,7 +95,7 @@ public class DraftAdviceService {
             Map<String, Choix> parPoste = new LinkedHashMap<>();
             for (RiotStatsGateway.SharedMatchPlayer joueur : partie.players()) {
                 TeamMember membre = parPuuid.get(joueur.puuid());
-                if (membre != null && ORDRE.contains(joueur.position())) {
+                if (membre != null && GameRole.estUnPoste(joueur.position())) {
                     parPoste.put(joueur.position(), new Choix(membre.getMemberId(), joueur.position(),
                             joueur.championId()));
                 }
@@ -116,12 +108,12 @@ public class DraftAdviceService {
                             .computeIfAbsent(autre.getMemberId(), m -> new Compte()).ajoute(victoire);
                 }
             }));
-            for (Type type : DUOS) {
+            for (ComboKind type : DUOS) {
                 ajoute(duos, type, parPoste, victoire);
             }
             ajoute(trios, TRIO, parPoste, victoire);
             if (parPoste.size() >= 3) {
-                List<Choix> compo = ORDRE.stream().map(parPoste::get).filter(Objects::nonNull).toList();
+                List<Choix> compo = GameRole.POSITIONS.stream().map(parPoste::get).filter(Objects::nonNull).toList();
                 compos.computeIfAbsent(compo, c -> new Compte()).ajoute(victoire);
             }
         }
@@ -137,7 +129,7 @@ public class DraftAdviceService {
                 .sorted(Comparator.comparingDouble(DraftAdviceDto.Combo::lowerBound).reversed())
                 .toList();
         List<DraftAdviceDto.Combo> triosRendus = trios.entrySet().stream()
-                .map(e -> rendu.combo(TRIO.kind(), e.getKey(), e.getValue(), TRIO_SEUIL))
+                .map(e -> rendu.combo(TRIO.name(), e.getKey(), e.getValue(), TRIO_SEUIL))
                 .sorted(Comparator.comparingDouble(DraftAdviceDto.Combo::lowerBound).reversed())
                 .toList();
         List<DraftAdviceDto.Combo> composRendues = compos.entrySet().stream()
@@ -156,7 +148,7 @@ public class DraftAdviceService {
                 .toList();
 
         List<DraftAdviceDto.Combo> affiches = new ArrayList<>();
-        DUOS.forEach(type -> duosRendus.stream().filter(c -> c.kind().equals(type.kind())).limit(RETENUS)
+        DUOS.forEach(type -> duosRendus.stream().filter(c -> c.kind().equals(type.name())).limit(RETENUS)
                 .forEach(affiches::add));
         triosRendus.stream().limit(RETENUS).forEach(affiches::add);
         affiches.addAll(aEviter);
@@ -172,7 +164,7 @@ public class DraftAdviceService {
                 Parallele.attend(menaces));
     }
 
-    private static void ajoute(Map<List<Choix>, Compte> comptes, Type type, Map<String, Choix> parPoste,
+    private static void ajoute(Map<List<Choix>, Compte> comptes, ComboKind type, Map<String, Choix> parPoste,
                                boolean victoire) {
         List<Choix> combo = type.positions().stream().map(parPoste::get).toList();
         if (combo.stream().allMatch(Objects::nonNull)) {
@@ -182,7 +174,7 @@ public class DraftAdviceService {
 
     private static String kindOf(List<Choix> combo) {
         List<String> postes = combo.stream().map(Choix::position).toList();
-        return DUOS.stream().filter(type -> type.positions().equals(postes)).map(Type::kind).findFirst()
+        return DUOS.stream().filter(type -> type.positions().equals(postes)).map(ComboKind::name).findFirst()
                 .orElse("COMPOSITION");
     }
 
@@ -199,7 +191,7 @@ public class DraftAdviceService {
         DraftAdviceDto.Pick pick(Choix choix) {
             RiotChampionGateway.Champion champion = catalogue.get(choix.championId());
             return new DraftAdviceDto.Pick(choix.memberId(), noms.get(choix.memberId()),
-                    ROLES.get(choix.position()).name(), choix.championId(),
+                    GameRole.dePosition(choix.position()).orElseThrow().name(), choix.championId(),
                     champion == null ? null : champion.key(), champion == null ? null : champion.name(),
                     champion == null ? null : champion.iconUrl());
         }
@@ -243,7 +235,7 @@ public class DraftAdviceService {
         Parallele.parCle(parType.keySet(), kind -> {
             List<DraftAdviceDto.Combo> liste = parType.get(kind);
             List<String> postes = liste.get(0).picks().stream()
-                    .map(pick -> positionDe(GameRole.valueOf(pick.role()))).toList();
+                    .map(pick -> GameRole.valueOf(pick.role()).position()).toList();
             List<ConnectorRiotComboGateway.Slot> slots = new ArrayList<>();
             for (int i = 0; i < postes.size(); i++) {
                 int index = i;
@@ -264,11 +256,6 @@ public class DraftAdviceService {
         }
         return new DraftAdviceDto.Combo(c.kind(), c.picks(), c.games(), c.wins(), c.winRate(), c.lowerBound(),
                 c.lowConfidence(), repere.games(), (double) repere.wins() / repere.games(), c.expected());
-    }
-
-    static String positionDe(GameRole role) {
-        return ROLES.entrySet().stream().filter(e -> e.getValue() == role).map(Map.Entry::getKey).findFirst()
-                .orElseThrow();
     }
 
     // #108 : forts en général, dans le pool ou l'historique de chaque joueur, et presque jamais joués ensemble.
@@ -295,12 +282,12 @@ public class DraftAdviceService {
                 cle(kindOf(choix), choix.stream().map(Choix::championId).toList()), compte.parties, Long::sum));
 
         Rendu rendu = new Rendu(noms, catalogue, Map.of());
-        Map<Type, List<Map<Integer, String>>> candidatsParType = new LinkedHashMap<>();
-        for (Type type : DUOS) {
+        Map<ComboKind, List<Map<Integer, String>>> candidatsParType = new LinkedHashMap<>();
+        for (ComboKind type : DUOS) {
             // Pour chaque poste : quel membre peut prendre quel champion.
             List<Map<Integer, String>> candidats = new ArrayList<>();
             for (String position : type.positions()) {
-                GameRole role = ROLES.get(position);
+                GameRole role = GameRole.dePosition(position).orElseThrow();
                 Map<Integer, String> parChampion = new LinkedHashMap<>();
                 for (TeamMember membre : joueurs) {
                     if (membre.getRoles() == null || !membre.getRoles().contains(role)) {
@@ -320,7 +307,7 @@ public class DraftAdviceService {
                 candidatsParType.put(type, candidats);
             }
         }
-        Map<Type, List<ConnectorRiotComboGateway.GeneralCombo>> generaux = Parallele.parCle(candidatsParType.keySet(),
+        Map<ComboKind, List<ConnectorRiotComboGateway.GeneralCombo>> generaux = Parallele.parCle(candidatsParType.keySet(),
                 type -> {
                     List<Map<Integer, String>> candidats = candidatsParType.get(type);
                     List<ConnectorRiotComboGateway.Slot> slots = new ArrayList<>();
@@ -331,11 +318,11 @@ public class DraftAdviceService {
                     return combos.combos(slots, REPERE_SOLIDE).orElseGet(List::of);
                 });
         List<DraftAdviceDto.Combo> propositions = new ArrayList<>();
-        for (Type type : candidatsParType.keySet()) {
+        for (ComboKind type : candidatsParType.keySet()) {
             List<Map<Integer, String>> candidats = candidatsParType.get(type);
             generaux.get(type).stream()
                     .filter(general -> (double) general.wins() / general.games() > 0.5)
-                    .filter(general -> ensemble.getOrDefault(cle(type.kind(), general.championIds()), 0L) < DEJA_ESSAYE)
+                    .filter(general -> ensemble.getOrDefault(cle(type.name(), general.championIds()), 0L) < DEJA_ESSAYE)
                     .filter(general -> !Objects.equals(candidats.get(0).get(general.championIds().get(0)),
                             candidats.get(1).get(general.championIds().get(1))))
                     .sorted(Comparator.comparingDouble((ConnectorRiotComboGateway.GeneralCombo g) ->
@@ -347,8 +334,8 @@ public class DraftAdviceService {
                             int id = general.championIds().get(i);
                             choix.add(new Choix(candidats.get(i).get(id), type.positions().get(i), id));
                         }
-                        long joues = ensemble.getOrDefault(cle(type.kind(), general.championIds()), 0L);
-                        propositions.add(new DraftAdviceDto.Combo(type.kind(),
+                        long joues = ensemble.getOrDefault(cle(type.name(), general.championIds()), 0L);
+                        propositions.add(new DraftAdviceDto.Combo(type.name(),
                                 choix.stream().map(rendu::pick).toList(), joues, 0, 0,
                                 borneBasse(general.wins(), general.games()), true, general.games(),
                                 (double) general.wins() / general.games(), null));
@@ -367,8 +354,7 @@ public class DraftAdviceService {
         double moyenne = (double) victoires / parties.size();
         Map<Integer, Compte> face = new HashMap<>();
         for (RiotStatsGateway.SharedMatch partie : parties) {
-            int camp = partie.players().get(0).side();
-            partie.others().stream().filter(o -> o.side() != camp).map(RiotStatsGateway.SharedMatchPlayer::championId)
+            VueDePartie.de(partie).adverses().stream().map(RiotStatsGateway.SharedMatchPlayer::championId)
                     .distinct()
                     .forEach(id -> face.computeIfAbsent(id, c -> new Compte()).ajoute(Boolean.TRUE.equals(partie.win())));
         }
@@ -408,20 +394,19 @@ public class DraftAdviceService {
             }
             for (RiotStatsGateway.InsightPlayer nous : insight.participants()) {
                 TeamMember membre = parPuuid.get(nous.puuid());
-                if (membre == null || nous.at15() == null || !ORDRE.contains(nous.position())) {
+                if (membre == null) {
                     continue;
                 }
-                insight.participants().stream()
-                        .filter(eux -> eux.side() != nous.side() && nous.position().equals(eux.position())
-                                && eux.at15() != null)
-                        .findFirst()
-                        .ifPresent(eux -> {
-                            double[] somme = ecarts.computeIfAbsent(
-                                    membre.getMemberId() + "|" + nous.position() + "|" + eux.championId(),
-                                    k -> new double[2]);
-                            somme[0]++;
-                            somme[1] += nous.at15().gold() - eux.at15().gold();
-                        });
+                VueDePartie.visAVis(nous, insight.participants()).ifPresent(eux -> {
+                    Integer or = VueDePartie.ecartA15(nous, eux, RiotStatsGateway.At15::gold);
+                    if (or != null) {
+                        double[] somme = ecarts.computeIfAbsent(
+                                membre.getMemberId() + "|" + nous.position() + "|" + eux.championId(),
+                                k -> new double[2]);
+                        somme[0]++;
+                        somme[1] += or;
+                    }
+                });
             }
         }
         return ecarts.entrySet().stream()
@@ -431,7 +416,8 @@ public class DraftAdviceService {
                     String[] parts = e.getKey().split("\\|");
                     int championId = Integer.parseInt(parts[2]);
                     RiotChampionGateway.Champion champion = catalogue.get(championId);
-                    return new DraftAdviceDto.LaneThreat(parts[0], noms.get(parts[0]), ROLES.get(parts[1]).name(),
+                    return new DraftAdviceDto.LaneThreat(parts[0], noms.get(parts[0]),
+                            GameRole.dePosition(parts[1]).orElseThrow().name(),
                             championId, champion == null ? null : champion.key(),
                             champion == null ? null : champion.name(), champion == null ? null : champion.iconUrl(),
                             (long) e.getValue()[0], e.getValue()[1] / e.getValue()[0]);
