@@ -12,10 +12,11 @@ import schultz.thomas.schub.core.api.client.riot.SeoCreatorsDto;
 import schultz.thomas.schub.core.api.dto.AccountsByRankDto;
 import schultz.thomas.schub.core.api.dto.CrawlerDto;
 import schultz.thomas.schub.core.api.dto.CrawlerToggleRequest;
+import schultz.thomas.schub.core.api.dto.HistoryWindowDto;
 import schultz.thomas.schub.core.api.dto.IngestLoadDto;
 import schultz.thomas.schub.core.api.dto.IngestSummaryDto;
+import schultz.thomas.schub.core.api.mapper.IngestDtoMapper;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
-import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.Permission;
@@ -32,6 +33,7 @@ public class IngestLoadController {
     private final PermissionEvaluator permissionEvaluator;
     private final UserService userService;
     private final ConnectorRiotSeoGateway seoGateway;
+    private final IngestDtoMapper dtos;
 
     @GetMapping("/load")
     public ResponseEntity<IngestLoadDto> load(
@@ -83,12 +85,12 @@ public class IngestLoadController {
     }
 
     @PutMapping("/history-window")
-    public ResponseEntity<HistoryWindow> updateHistoryWindow(
+    public ResponseEntity<HistoryWindowDto> updateHistoryWindow(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
-            @RequestBody HistoryWindow window) {
+            @RequestBody HistoryWindowDto window) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
-        return ResponseEntity.ok(riotConnector.updateHistoryWindow(window));
+        return ResponseEntity.ok(dtos.toDto(riotConnector.updateHistoryWindow(dtos.fromDto(window))));
     }
 
     @GetMapping("/seo-creators")

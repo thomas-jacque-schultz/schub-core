@@ -28,6 +28,7 @@ public class TeamProjection {
 
     private final PermissionEvaluator permissionEvaluator;
     private final MemberDirectory memberDirectory;
+    private final TeamDtoMapper dtos;
 
     public List<TeamSummaryDto> toSummaries(List<Team> teams, User actor) {
         return teams.stream().map(team -> toSummary(team, actor)).toList();
@@ -65,7 +66,7 @@ public class TeamProjection {
                 droits.contains(Permission.ROSTER_EDIT),
                 droits.contains(Permission.COMPOSITION_EDIT),
                 team.isPublicPage(),
-                team.getTrainingSlots() == null ? List.of() : team.getTrainingSlots());
+                team.getTrainingSlots() == null ? List.of() : dtos.toSlotDtos(team.getTrainingSlots()));
     }
 
     public List<CompositionDto> toDtos(List<Composition> compositions, Team team, User actor) {

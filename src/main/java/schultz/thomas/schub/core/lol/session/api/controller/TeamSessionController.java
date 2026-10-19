@@ -13,8 +13,9 @@ import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
+import schultz.thomas.schub.core.lol.session.api.dto.TeamSessionDto;
+import schultz.thomas.schub.core.lol.session.api.mapper.SessionSummaryDtoMapper;
 import schultz.thomas.schub.core.lol.session.business.service.SessionWatcher;
-import schultz.thomas.schub.core.lol.session.data.model.TeamSession;
 import schultz.thomas.schub.core.lol.session.data.repository.TeamSessionRepository;
 import schultz.thomas.schub.core.lol.team.business.service.TeamService;
 
@@ -34,24 +35,25 @@ public class TeamSessionController {
     private final PermissionEvaluator permissionEvaluator;
     private final TeamSessionRepository sessions;
     private final SessionWatcher watcher;
+    private final SessionSummaryDtoMapper dtos;
 
     @GetMapping
-    public List<TeamSession> list(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+    public List<TeamSessionDto> list(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                   @PathVariable String teamId,
                                   @RequestParam(defaultValue = "60") int days) {
         teamService.requireVisible(userService.requireActor(actorId), teamId);
-        return sessions.findByTeamIdAndDayGreaterThanEqualOrderByStartedAtDesc(teamId,
-                LocalDate.now(PARIS).minusDays(Math.clamp(days, 1, 366)));
+        return dtos.toSessionDtos(sessions.findByTeamIdAndDayGreaterThanEqualOrderByStartedAtDesc(teamId,
+                LocalDate.now(PARIS).minusDays(Math.clamp(days, 1, 366))));
     }
 
     // Relance la détection d'une journée passée : l'observateur ne repasse pas de lui-même.
     @PostMapping("/detect")
-    public List<TeamSession> detect(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+    public List<TeamSessionDto> detect(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                     @PathVariable String teamId,
                                     @RequestParam LocalDate day) {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.TEAM_MANAGE, TeamService.ref(teamId));
-        return watcher.detect(teamService.require(teamId), day);
+        return dtos.toSessionDtos(watcher.detect(teamService.require(teamId), day));
     }
 
 }

@@ -1,7 +1,5 @@
 package schultz.thomas.schub.core.augur.api.dto;
 
-import schultz.thomas.schub.core.augur.data.model.ConditionTrace;
-import schultz.thomas.schub.core.augur.data.model.FindingRecord;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 
 import java.util.List;
@@ -18,13 +16,7 @@ public record FindingDto(
         double confidence,
         boolean experimental,
         Map<String, String> limits,
-        List<ConditionTrace> evidence,
+        List<ConditionTraceDto> evidence,
         Map<String, String> context
 ) {
-
-    public static FindingDto of(FindingRecord record, PatternVersion pattern) {
-        return new FindingDto(record.patternKey(), pattern.getLabel(), pattern.getSentence(), pattern.getPolarity(),
-                pattern.getCategory(), pattern.getNature(), record.degree(), pattern.isExperimental(), pattern.getLimits(),
-                record.conditions(), record.context());
-    }
 }
