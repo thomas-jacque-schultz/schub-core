@@ -9,6 +9,7 @@ import schultz.thomas.schub.core.augur.business.service.Sensors;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
 import schultz.thomas.schub.core.team.api.dto.StatLineDto;
 import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
+import schultz.thomas.schub.core.team.business.model.GameRole;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -26,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LolSensors implements Sensors {
 
     private static final Duration FRAICHEUR_REFERENTIEL = Duration.ofHours(1);
-    private static final String SUPPORT = "UTILITY";
 
     private final RiotStatsGateway statsGateway;
     private final ObjectMapper objectMapper;
@@ -118,7 +118,7 @@ public class LolSensors implements Sensors {
         return new Signals()
                 .context("position", poste)
                 .context("tier", palier)
-                .put("isSupport", SUPPORT.equals(poste) ? 1 : 0, null);
+                .put("isSupport", GameRole.SUP.position().equals(poste) ? 1 : 0, null);
     }
 
     private static Double centile(Optional<ReferenceGridDto> grille, String metrique, String palier, double valeur) {

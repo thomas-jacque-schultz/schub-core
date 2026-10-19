@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
 import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
+import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.service.RiotStatsGateway;
 
 import java.util.Set;
@@ -20,7 +21,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class ReferenceController {
 
-    private static final Set<String> POSTES = Set.of("TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY");
     private static final Set<String> PORTEES = Set.of("GAME", "MEAN");
 
     private final RiotStatsGateway statsGateway;
@@ -38,7 +38,7 @@ public class ReferenceController {
             @RequestParam(defaultValue = "MEAN") String scope,
             @RequestParam(required = false) String tier,
             @RequestParam(required = false) String patch) {
-        if (!POSTES.contains(position) || !PORTEES.contains(scope)) {
+        if (!GameRole.estUnPoste(position) || !PORTEES.contains(scope)) {
             return ResponseEntity.badRequest().build();
         }
         return statsGateway.referenceGrid(position, scope, tier, patch)
