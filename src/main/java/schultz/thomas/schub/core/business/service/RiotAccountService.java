@@ -230,6 +230,7 @@ public class RiotAccountService {
         if (demandee) {
             log.info("Collecte des parties demandée pour le compte {}", acteur.getId());
         }
+        riotConnectorService.requestBackfill(puuid);
         return demandee;
     }
 
@@ -250,7 +251,9 @@ public class RiotAccountService {
             return null;
         }
         return riotConnectorService.ingestOf(puuid)
-                .map(ingest -> new RiotIngestDto(ingest.pending(), ingest.running(), ingest.estimatedReadyAt()))
+                .map(ingest -> new RiotIngestDto(ingest.pending(), ingest.running(), ingest.estimatedReadyAt(),
+                        ingest.backfill() == null ? null : new RiotIngestDto.Backfill(ingest.backfill().since(),
+                                ingest.backfill().found(), ingest.backfill().collected())))
                 .orElse(null);
     }
 
