@@ -70,6 +70,17 @@ class RiotAccountServiceTest {
     }
 
     @Test
+    @DisplayName("Lier un compte demande aussi le rattrapage de ses derniers mois (Schub#113)")
+    void lierDemandeLeRattrapage() {
+        when(riotIdResolver.resolve("J1HUIV", "000")).thenReturn(RiotIdResolution.resolved(PUUID));
+
+        service.link(acteur, "J1HUIV#000", false);
+
+        verify(riotConnectorService).requestIngest(PUUID);
+        verify(riotConnectorService).requestBackfill(PUUID);
+    }
+
+    @Test
     @DisplayName("Le puuid ne figure jamais dans la réponse — aucun écran n'en a l'usage")
     void neSertJamaisLePuuid() {
         when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.resolved(PUUID));

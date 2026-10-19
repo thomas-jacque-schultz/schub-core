@@ -36,7 +36,7 @@ public class HttpRiotConnectorService implements RiotConnectorService {
                     .body(IngestResponse.class);
             return Optional.ofNullable(response)
                     .map(body -> new PlayerIngest(body.pending(), body.running(), body.estimatedReadyAt(),
-                            body.priorityPending()));
+                            body.priorityPending(), body.backfill()));
         } catch (RestClientException indisponible) {
             log.debug("État d'ingestion indisponible pour {} : {}", puuid, indisponible.getMessage());
             return Optional.empty();
@@ -164,6 +164,17 @@ public class HttpRiotConnectorService implements RiotConnectorService {
     }
 
     @Override
+    public boolean requestBackfill(String puuid) {
+        try {
+            restClient.post().uri("/players/{puuid}/matches/backfill", puuid).retrieve().toBodilessEntity();
+            return true;
+        } catch (RestClientException indisponible) {
+            log.warn("Rattrapage non demandé pour {} : {}", puuid, indisponible.getMessage());
+            return false;
+        }
+    }
+
+    @Override
     public boolean requestPreview(String puuid, boolean slow) {
         try {
             restClient.post()
@@ -197,7 +208,8 @@ public class HttpRiotConnectorService implements RiotConnectorService {
         }
     }
 
-    record IngestResponse(long pending, long running, Instant estimatedReadyAt, long priorityPending) {
+    record IngestResponse(long pending, long running, Instant estimatedReadyAt, long priorityPending,
+                          Backfill backfill) {
     }
 
     record LoadResponse(long pending, long running, long failed, double callsPerMinute,

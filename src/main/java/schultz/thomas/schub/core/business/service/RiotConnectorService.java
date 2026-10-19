@@ -11,6 +11,9 @@ public interface RiotConnectorService {
 
     boolean requestIngest(String puuid);
 
+    // Rattrapage des derniers mois d'un compte lié (Schub#113) ; le connecteur décide de la profondeur, ou de rien.
+    boolean requestBackfill(String puuid);
+
     // Joueur recherché : ses dernières parties d'abord ; slow, au compte-gouttes.
     boolean requestPreview(String puuid, boolean slow);
 
@@ -37,11 +40,15 @@ public interface RiotConnectorService {
     List<KnownPlayer> search(String query, int limit);
 
     // priorityPending : tâches demandées pour ce joueur (aperçu d'un joueur recherché) encore en file.
-    record PlayerIngest(long pending, long running, Instant estimatedReadyAt, long priorityPending) {
+    record PlayerIngest(long pending, long running, Instant estimatedReadyAt, long priorityPending, Backfill backfill) {
 
         public PlayerIngest(long pending, long running, Instant estimatedReadyAt) {
-            this(pending, running, estimatedReadyAt, 0);
+            this(pending, running, estimatedReadyAt, 0, null);
         }
+    }
+
+    // found : null tant que les identifiants ne sont pas relevés.
+    record Backfill(Instant since, Integer found, long collected) {
     }
 
     record IngestSummary(Counts matches, Counts profiles) {
