@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-// Les combos qui gagnent, palier par palier (Schub#112) : les mêmes seuils de confiance que les conseils de draft.
+// Les combos qui gagnent, palier par palier (Schub#112). Plancher de 20 parties : sous lui, la borne de Wilson
+// classait des 7/7 devant un 74 % sur 42 parties, et la page se lisait comme une loterie.
 @Service
 @RequiredArgsConstructor
 public class TierCombosService {
@@ -20,7 +21,7 @@ public class TierCombosService {
             "ADC_SUP", List.of("BOTTOM", "UTILITY"),
             "JGL_MID", List.of("JUNGLE", "MIDDLE"),
             "JGL_MID_SUP", List.of("JUNGLE", "MIDDLE", "UTILITY"));
-    static final int PARTIES_MINIMUM = 3;
+    static final int PARTIES_MINIMUM = 20;
     static final int LIGNES = 30;
 
     private final ConnectorRiotComboGateway combos;
@@ -34,14 +35,12 @@ public class TierCombosService {
                 .orElseThrow(RiotConnectorUnavailableException::new);
         Map<Integer, RiotChampionGateway.Champion> catalogue = championGateway.catalogue()
                 .map(RiotChampionGateway.Catalogue::parId).orElseGet(Map::of);
-        int seuil = kind.equals("JGL_MID_SUP") ? DraftAdviceService.TRIO_SEUIL : DraftAdviceService.DUO_SEUIL;
         List<TierCombosDto.Line> lignes = lus.combos().stream()
                 .map(combo -> new TierCombosDto.Line(
                         combo.championIds().stream().map(id -> champion(catalogue, id)).toList(),
-                        combo.games(), combo.wins(), (double) combo.wins() / combo.games(), combo.lowerBound(),
-                        combo.games() < seuil))
+                        combo.games(), combo.wins(), (double) combo.wins() / combo.games(), combo.lowerBound()))
                 .toList();
-        return new TierCombosDto(tier, kind, TYPES.get(kind), lus.computedAt(), lus.games(), seuil, lignes);
+        return new TierCombosDto(tier, kind, TYPES.get(kind), lus.computedAt(), lus.games(), PARTIES_MINIMUM, lignes);
     }
 
     private static TierCombosDto.Champion champion(Map<Integer, RiotChampionGateway.Champion> catalogue, int id) {

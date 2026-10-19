@@ -10,12 +10,11 @@ public record TierCombosDto(
         List<String> positions,
         Instant computedAt,
         long games,
-        int threshold,
+        int minGames,
         List<Line> combos
 ) {
 
-    public record Line(List<Champion> champions, long games, long wins, double winRate, double lowerBound,
-                       boolean lowConfidence) {
+    public record Line(List<Champion> champions, long games, long wins, double winRate, double lowerBound) {
     }
 
     public record Champion(int id, String key, String name, String iconUrl) {
