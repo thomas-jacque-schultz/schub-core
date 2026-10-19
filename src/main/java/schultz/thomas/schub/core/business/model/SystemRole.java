@@ -18,7 +18,7 @@ public enum SystemRole {
             Permission.SERVER_CREATE, Permission.SERVER_EDIT, Permission.SERVER_DELETE,
             Permission.PORT_VIEW, Permission.PORT_RULE_EDIT,
             Permission.DISCORD_CHANNEL_MANAGE,
-            Permission.USER_VIEW, Permission.USER_ROLE_ASSIGN,
+            Permission.USER_VIEW,
             Permission.TEAM_CREATE)),
 
     OWNER(EnumSet.allOf(Permission.class));

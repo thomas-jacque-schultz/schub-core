@@ -35,6 +35,18 @@ class SystemRolePermissionsTest {
     }
 
     @Test
+    @DisplayName("seul OWNER change le rôle des autres (Schub#110)")
+    void attributionDesRolesReserveeAOwner() {
+        for (SystemRole role : SystemRole.values()) {
+            if (role != SystemRole.OWNER) {
+                assertThat(role.permissions())
+                        .as("%s ne doit pas attribuer de rôle", role)
+                        .doesNotContain(Permission.USER_ROLE_ASSIGN, Permission.ROLE_MANAGE);
+            }
+        }
+    }
+
+    @Test
     @DisplayName("mais un administrateur reste une personne, qui monte son équipe")
     void administratorPeutCreerSonEquipe() {
         assertThat(SystemRole.ADMINISTRATOR.permissions()).contains(Permission.TEAM_CREATE);
