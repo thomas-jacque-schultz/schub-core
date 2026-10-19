@@ -22,7 +22,7 @@ class TierCombosServiceTest {
     private final TierCombosService service = new TierCombosService(combos, champions);
 
     @Test
-    @DisplayName("chaque ligne nomme ses champions et porte le logo sous le seuil des conseils de draft")
+    @DisplayName("chaque ligne nomme ses champions, et un champion absent du catalogue reste sans nom")
     void lignesNommees() {
         when(combos.tierCombos("SILVER_GOLD", "ADC_SUP", TierCombosService.PARTIES_MINIMUM, TierCombosService.LIGNES))
                 .thenReturn(Optional.of(new ConnectorRiotComboGateway.TierCombos("SILVER_GOLD", "ADC_SUP",
@@ -38,8 +38,7 @@ class TierCombosServiceTest {
         assertThat(dto.positions()).containsExactly("BOTTOM", "UTILITY");
         assertThat(dto.combos().get(0).champions()).extracting(TierCombosDto.Champion::name)
                 .containsExactly("Ashe", "Thresh");
-        assertThat(dto.combos().get(0).lowConfidence()).isFalse();
-        assertThat(dto.combos().get(1).lowConfidence()).isTrue();
+        assertThat(dto.minGames()).isEqualTo(TierCombosService.PARTIES_MINIMUM);
         assertThat(dto.combos().get(1).champions().get(0).name()).isNull();
     }
 
