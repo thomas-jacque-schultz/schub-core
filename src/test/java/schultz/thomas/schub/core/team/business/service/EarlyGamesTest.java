@@ -2,7 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import schultz.thomas.schub.core.team.business.model.EarlyGame;
+import schultz.thomas.schub.core.team.business.model.EarlyGameView;
 import schultz.thomas.schub.core.team.business.model.TeamEarlyGame;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
@@ -56,15 +56,15 @@ class EarlyGamesTest {
     @Test
     @DisplayName("Vue d'une partie : chaque gank dit depuis notre camp, pertes comprises")
     void vue() {
-        EarlyGame vue = EarlyGames.vue(early(), 100, PAR_PUUID);
+        EarlyGameView vue = EarlyGames.vue(early(), 100, PAR_PUUID);
 
-        assertThat(vue.ganks()).extracting(EarlyGame.Gank::ours).containsExactly(false, false, true);
-        EarlyGame.Gank subi = vue.ganks().getFirst();
+        assertThat(vue.ganks()).extracting(EarlyGameView.Gank::ours).containsExactly(false, false, true);
+        EarlyGameView.Gank subi = vue.ganks().getFirst();
         assertThat(subi.targetMemberIds()).containsExactly("m-top");
         assertThat(subi.fallenMemberIds()).containsExactly("m-top");
         assertThat(subi.alliesLost()).isEqualTo(1);
         assertThat(subi.enemiesLost()).isZero();
-        EarlyGame.Gank fait = vue.ganks().getLast();
+        EarlyGameView.Gank fait = vue.ganks().getLast();
         assertThat(fait.alliesLost()).isEqualTo(1);
         assertThat(fait.enemiesLost()).isZero();
         assertThat(vue.ourJungler().memberId()).isEqualTo("m-jgl");

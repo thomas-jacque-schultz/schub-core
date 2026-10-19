@@ -9,7 +9,7 @@ public record TeamGameDetail(
         List<Matchup> matchups,
         boolean timelineAvailable,
         Instant ranksObservedAt,
-        EarlyGame early,
+        EarlyGameView early,
         String viewerMemberId,
         Integer days,
         List<GamePlayerMetrics> metrics
