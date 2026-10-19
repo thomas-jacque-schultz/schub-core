@@ -28,11 +28,11 @@ public class MeController {
 
     // L'aperçu du résumé de session qu'aurait reçu ce compte pour ce jour (Schub#99) : rien n'est envoyé.
     @GetMapping("/session-summary")
-    public ResponseEntity<Map<String, String>> sessionSummary(
+    public ResponseEntity<Map<String, Object>> sessionSummary(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestParam LocalDate day) {
         return sessionSummaries.preview(userService.requireActor(actorId), day)
-                .map(texte -> ResponseEntity.ok(Map.of("text", texte)))
+                .map(encadres -> ResponseEntity.ok(Map.<String, Object>of("embeds", encadres)))
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 

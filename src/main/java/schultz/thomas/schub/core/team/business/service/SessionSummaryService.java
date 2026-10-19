@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.service.ConnectorPremadeLabGateway;
+import schultz.thomas.schub.core.business.service.ConnectorPremadeLabGateway.Embed;
 import schultz.thomas.schub.core.data.model.SessionSummaryPreferences;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
@@ -22,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,10 +43,25 @@ public class SessionSummaryService {
 
     static final ZoneId PARIS = ZoneId.of("Europe/Paris");
     static final DateTimeFormatter JOUR = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
+    static final DateTimeFormatter HEURE = DateTimeFormatter.ofPattern("H' h 'mm", Locale.FRENCH);
     // Un écart de moins de 10 % à sa propre moyenne n'est pas un constat.
     static final double ECART_NOTABLE = 0.10;
     static final int AVANCE_A_15 = 1000;
     static final int REFERENCE_JOURS = 90;
+    static final int OR_PREMADELAB = 0xC9A227;
+    // Limites de Discord : 10 encadrés et 6 000 caractères par message, 25 champs par encadré.
+    static final int ENCADRES_MAX = 10;
+    static final int CARACTERES_MAX = 6000;
+    static final int PARTIES_MAX = 24;
+    static final Map<String, String> POSTES = Map.of("TOP", "Top", "JUNGLE", "Jungle", "MIDDLE", "Mid",
+            "BOTTOM", "ADC", "UTILITY", "Support");
+    // Les modes hors Faille : pas de poste, donc pas de vis-à-vis.
+    static final Map<String, String> MODES = Map.ofEntries(Map.entry("ARAM", "ARAM"),
+            Map.entry("ARAM_MAYHEM", "ARAM Mayhem"), Map.entry("ARAM_CLASH", "Clash ARAM"),
+            Map.entry("ARENA", "Arène"), Map.entry("URF", "URF"), Map.entry("ARURF", "ARURF"),
+            Map.entry("ONE_FOR_ALL", "Un pour tous"), Map.entry("NEXUS_BLITZ", "Nexus Blitz"),
+            Map.entry("ULTIMATE_SPELLBOOK", "Grimoire ultime"), Map.entry("BRAWL", "Brawl"),
+            Map.entry("SWARM", "Swarm"), Map.entry("COOP_VS_AI", "Contre l'IA"));
 
     private final TeamSessionRepository sessions;
     private final TeamRepository teams;
@@ -72,20 +89,16 @@ public class SessionSummaryService {
                     || jour.toString().equals(user.get().getLastSessionSummaryDay())) {
                 continue;
             }
-            List<TeamSession> voulues = voulues(user.get(), entree.getValue());
-            if (voulues.isEmpty()) {
-                continue;
-            }
-            String texte = voulues.stream()
+            List<Embed> encadres = limite(voulues(user.get(), entree.getValue()).stream()
                     .map(s -> compose(equipes.computeIfAbsent(s.teamId(), id -> teams.findById(id).orElse(null)),
                             s, entree.getKey().split("\\|")[1]))
                     .filter(Objects::nonNull)
-                    .reduce((a, b) -> a + "\n\n" + b).orElse(null);
-            if (texte == null) {
+                    .toList());
+            if (encadres.isEmpty()) {
                 continue;
             }
-            ConnectorPremadeLabGateway.Status statut = premadelab.sendDirectMessage(user.get().getDiscordId(),
-                    tronque(texte)).status();
+            ConnectorPremadeLabGateway.Status statut =
+                    premadelab.sendDirectMessage(user.get().getDiscordId(), encadres).status();
             switch (statut) {
                 case SENT -> {
                     user.get().setLastSessionSummaryDay(jour.toString());
@@ -102,15 +115,15 @@ public class SessionSummaryService {
     }
 
     // Ce que recevrait ce compte pour ce jour, sans rien envoyer.
-    public Optional<String> preview(User user, LocalDate jour) {
-        return texte(user, jour, true);
+    public Optional<List<Embed>> preview(User user, LocalDate jour) {
+        return encadres(user, jour, true);
     }
 
     public record RecentSession(LocalDate day, Instant startedAt, String teamName, long games, long wins,
                                 boolean planned) {
     }
 
-    public record TestResult(String text, ConnectorPremadeLabGateway.Status status, String detail) {
+    public record TestResult(List<Embed> embeds, ConnectorPremadeLabGateway.Status status, String detail) {
     }
 
     public List<RecentSession> recentFor(User user, int jours) {
@@ -126,31 +139,56 @@ public class SessionSummaryService {
     }
 
     // Debug : ni préférences, ni envoi unique par jour, et l'envoi n'est pas noté sur le compte.
-    public Optional<TestResult> sendTest(User user, LocalDate jour) {
-        return texte(user, jour, false).map(texte -> {
-            if (user.getDiscordId() == null) {
-                return new TestResult(texte, ConnectorPremadeLabGateway.Status.DISABLED, "Aucun compte Discord lié");
+    public Optional<TestResult> sendTest(User user, LocalDate jour, boolean envoyer) {
+        return encadres(user, jour, false).map(encadres -> {
+            if (!envoyer) {
+                return new TestResult(encadres, null, null);
             }
-            ConnectorPremadeLabGateway.Result envoi = premadelab.sendDirectMessage(user.getDiscordId(), tronque(texte));
-            return new TestResult(texte, envoi.status(), envoi.detail());
+            if (user.getDiscordId() == null) {
+                return new TestResult(encadres, ConnectorPremadeLabGateway.Status.DISABLED,
+                        "Aucun compte Discord lié");
+            }
+            ConnectorPremadeLabGateway.Result envoi = premadelab.sendDirectMessage(user.getDiscordId(), encadres);
+            return new TestResult(encadres, envoi.status(), envoi.detail());
         });
     }
 
-    private Optional<String> texte(User user, LocalDate jour, boolean selonPreferences) {
-        List<String> parties = new ArrayList<>();
+    private Optional<List<Embed>> encadres(User user, LocalDate jour, boolean selonPreferences) {
+        List<Embed> encadres = new ArrayList<>();
         presences(jour).forEach((cle, liste) -> {
             if (cle.startsWith(user.getId() + "|")) {
                 (selonPreferences ? voulues(user, liste) : liste).forEach(s -> teams.findById(s.teamId())
                         .map(team -> compose(team, s, cle.split("\\|")[1]))
-                        .ifPresent(parties::add));
+                        .ifPresent(encadres::add));
             }
         });
-        return parties.isEmpty() ? Optional.empty() : Optional.of(String.join("\n\n", parties));
+        return encadres.isEmpty() ? Optional.empty() : Optional.of(limite(encadres));
     }
 
-    // Limite de Discord : 2 000 caractères par message.
-    private static String tronque(String texte) {
-        return texte.length() > 2000 ? texte.substring(0, 1997) + "…" : texte;
+    static List<Embed> limite(List<Embed> encadres) {
+        List<Embed> retenus = new ArrayList<>();
+        int total = 0;
+        for (Embed encadre : encadres) {
+            total += taille(encadre);
+            if (retenus.size() == ENCADRES_MAX || (!retenus.isEmpty() && total > CARACTERES_MAX)) {
+                break;
+            }
+            retenus.add(encadre);
+        }
+        return retenus;
+    }
+
+    private static int taille(Embed encadre) {
+        int taille = longueur(encadre.title()) + longueur(encadre.description())
+                + (encadre.footer() == null ? 0 : longueur(encadre.footer().text()));
+        for (Embed.Field champ : encadre.fields()) {
+            taille += longueur(champ.name()) + longueur(champ.value());
+        }
+        return taille;
+    }
+
+    private static int longueur(String texte) {
+        return texte == null ? 0 : texte.length();
     }
 
     private static List<TeamSession> voulues(User user, List<TeamSession> liste) {
@@ -173,31 +211,110 @@ public class SessionSummaryService {
         return parMembre;
     }
 
-    String compose(Team team, TeamSession session, String memberId) {
+    // Une ligne par partie (poste, champions, début de partie, l'équipe), puis le bilan de la session.
+    Embed compose(Team team, TeamSession session, String memberId) {
         if (team == null) {
             return null;
         }
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, String> noms = gamesStats.noms(joueurs);
+        Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
         TeamMember moi = joueurs.stream().filter(m -> memberId.equals(m.getMemberId())).findFirst().orElse(null);
+        String monPuuid = moi == null ? null : moi.getRiotPuuid();
+        List<RiotStatsGateway.SharedMatch> parties = statsGateway.sharedMatchesAmong(List.copyOf(parPuuid.keySet()),
+                        SessionWatcher.MEMBRES_MINIMUM, session.matchIds())
+                .map(RiotStatsGateway.SharedMatches::matches).orElseGet(List::of).stream()
+                .sorted(Comparator.comparing(RiotStatsGateway.SharedMatch::startedAt))
+                .toList();
+        Map<String, RiotStatsGateway.Insight> insights = new HashMap<>();
+        statsGateway.insights(session.matchIds()).orElseGet(List::of)
+                .forEach(insight -> insights.put(insight.matchId(), insight));
+
+        List<Embed.Field> champs = new ArrayList<>();
+        parties.stream().limit(PARTIES_MAX).forEach(partie -> champs.add(
+                partie(partie, monPuuid, insights.get(partie.matchId()))));
+        champs.add(new Embed.Field("Bilan", bilan(team, session, monPuuid, parties, parPuuid, noms, insights), false));
+
+        List<String> avec = joueurs.stream()
+                .filter(m -> session.memberIds().contains(m.getMemberId()) && !memberId.equals(m.getMemberId()))
+                .map(m -> sansTag(noms.get(m.getMemberId())))
+                .filter(Objects::nonNull)
+                .toList();
         String jour = session.startedAt().atZone(PARIS).format(JOUR);
-        StringBuilder texte = new StringBuilder()
-                .append("**").append(session.planned() ? "Séance d'entraînement du " : "Session du ").append(jour)
-                .append("** · ").append(team.getName()).append('\n')
-                .append(session.games()).append(" parties : ").append(session.wins()).append(" V – ")
-                .append(session.games() - session.wins()).append(" D.\n");
-        if (moi != null && moi.getRiotPuuid() != null) {
-            List<String> toi = toi(moi.getRiotPuuid(), session);
-            if (!toi.isEmpty()) {
-                texte.append("\n**Toi**\n").append(String.join("\n", toi)).append('\n');
-            }
+        return new Embed(
+                (session.planned() ? "Séance d'entraînement du " : "Session du ") + jour + " · " + team.getName(),
+                premadelabUrl + "/teams/" + team.getId(),
+                "De " + session.startedAt().atZone(PARIS).format(HEURE) + " à "
+                        + session.endedAt().atZone(PARIS).format(HEURE)
+                        + (avec.isEmpty() ? "" : ", avec " + String.join(", ", avec)),
+                OR_PREMADELAB,
+                champs,
+                new Embed.Footer("PremadeLab"));
+    }
+
+    private static Embed.Field partie(RiotStatsGateway.SharedMatch partie, String monPuuid,
+                                      RiotStatsGateway.Insight insight) {
+        RiotStatsGateway.SharedMatchPlayer moi = partie.players().stream()
+                .filter(j -> j.puuid().equals(monPuuid)).findFirst().orElse(null);
+        String poste = moi == null ? null : POSTES.get(moi.position());
+        RiotStatsGateway.SharedMatchPlayer adverse = poste == null ? null : partie.others().stream()
+                .filter(j -> j.side() != moi.side() && moi.position().equals(j.position()))
+                .findFirst().orElse(null);
+        String resultat = partie.win() == null ? "➖" : partie.win() ? "✅ Victoire" : "❌ Défaite";
+        String contexte = moi == null ? "sans toi" : poste != null ? poste : MODES.get(partie.queue());
+        String nom = resultat + (contexte == null ? "" : " · " + contexte) + " · "
+                + partie.durationSeconds() / 60 + " min";
+
+        List<String> lignes = new ArrayList<>();
+        if (moi != null) {
+            lignes.add("**" + moi.championName() + "**" + (adverse == null ? "" : " contre " + adverse.championName())
+                    + " · " + moi.kills() + "/" + moi.deaths() + "/" + moi.assists());
         }
-        List<String> equipe = equipe(team, session, joueurs, noms);
-        if (!equipe.isEmpty()) {
-            texte.append("\n**L'équipe**\n").append(String.join("\n", equipe)).append('\n');
+        Map<String, RiotStatsGateway.At15> a15 = new HashMap<>();
+        if (insight != null && insight.participants() != null) {
+            insight.participants().stream().filter(j -> j.at15() != null).forEach(j -> a15.put(j.puuid(), j.at15()));
         }
-        texte.append("\nLe détail : ").append(premadelabUrl).append("/teams/").append(team.getId());
-        return texte.toString();
+        if (adverse != null && a15.containsKey(moi.puuid()) && a15.containsKey(adverse.puuid())) {
+            RiotStatsGateway.At15 nous = a15.get(moi.puuid());
+            RiotStatsGateway.At15 eux = a15.get(adverse.puuid());
+            lignes.add("À 15 min : " + signe(nous.gold() - eux.gold()) + " or et " + signe(nous.cs() - eux.cs())
+                    + " CS sur lui, " + nous.kills() + "/" + nous.deaths() + "/" + nous.assists());
+        }
+        Integer avance = avance(insight, partie);
+        if (avance != null) {
+            lignes.add("Équipe : " + signe(avance) + " or à 15 min");
+        }
+        return new Embed.Field(nom, lignes.isEmpty() ? "—" : String.join("\n", lignes), false);
+    }
+
+    static String sansTag(String riotId) {
+        return riotId == null || riotId.indexOf("#") <= 0 ? riotId : riotId.substring(0, riotId.indexOf("#"));
+    }
+
+    private String bilan(Team team, TeamSession session, String monPuuid, List<RiotStatsGateway.SharedMatch> parties,
+                         Map<String, TeamMember> parPuuid, Map<String, String> noms,
+                         Map<String, RiotStatsGateway.Insight> insights) {
+        long secondes = parties.stream().mapToLong(RiotStatsGateway.SharedMatch::durationSeconds).sum();
+        List<String> lignes = new ArrayList<>();
+        lignes.add("**" + session.wins() + " V – " + (session.games() - session.wins()) + " D** en "
+                + session.games() + " parties · " + duree(secondes) + " de jeu");
+        if (monPuuid != null) {
+            lignes.addAll(toi(monPuuid, session));
+        }
+        lignes.addAll(equipe(team, session, parties, parPuuid, noms, insights));
+        return String.join("\n", lignes);
+    }
+
+    static String signe(int valeur) {
+        int absolu = Math.abs(valeur);
+        String chiffre = absolu >= 1000 ? String.format(Locale.FRANCE, "%.1f k", absolu / 1000.0)
+                : String.valueOf(absolu);
+        return (valeur < 0 ? "−" : "+") + chiffre;
+    }
+
+    static String duree(long secondes) {
+        long minutes = secondes / 60;
+        return minutes >= 60 ? minutes / 60 + " h " + String.format("%02d", minutes % 60) : minutes + " min";
     }
 
     private record Mesure(String libelle, ToDoubleFunction<RiotStatsGateway.Bucket> valeur, boolean plusHautMieux,
@@ -216,7 +333,7 @@ public class SessionSummaryService {
         return Math.max(1, b.secondsPlayed() / 60.0);
     }
 
-    // Le joueur comparé à lui-même, jamais aux autres : deux points forts, deux à travailler.
+    // Le joueur comparé à lui-même, jamais aux autres : son point le plus fort, et le plus faible.
     private List<String> toi(String puuid, TeamSession session) {
         Optional<RiotStatsGateway.Bucket> soir = statsGateway.aggregate(List.of(puuid),
                         RiotStatsGateway.Grouping.OVERALL, RiotStatsGateway.Scope.RIFT, null, session.matchIds())
@@ -240,26 +357,22 @@ public class SessionSummaryService {
             }
         }
         List<String> lignes = new ArrayList<>();
-        ecarts.stream().filter(e -> e.relatif() >= ECART_NOTABLE)
-                .sorted(Comparator.comparingDouble(Ecart::relatif).reversed()).limit(2)
-                .forEach(e -> lignes.add("✅ " + ligne(e.mesure(), e.soir(), e.habitude())));
-        ecarts.stream().filter(e -> e.relatif() <= -ECART_NOTABLE)
-                .sorted(Comparator.comparingDouble(Ecart::relatif)).limit(2)
-                .forEach(e -> lignes.add("🔧 " + ligne(e.mesure(), e.soir(), e.habitude())));
+        ecarts.stream().filter(e -> e.relatif() >= ECART_NOTABLE).max(Comparator.comparingDouble(Ecart::relatif))
+                .ifPresent(e -> lignes.add("✅ " + ligne(e.mesure(), e.soir(), e.habitude())));
+        ecarts.stream().filter(e -> e.relatif() <= -ECART_NOTABLE).min(Comparator.comparingDouble(Ecart::relatif))
+                .ifPresent(e -> lignes.add("🔧 " + ligne(e.mesure(), e.soir(), e.habitude())));
         return lignes;
     }
 
     private static String ligne(Mesure mesure, double soir, double habitude) {
-        return mesure.libelle() + " : " + String.format(Locale.FRANCE, mesure.format(), soir)
-                + " (ta moyenne : " + String.format(Locale.FRANCE, mesure.format(), habitude) + ")";
+        return mesure.libelle() + " " + String.format(Locale.FRANCE, mesure.format(), soir)
+                + " (ta moyenne " + String.format(Locale.FRANCE, mesure.format(), habitude) + ")";
     }
 
-    private List<String> equipe(Team team, TeamSession session, List<TeamMember> joueurs, Map<String, String> noms) {
+    private List<String> equipe(Team team, TeamSession session, List<RiotStatsGateway.SharedMatch> parties,
+                                Map<String, TeamMember> parPuuid, Map<String, String> noms,
+                                Map<String, RiotStatsGateway.Insight> insights) {
         List<String> lignes = new ArrayList<>();
-        Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
-        List<RiotStatsGateway.SharedMatch> parties = statsGateway.sharedMatchesAmong(List.copyOf(parPuuid.keySet()),
-                        SessionWatcher.MEMBRES_MINIMUM, session.matchIds())
-                .map(RiotStatsGateway.SharedMatches::matches).orElseGet(List::of);
 
         // Le duo du soir : la paire qui a gagné le plus de parties ensemble.
         Map<String, long[]> duos = new LinkedHashMap<>();
@@ -280,19 +393,18 @@ public class SessionSummaryService {
                         .thenComparingLong(e -> -e.getValue()[0]))
                 .ifPresent(e -> {
                     String[] paire = e.getKey().split("\\|");
-                    lignes.add("Duo du soir : " + noms.get(paire[0]) + " et " + noms.get(paire[1]) + ", "
-                            + e.getValue()[1] + " V – " + (e.getValue()[0] - e.getValue()[1]) + " D.");
+                    lignes.add("Duo du soir : " + sansTag(noms.get(paire[0])) + " et " + sansTag(noms.get(paire[1]))
+                            + ", " + e.getValue()[1] + " V – " + (e.getValue()[0] - e.getValue()[1]) + " D");
                 });
 
-        // Les défaites après une avance à 15 min, quand la timeline est relevée.
-        long avancesPerdues = statsGateway.insights(session.matchIds()).orElseGet(List::of).stream()
-                .filter(insight -> insight.participants() != null)
-                .filter(insight -> parties.stream().anyMatch(p -> p.matchId().equals(insight.matchId())
-                        && Boolean.FALSE.equals(p.win()) && avance(insight, p) >= AVANCE_A_15))
+        long avancesPerdues = parties.stream()
+                .filter(p -> Boolean.FALSE.equals(p.win()))
+                .map(p -> avance(insights.get(p.matchId()), p))
+                .filter(avance -> avance != null && avance >= AVANCE_A_15)
                 .count();
         if (avancesPerdues > 0) {
             lignes.add(avancesPerdues + (avancesPerdues > 1 ? " parties perdues" : " partie perdue")
-                    + " après une avance à 15 min.");
+                    + " après une avance à 15 min");
         }
 
         if (session.planned()) {
@@ -300,28 +412,34 @@ public class SessionSummaryService {
                             session.day().minusDays(REFERENCE_JOURS)).stream()
                     .filter(s -> s.planned() && !s.missed() && s.startedAt().isBefore(session.startedAt()))
                     .findFirst()
-                    .ifPresent(avant -> lignes.add("Par rapport à la séance précédente : "
-                            + Math.round(100.0 * session.wins() / session.games()) + " % de victoires contre "
-                            + Math.round(100.0 * avant.wins() / Math.max(1, avant.games())) + " %."));
+                    .ifPresent(avant -> lignes.add("Séance précédente : "
+                            + Math.round(100.0 * avant.wins() / Math.max(1, avant.games())) + " % de victoires, "
+                            + Math.round(100.0 * session.wins() / session.games()) + " % ce soir"));
         }
         return lignes;
     }
 
-    private static int avance(RiotStatsGateway.Insight insight, RiotStatsGateway.SharedMatch partie) {
+    // L'écart d'or des deux camps à 15 min ; null sans timeline.
+    private static Integer avance(RiotStatsGateway.Insight insight, RiotStatsGateway.SharedMatch partie) {
+        if (insight == null || insight.participants() == null || partie.players().isEmpty()) {
+            return null;
+        }
         int camp = partie.players().get(0).side();
         int nous = 0;
         int eux = 0;
+        boolean releve = false;
         Set<String> vus = new HashSet<>();
         for (RiotStatsGateway.InsightPlayer joueur : insight.participants()) {
             if (joueur.at15() == null || !vus.add(joueur.puuid())) {
                 continue;
             }
+            releve = true;
             if (joueur.side() == camp) {
                 nous += joueur.at15().gold();
             } else {
                 eux += joueur.at15().gold();
             }
         }
-        return nous - eux;
+        return releve ? nous - eux : null;
     }
 }
