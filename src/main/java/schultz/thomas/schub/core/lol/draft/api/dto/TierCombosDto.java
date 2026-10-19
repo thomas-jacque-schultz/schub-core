@@ -1,5 +1,7 @@
 package schultz.thomas.schub.core.lol.draft.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.List;
 
@@ -17,6 +19,7 @@ public record TierCombosDto(
     public record Line(List<Champion> champions, long games, long wins, double winRate, double lowerBound) {
     }
 
+    @Schema(name = "TierComboChampion")
     public record Champion(int id, String key, String name, String iconUrl) {
     }
 }

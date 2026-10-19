@@ -1,10 +1,13 @@
 package schultz.thomas.schub.core.lol.stats.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
 // Chaque partie d'équipe se situe dans les parties du même palier ; on moyenne les percentiles, pas les valeurs.
 public record TeamLevelDto(int games, String tier, List<String> patches, List<Metric> metrics) {
 
+    @Schema(name = "TeamLevelMetric")
     public record Metric(
             String key,
             String polarity,

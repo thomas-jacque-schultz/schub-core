@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.lol.seo.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import schultz.thomas.schub.core.lol.team.data.model.GameRole;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public record PublicTeamDto(
     public record BestDuo(String a, String b, long games, long wins, double delta) {
     }
 
+    @Schema(name = "PublicTeamChampion")
     public record Champion(int championId, String name, String iconUrl, long games, long wins) {
     }
 
