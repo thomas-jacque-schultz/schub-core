@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import schultz.thomas.schub.core.api.client.riot.SeoCreatorsDto;
 import schultz.thomas.schub.core.api.dto.AccountsByRankDto;
 import schultz.thomas.schub.core.api.dto.CrawlerDto;
 import schultz.thomas.schub.core.api.dto.CrawlerToggleRequest;
@@ -91,7 +92,7 @@ public class IngestLoadController {
     }
 
     @GetMapping("/seo-creators")
-    public ResponseEntity<ConnectorRiotSeoGateway.SeoCreators> seoCreators(
+    public ResponseEntity<SeoCreatorsDto> seoCreators(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
@@ -99,7 +100,7 @@ public class IngestLoadController {
     }
 
     @PutMapping("/seo-creators")
-    public ResponseEntity<ConnectorRiotSeoGateway.SeoCreators> replaceSeoCreators(
+    public ResponseEntity<SeoCreatorsDto> replaceSeoCreators(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody List<String> riotIds) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
