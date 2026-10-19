@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import schultz.thomas.schub.core.api.mapper.AccountDtoMapperImpl;
 import schultz.thomas.schub.core.api.mapper.GameServerMapperImpl;
+import schultz.thomas.schub.core.api.mapper.IngestDtoMapperImpl;
 import schultz.thomas.schub.core.api.mapper.GameServerProjection;
 import schultz.thomas.schub.core.api.mapper.PortForwardingDtoMapperImpl;
 import schultz.thomas.schub.core.api.mapper.StaticPortRuleMapperImpl;
@@ -35,6 +36,7 @@ import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RoleService;
 import schultz.thomas.schub.core.business.service.StaticPortRuleService;
 import schultz.thomas.schub.core.business.service.UserService;
+import schultz.thomas.schub.core.config.ContractNullability;
 import schultz.thomas.schub.core.config.OpenApiConfiguration;
 import schultz.thomas.schub.core.config.PortForwardingProperties;
 import schultz.thomas.schub.core.lol.draft.api.mapper.DraftDtoMapperImpl;
@@ -81,7 +83,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @AutoConfigureMockMvc(addFilters = false)
 @ImportAutoConfiguration({SpringDocConfiguration.class, SpringDocConfigProperties.class,
         SpringDocWebMvcConfiguration.class})
-@Import({OpenApiConfiguration.class, AccountDtoMapperImpl.class, AugurDtoMapperImpl.class, DraftDtoMapperImpl.class, GameServerMapperImpl.class, PortForwardingDtoMapperImpl.class, RiotDtoMapperImpl.class, SeoDtoMapperImpl.class, SessionSummaryDtoMapperImpl.class, StaticPortRuleMapperImpl.class, StatsDtoMapperImpl.class, TeamDtoMapperImpl.class})
+@Import({OpenApiConfiguration.class, ContractNullability.class, AccountDtoMapperImpl.class, AugurDtoMapperImpl.class, DraftDtoMapperImpl.class, GameServerMapperImpl.class, IngestDtoMapperImpl.class, PortForwardingDtoMapperImpl.class, RiotDtoMapperImpl.class, SeoDtoMapperImpl.class, SessionSummaryDtoMapperImpl.class, StaticPortRuleMapperImpl.class, StatsDtoMapperImpl.class, TeamDtoMapperImpl.class})
 class OpenApiContractTest {
 
     static final Path CONTRAT = Path.of("openapi/core.json");

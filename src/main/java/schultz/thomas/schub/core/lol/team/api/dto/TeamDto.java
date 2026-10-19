@@ -1,7 +1,5 @@
 package schultz.thomas.schub.core.lol.team.api.dto;
 
-import schultz.thomas.schub.core.lol.team.data.model.TrainingSlot;
-
 import java.time.Instant;
 import java.util.List;
 
@@ -17,6 +15,6 @@ public record TeamDto(
         boolean viewerCanEditRoster,
         boolean viewerCanEditCompositions,
         boolean publicPage,
-        List<TrainingSlot> trainingSlots
+        List<TrainingSlotDto> trainingSlots
 ) {
 }

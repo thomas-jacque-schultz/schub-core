@@ -61,7 +61,7 @@ class TeamProjectionTest {
 
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
                 List.of(new TeamScopedAuthority(teamRepository)));
-        projection = new TeamProjection(evaluator, memberDirectory);
+        projection = new TeamProjection(evaluator, memberDirectory, new TeamDtoMapperImpl());
 
         capitaine = compte("capitaine", "role-visiteur");
         membre = compte("membre", "role-visiteur");

@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientException;
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
+import schultz.thomas.schub.core.api.dto.HistoryWindowDto;
+import schultz.thomas.schub.core.api.mapper.IngestDtoMapper;
 import schultz.thomas.schub.core.business.service.ActivityService;
-import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.lol.seo.api.client.ConnectorRiotSeoGateway;
 import schultz.thomas.schub.core.lol.seo.api.dto.PlayerSuggestionDto;
@@ -30,6 +31,7 @@ public class PlayerSearchController {
     private final RiotConnectorService riotConnector;
     private final ActivityService activityService;
     private final ConnectorRiotSeoGateway seoGateway;
+    private final IngestDtoMapper ingestDtos;
 
     // Pour le plan du site : des Riot ID, jamais de puuid. Connecteur muet : liste vide, le plan garde ses pages fixes.
     @GetMapping("/indexable")
@@ -49,8 +51,9 @@ public class PlayerSearchController {
 
     // La présentation publique dit ce que couvre l'historique d'un joueur.
     @GetMapping("/history-window")
-    public ResponseEntity<HistoryWindow> historyWindow() {
+    public ResponseEntity<HistoryWindowDto> historyWindow() {
         return riotConnector.historyWindow()
+                .map(ingestDtos::toDto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build());
     }

@@ -613,7 +613,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/HistoryWindow"
+                "$ref" : "#/components/schemas/HistoryWindowDto"
               }
             }
           },
@@ -624,7 +624,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/HistoryWindow"
+                  "$ref" : "#/components/schemas/HistoryWindowDto"
                 }
               }
             },
@@ -1326,7 +1326,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/HistoryWindow"
+                  "$ref" : "#/components/schemas/HistoryWindowDto"
                 }
               }
             },
@@ -1757,7 +1757,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/Evaluation"
+                    "$ref" : "#/components/schemas/EvaluationDto"
                   }
                 }
               }
@@ -3035,7 +3035,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/TeamSession"
+                    "$ref" : "#/components/schemas/TeamSessionDto"
                   }
                 }
               }
@@ -3079,7 +3079,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/TeamSession"
+                    "$ref" : "#/components/schemas/TeamSessionDto"
                   }
                 }
               }
@@ -3599,7 +3599,7 @@
               "schema" : {
                 "type" : "array",
                 "items" : {
-                  "$ref" : "#/components/schemas/TrainingSlot"
+                  "$ref" : "#/components/schemas/TrainingSlotDto"
                 }
               }
             }
@@ -3991,6 +3991,7 @@
   "components" : {
     "schemas" : {
       "AccountLinksDto" : {
+        "required" : [ "discord", "riot" ],
         "type" : "object",
         "properties" : {
           "discord" : {
@@ -4002,6 +4003,7 @@
         }
       },
       "AccountsByRankDto" : {
+        "required" : [ "available", "rows" ],
         "type" : "object",
         "properties" : {
           "available" : {
@@ -4016,6 +4018,7 @@
         }
       },
       "Active" : {
+        "required" : [ "last24h", "last30d", "last7d" ],
         "type" : "object",
         "properties" : {
           "last24h" : {
@@ -4033,6 +4036,7 @@
         }
       },
       "AddMemberRequest" : {
+        "required" : [ "coach", "riotGameName", "riotPuuid", "riotTagLine", "roles", "status" ],
         "type" : "object",
         "properties" : {
           "coach" : {
@@ -4061,6 +4065,7 @@
         }
       },
       "AssignRoleRequest" : {
+        "required" : [ "roleId" ],
         "type" : "object",
         "properties" : {
           "roleId" : {
@@ -4069,6 +4074,7 @@
         }
       },
       "At15Dto" : {
+        "required" : [ "assists", "cs", "damageToChampions", "deaths", "gold", "kills", "xp" ],
         "type" : "object",
         "properties" : {
           "assists" : {
@@ -4102,6 +4108,7 @@
         }
       },
       "AverageRankDto" : {
+        "required" : [ "counted", "division", "tier", "value" ],
         "type" : "object",
         "properties" : {
           "counted" : {
@@ -4121,6 +4128,7 @@
         }
       },
       "Backfill" : {
+        "required" : [ "collected", "found", "since" ],
         "type" : "object",
         "properties" : {
           "collected" : {
@@ -4138,6 +4146,7 @@
         }
       },
       "Ban" : {
+        "required" : [ "championId", "championKey", "championName", "gamesAgainst", "iconUrl", "impact", "lowConfidence", "presence", "winRateAgainst", "winsAgainst" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -4179,6 +4188,7 @@
         }
       },
       "BestDuo" : {
+        "required" : [ "a", "b", "delta", "games", "wins" ],
         "type" : "object",
         "properties" : {
           "a" : {
@@ -4202,6 +4212,7 @@
         }
       },
       "Bound" : {
+        "required" : [ "high", "low" ],
         "type" : "object",
         "properties" : {
           "high" : {
@@ -4215,6 +4226,7 @@
         }
       },
       "ChampionCatalogEntryDto" : {
+        "required" : [ "championId", "championKey", "iconUrl", "name" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -4233,6 +4245,7 @@
         }
       },
       "ChampionGridDto" : {
+        "required" : [ "championId", "computedAt", "group", "metrics", "patches", "percentiles" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -4268,6 +4281,7 @@
         }
       },
       "ChampionGridMetric" : {
+        "required" : [ "count", "polarity", "values" ],
         "type" : "object",
         "properties" : {
           "count" : {
@@ -4287,6 +4301,7 @@
         }
       },
       "ChampionPoolColumnDto" : {
+        "required" : [ "champions", "hiddenByFloor", "role", "unavailableMembers" ],
         "type" : "object",
         "properties" : {
           "champions" : {
@@ -4312,6 +4327,7 @@
         }
       },
       "ChampionPoolDto" : {
+        "required" : [ "catalog", "columns", "generatedAt", "masteryFloor", "patch", "startingSelection", "teamId", "teamMasteryFloor", "teamName", "viewerCanEdit", "viewerMemberId" ],
         "type" : "object",
         "properties" : {
           "catalog" : {
@@ -4359,6 +4375,7 @@
         }
       },
       "ChampionPoolEntryDto" : {
+        "required" : [ "championId", "championKey", "iconUrl", "name", "players", "setAsideByFloor" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -4387,6 +4404,7 @@
         }
       },
       "ChampionPoolMemberDto" : {
+        "required" : [ "avatarUrl", "displayName", "games", "lastPlayedAt", "linked", "masteryLevel", "masteryPoints", "memberId", "observedAt", "riotGameName", "riotTagLine", "state", "status", "winRate" ],
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
@@ -4442,6 +4460,7 @@
         }
       },
       "Combo" : {
+        "required" : [ "expected", "games", "kind", "lowConfidence", "lowerBound", "picks", "referenceGames", "referenceWinRate", "winRate", "wins" ],
         "type" : "object",
         "properties" : {
           "expected" : {
@@ -4487,6 +4506,7 @@
         }
       },
       "CommentRequest" : {
+        "required" : [ "comment" ],
         "type" : "object",
         "properties" : {
           "comment" : {
@@ -4495,6 +4515,7 @@
         }
       },
       "Companion" : {
+        "required" : [ "games", "riotId", "slug", "winRate", "wins", "withoutGames", "withoutWinRate" ],
         "type" : "object",
         "properties" : {
           "games" : {
@@ -4526,6 +4547,7 @@
         }
       },
       "CompanionsDto" : {
+        "required" : [ "companions", "minimumGames", "month", "suggestedTeam" ],
         "type" : "object",
         "properties" : {
           "companions" : {
@@ -4550,6 +4572,7 @@
         }
       },
       "CompositionDto" : {
+        "required" : [ "bans", "createdAt", "id", "name", "notes", "patch", "slots", "teamId", "updatedAt", "viewerCanEdit" ],
         "type" : "object",
         "properties" : {
           "bans" : {
@@ -4593,6 +4616,7 @@
         }
       },
       "CompositionRecordDto" : {
+        "required" : [ "compositionId", "games", "lowConfidence", "matches", "wins" ],
         "type" : "object",
         "properties" : {
           "compositionId" : {
@@ -4618,6 +4642,7 @@
         }
       },
       "CompositionRequest" : {
+        "required" : [ "bans", "name", "notes", "patch", "slots" ],
         "type" : "object",
         "properties" : {
           "bans" : {
@@ -4644,6 +4669,7 @@
         }
       },
       "CompositionSlotDto" : {
+        "required" : [ "alternatives", "championId", "memberId", "playerDisplayName", "role" ],
         "type" : "object",
         "properties" : {
           "alternatives" : {
@@ -4668,6 +4694,7 @@
         }
       },
       "CompositionSlotRequest" : {
+        "required" : [ "alternatives", "championId", "memberId", "role" ],
         "type" : "object",
         "properties" : {
           "alternatives" : {
@@ -4688,7 +4715,8 @@
           }
         }
       },
-      "Condition" : {
+      "ConditionDto" : {
+        "required" : [ "from", "signal", "to", "unit", "weight" ],
         "type" : "object",
         "properties" : {
           "from" : {
@@ -4712,12 +4740,14 @@
           }
         }
       },
-      "ConditionTrace" : {
+      "ConditionTraceDto" : {
+        "required" : [ "degree", "from", "observed", "role", "signal", "to", "unit", "value" ],
         "type" : "object",
         "properties" : {
           "degree" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "from" : {
             "type" : "number",
@@ -4725,7 +4755,8 @@
           },
           "observed" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "role" : {
             "type" : "string",
@@ -4744,11 +4775,13 @@
           },
           "value" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           }
         }
       },
       "Counts" : {
+        "required" : [ "analysed", "pending", "retrieved" ],
         "type" : "object",
         "properties" : {
           "analysed" : {
@@ -4766,6 +4799,7 @@
         }
       },
       "CrawlerDto" : {
+        "required" : [ "available", "backgroundPending", "databaseBytes", "enabled", "knownAccounts", "lastRoundAccounts", "lastRoundAt", "running", "storageAlert", "storageAlertBytes", "switchable", "trackedAccounts" ],
         "type" : "object",
         "properties" : {
           "available" : {
@@ -4814,6 +4848,7 @@
         }
       },
       "CrawlerToggleRequest" : {
+        "required" : [ "enabled" ],
         "type" : "object",
         "properties" : {
           "enabled" : {
@@ -4822,6 +4857,7 @@
         }
       },
       "Day" : {
+        "required" : [ "activeUsers", "day", "searchers" ],
         "type" : "object",
         "properties" : {
           "activeUsers" : {
@@ -4838,6 +4874,7 @@
         }
       },
       "DiscordIdentityDto" : {
+        "required" : [ "avatarUrl", "id", "username" ],
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
@@ -4852,6 +4889,7 @@
         }
       },
       "DisplayNameRequest" : {
+        "required" : [ "displayName" ],
         "type" : "object",
         "properties" : {
           "displayName" : {
@@ -4860,6 +4898,7 @@
         }
       },
       "DraftAdviceDto" : {
+        "required" : [ "avoid", "bans", "compositions", "duoThreshold", "duos", "games", "laneThreats", "toTry", "trioThreshold", "trios" ],
         "type" : "object",
         "properties" : {
           "avoid" : {
@@ -4919,6 +4958,7 @@
         }
       },
       "Duo" : {
+        "required" : [ "delta", "expected", "games", "memberA", "memberB", "nameA", "nameB", "winRate", "wins" ],
         "type" : "object",
         "properties" : {
           "delta" : {
@@ -4956,6 +4996,7 @@
         }
       },
       "EarlyGameDto" : {
+        "required" : [ "ganks", "ourJungler", "ourObjectives", "theirJungler", "theirObjectives" ],
         "type" : "object",
         "properties" : {
           "ganks" : {
@@ -4978,13 +5019,14 @@
           }
         }
       },
-      "Evaluation" : {
+      "EvaluationDto" : {
+        "required" : [ "conditions", "degree", "emitted", "excepted", "patternKey", "version" ],
         "type" : "object",
         "properties" : {
           "conditions" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/ConditionTrace"
+              "$ref" : "#/components/schemas/ConditionTraceDto"
             }
           },
           "degree" : {
@@ -5007,6 +5049,7 @@
         }
       },
       "Example" : {
+        "required" : [ "currentDegree", "draftDegree", "subject", "tier" ],
         "type" : "object",
         "properties" : {
           "currentDegree" : {
@@ -5026,6 +5069,7 @@
         }
       },
       "FieldDto" : {
+        "required" : [ "inline", "name", "value" ],
         "type" : "object",
         "properties" : {
           "inline" : {
@@ -5040,6 +5084,7 @@
         }
       },
       "FindingDto" : {
+        "required" : [ "category", "confidence", "context", "evidence", "experimental", "label", "limits", "nature", "pattern", "polarity", "sentence" ],
         "type" : "object",
         "properties" : {
           "category" : {
@@ -5059,7 +5104,7 @@
           "evidence" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/ConditionTrace"
+              "$ref" : "#/components/schemas/ConditionTraceDto"
             }
           },
           "experimental" : {
@@ -5097,6 +5142,7 @@
         }
       },
       "FooterDto" : {
+        "required" : [ "text" ],
         "type" : "object",
         "properties" : {
           "text" : {
@@ -5105,6 +5151,7 @@
         }
       },
       "Game" : {
+        "required" : [ "durationSeconds", "matchId", "startedAt", "win" ],
         "type" : "object",
         "properties" : {
           "durationSeconds" : {
@@ -5124,6 +5171,7 @@
         }
       },
       "GameDto" : {
+        "required" : [ "iconUrl", "label", "name" ],
         "type" : "object",
         "properties" : {
           "iconUrl" : {
@@ -5138,6 +5186,7 @@
         }
       },
       "GamePlayerMetricsDto" : {
+        "required" : [ "average", "championId", "game", "position", "side", "tier", "tierEstimated" ],
         "type" : "object",
         "properties" : {
           "average" : {
@@ -5175,6 +5224,7 @@
         "description" : "Un joueur d'une partie : ses indicateurs sur la partie et sa moyenne au mÃªme poste."
       },
       "GameServerCommandFailureDto" : {
+        "required" : [ "action", "at", "message" ],
         "type" : "object",
         "properties" : {
           "action" : {
@@ -5190,6 +5240,7 @@
         }
       },
       "GameServerDto" : {
+        "required" : [ "deploymentId", "description", "game", "gameIconUrl", "gameLabel", "id", "installation", "lastCommandFailure", "lastStatusChangeAt", "lastStatusCheckAt", "name", "playersMax", "ports", "referentIds", "referents", "slug", "status", "statusHistory", "urlConnection", "version", "viewerCanControl" ],
         "type" : "object",
         "properties" : {
           "deploymentId" : {
@@ -5274,6 +5325,7 @@
         }
       },
       "GameServerPortDto" : {
+        "required" : [ "lanIp", "lanPort", "proto", "wanPort" ],
         "type" : "object",
         "properties" : {
           "lanIp" : {
@@ -5293,6 +5345,7 @@
         }
       },
       "GameServerReferentDto" : {
+        "required" : [ "discordId", "displayName", "id" ],
         "type" : "object",
         "properties" : {
           "discordId" : {
@@ -5307,6 +5360,7 @@
         }
       },
       "GameServerStatusHistoryEntryDto" : {
+        "required" : [ "startedAt", "status" ],
         "type" : "object",
         "properties" : {
           "startedAt" : {
@@ -5319,6 +5373,7 @@
         }
       },
       "GankDto" : {
+        "required" : [ "alliesLost", "decisive", "enemiesLost", "fallenMemberIds", "lane", "objectiveFollowUp", "ours", "outcome", "second", "targetMemberIds" ],
         "type" : "object",
         "properties" : {
           "alliesLost" : {
@@ -5362,7 +5417,8 @@
           }
         }
       },
-      "HistoryWindow" : {
+      "HistoryWindowDto" : {
+        "required" : [ "maxAgeDays", "maxGames", "minGames" ],
         "type" : "object",
         "properties" : {
           "maxAgeDays" : {
@@ -5380,6 +5436,7 @@
         }
       },
       "ImpactDto" : {
+        "required" : [ "appearing", "byTier", "disappearing", "examples", "sampled", "unchanged" ],
         "type" : "object",
         "properties" : {
           "appearing" : {
@@ -5417,6 +5474,7 @@
         }
       },
       "IndexablePlayerDto" : {
+        "required" : [ "featured", "riotId" ],
         "type" : "object",
         "properties" : {
           "featured" : {
@@ -5428,6 +5486,7 @@
         }
       },
       "IngestLoadDto" : {
+        "required" : [ "available", "callsPerMinute", "estimatedDrain", "estimatedReadyAt", "failed", "pending", "running", "throttledFor" ],
         "type" : "object",
         "properties" : {
           "available" : {
@@ -5466,6 +5525,7 @@
         }
       },
       "IngestPauseDto" : {
+        "required" : [ "available", "paused", "running", "updatedAt" ],
         "type" : "object",
         "properties" : {
           "available" : {
@@ -5485,6 +5545,7 @@
         }
       },
       "IngestPauseRequest" : {
+        "required" : [ "paused" ],
         "type" : "object",
         "properties" : {
           "paused" : {
@@ -5493,6 +5554,7 @@
         }
       },
       "IngestSummaryDto" : {
+        "required" : [ "available", "matches", "profiles" ],
         "type" : "object",
         "properties" : {
           "available" : {
@@ -5507,6 +5569,7 @@
         }
       },
       "JunglePresenceDto" : {
+        "required" : [ "botMinutes", "memberId", "midMinutes", "strongSide", "topMinutes" ],
         "type" : "object",
         "properties" : {
           "botMinutes" : {
@@ -5530,6 +5593,7 @@
         }
       },
       "LaneThreat" : {
+        "required" : [ "championId", "championKey", "championName", "games", "goldDiffAt15", "iconUrl", "memberId", "memberName", "role" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -5565,6 +5629,7 @@
         }
       },
       "Line" : {
+        "required" : [ "champions", "games", "lowerBound", "winRate", "wins" ],
         "type" : "object",
         "properties" : {
           "champions" : {
@@ -5592,6 +5657,7 @@
         }
       },
       "Listed" : {
+        "required" : [ "id", "name" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -5603,6 +5669,7 @@
         }
       },
       "MasteryDto" : {
+        "required" : [ "championId", "championName", "iconUrl", "level", "points" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -5626,6 +5693,7 @@
         }
       },
       "MatchupDto" : {
+        "required" : [ "ally", "enemy", "position", "rankGap" ],
         "type" : "object",
         "properties" : {
           "ally" : {
@@ -5644,6 +5712,7 @@
         }
       },
       "MeDto" : {
+        "required" : [ "discord", "displayName", "displayNameChosen", "dmUnreachable", "links", "riot", "role", "sessionSummaries", "userId" ],
         "type" : "object",
         "properties" : {
           "discord" : {
@@ -5676,6 +5745,7 @@
         }
       },
       "Member" : {
+        "required" : [ "riotId", "roles", "slug" ],
         "type" : "object",
         "properties" : {
           "riotId" : {
@@ -5694,6 +5764,7 @@
         }
       },
       "MemberEarlyDto" : {
+        "required" : [ "botMinutes", "deathsOnGank", "displayName", "ganksCountered", "ganksDecisive", "ganksFaced", "ganksHeld", "ganksMade", "jungleGames", "laneGames", "memberId", "midMinutes", "presenceWith", "topMinutes" ],
         "type" : "object",
         "properties" : {
           "botMinutes" : {
@@ -5755,6 +5826,7 @@
         }
       },
       "MetricReferenceDto" : {
+        "required" : [ "bounds", "minimumGames", "population", "position", "tier" ],
         "type" : "object",
         "properties" : {
           "bounds" : {
@@ -5780,6 +5852,7 @@
         }
       },
       "MyGamesDto" : {
+        "required" : [ "days", "games", "generatedAt", "state", "totalGames", "truncated", "viewerMemberId" ],
         "type" : "object",
         "properties" : {
           "days" : {
@@ -5813,6 +5886,7 @@
         }
       },
       "MyStatsDto" : {
+        "required" : [ "champions", "coverage", "days", "displayName", "generatedAt", "ingest", "months", "overall", "patches", "positions", "queues", "rankings", "references", "riotGameName", "riotTagLine", "state" ],
         "type" : "object",
         "properties" : {
           "champions" : {
@@ -5887,6 +5961,7 @@
         }
       },
       "ObjectivesDto" : {
+        "required" : [ "dragons", "grubs", "heralds" ],
         "type" : "object",
         "properties" : {
           "dragons" : {
@@ -5904,6 +5979,7 @@
         }
       },
       "PatternDto" : {
+        "required" : [ "activatedAt", "author", "category", "comment", "createdAt", "exceptions", "experimental", "key", "label", "limits", "nature", "optional", "optionalInfluence", "polarity", "required", "scope", "sentence", "status", "threshold", "version" ],
         "type" : "object",
         "properties" : {
           "activatedAt" : {
@@ -5927,7 +6003,7 @@
           "exceptions" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Condition"
+              "$ref" : "#/components/schemas/ConditionDto"
             }
           },
           "experimental" : {
@@ -5955,7 +6031,7 @@
           "optional" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Condition"
+              "$ref" : "#/components/schemas/ConditionDto"
             }
           },
           "optionalInfluence" : {
@@ -5969,7 +6045,7 @@
           "required" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Condition"
+              "$ref" : "#/components/schemas/ConditionDto"
             }
           },
           "scope" : {
@@ -5997,6 +6073,7 @@
         }
       },
       "PatternRequest" : {
+        "required" : [ "category", "comment", "exceptions", "experimental", "key", "label", "limits", "nature", "optional", "optionalInfluence", "polarity", "required", "scope", "sentence", "threshold" ],
         "type" : "object",
         "properties" : {
           "category" : {
@@ -6009,7 +6086,7 @@
           "exceptions" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Condition"
+              "$ref" : "#/components/schemas/ConditionDto"
             }
           },
           "experimental" : {
@@ -6037,7 +6114,7 @@
           "optional" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Condition"
+              "$ref" : "#/components/schemas/ConditionDto"
             }
           },
           "optionalInfluence" : {
@@ -6051,7 +6128,7 @@
           "required" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/Condition"
+              "$ref" : "#/components/schemas/ConditionDto"
             }
           },
           "scope" : {
@@ -6071,6 +6148,7 @@
         }
       },
       "Pick" : {
+        "required" : [ "championId", "championKey", "championName", "iconUrl", "memberId", "memberName", "role" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -6098,6 +6176,7 @@
         }
       },
       "PlayerCollectDto" : {
+        "required" : [ "lane" ],
         "type" : "object",
         "properties" : {
           "lane" : {
@@ -6107,6 +6186,7 @@
         }
       },
       "PlayerStatsDto" : {
+        "required" : [ "avatarUrl", "champions", "coverage", "displayName", "linked", "memberId", "months", "overall", "positions", "premade", "queues", "rankings", "references", "riotGameName", "riotTagLine", "roles", "state", "status" ],
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
@@ -6187,6 +6267,7 @@
         }
       },
       "PlayerSuggestionDto" : {
+        "required" : [ "gameName", "lastPlayedAt", "matchCount", "positions", "riotId", "tagLine" ],
         "type" : "object",
         "properties" : {
           "gameName" : {
@@ -6215,6 +6296,7 @@
         }
       },
       "PoolChampionsRequest" : {
+        "required" : [ "championKeys" ],
         "type" : "object",
         "properties" : {
           "championKeys" : {
@@ -6226,6 +6308,7 @@
         }
       },
       "PoolMasteryFloorRequest" : {
+        "required" : [ "masteryFloor" ],
         "type" : "object",
         "properties" : {
           "masteryFloor" : {
@@ -6235,6 +6318,7 @@
         }
       },
       "PortForwardingReportDto" : {
+        "required" : [ "applied", "conflicts", "outcomes", "rejected", "skippedReason" ],
         "type" : "object",
         "properties" : {
           "applied" : {
@@ -6264,6 +6348,7 @@
         }
       },
       "PortRuleDto" : {
+        "required" : [ "lanIp", "lanPort", "open", "owner", "protocol", "providerId", "wanPortEnd", "wanPortStart" ],
         "type" : "object",
         "properties" : {
           "lanIp" : {
@@ -6297,6 +6382,7 @@
         }
       },
       "PortainerStackDto" : {
+        "required" : [ "endpointId", "id", "lastCommandFailure", "name", "observedAt", "running" ],
         "type" : "object",
         "properties" : {
           "endpointId" : {
@@ -6323,6 +6409,7 @@
         }
       },
       "PositionOppositionDto" : {
+        "required" : [ "averageCsDiff15", "averageGap", "averageGoldDiff15", "games", "laneGames", "laneWinRate", "position", "versusStronger", "versusWeaker" ],
         "type" : "object",
         "properties" : {
           "averageCsDiff15" : {
@@ -6361,6 +6448,7 @@
         }
       },
       "PositionPlayedDto" : {
+        "required" : [ "matches", "position" ],
         "type" : "object",
         "properties" : {
           "matches" : {
@@ -6373,6 +6461,7 @@
         }
       },
       "PremadeLabSettingsDto" : {
+        "required" : [ "budgetWindowMinutes", "unknownPlayerBudget" ],
         "type" : "object",
         "properties" : {
           "budgetWindowMinutes" : {
@@ -6386,6 +6475,7 @@
         }
       },
       "PresenceWithDto" : {
+        "required" : [ "displayName", "games", "memberId", "minutes", "totalMinutes" ],
         "type" : "object",
         "properties" : {
           "displayName" : {
@@ -6409,6 +6499,7 @@
         }
       },
       "PublicServerStatusDto" : {
+        "required" : [ "game", "name", "status" ],
         "type" : "object",
         "properties" : {
           "game" : {
@@ -6423,6 +6514,7 @@
         }
       },
       "PublicTeamChampion" : {
+        "required" : [ "championId", "games", "iconUrl", "name", "wins" ],
         "type" : "object",
         "properties" : {
           "championId" : {
@@ -6446,6 +6538,7 @@
         }
       },
       "PublicTeamDto" : {
+        "required" : [ "bestDuo", "champions", "games", "id", "members", "monthGames", "monthWins", "name", "wins" ],
         "type" : "object",
         "properties" : {
           "bestDuo" : {
@@ -6488,6 +6581,7 @@
         }
       },
       "RadarReferencesDto" : {
+        "required" : [ "met", "position", "tier" ],
         "type" : "object",
         "properties" : {
           "met" : {
@@ -6502,6 +6596,7 @@
         }
       },
       "RankedStandingDto" : {
+        "required" : [ "division", "hotStreak", "inactive", "leaguePoints", "losses", "observedAt", "queue", "riotQueueType", "tier", "wins" ],
         "type" : "object",
         "properties" : {
           "division" : {
@@ -6541,6 +6636,7 @@
         }
       },
       "RecentSessionDto" : {
+        "required" : [ "day", "games", "planned", "startedAt", "teamName", "wins" ],
         "type" : "object",
         "properties" : {
           "day" : {
@@ -6568,6 +6664,7 @@
         }
       },
       "ReferenceGridDto" : {
+        "required" : [ "computedAt", "metrics", "patches", "percentiles", "position", "scope" ],
         "type" : "object",
         "properties" : {
           "computedAt" : {
@@ -6602,6 +6699,7 @@
         }
       },
       "ReferenceGridMetric" : {
+        "required" : [ "missingTiers", "polarity", "rankMeans", "tiers" ],
         "type" : "object",
         "properties" : {
           "missingTiers" : {
@@ -6629,6 +6727,7 @@
         }
       },
       "Resource" : {
+        "required" : [ "conversion", "damageShareInLosses", "damageShareInWins", "games", "gamesAbove", "gamesBelow", "goldShareInLosses", "goldShareInWins", "goldShareThreshold", "position", "winRateAbove", "winRateBelow" ],
         "type" : "object",
         "properties" : {
           "conversion" : {
@@ -6681,6 +6780,7 @@
         }
       },
       "RiotAccountChangeDto" : {
+        "required" : [ "estimatedDuration", "estimatedMatches", "ingestRestarted", "previousRiotId", "riotId", "rosterSlotsToClaim", "statsReset" ],
         "type" : "object",
         "properties" : {
           "estimatedDuration" : {
@@ -6710,6 +6810,7 @@
         }
       },
       "RiotAccountDto" : {
+        "required" : [ "change", "gameName", "ingest", "linkedAt", "riotId", "state", "tagLine" ],
         "type" : "object",
         "properties" : {
           "change" : {
@@ -6738,6 +6839,7 @@
         }
       },
       "RiotAccountRequest" : {
+        "required" : [ "confirmChange", "riotId" ],
         "type" : "object",
         "properties" : {
           "confirmChange" : {
@@ -6749,6 +6851,7 @@
         }
       },
       "RiotAccountSuggestionDto" : {
+        "required" : [ "alreadyLinked", "gameName", "lastPlayedAt", "matchCount", "mine", "observedAt", "positions", "riotId", "source", "tagLine" ],
         "type" : "object",
         "properties" : {
           "alreadyLinked" : {
@@ -6790,6 +6893,7 @@
         }
       },
       "RiotDataInvalidationDto" : {
+        "required" : [ "accountsToResolve", "findings", "riotDocuments" ],
         "type" : "object",
         "properties" : {
           "accountsToResolve" : {
@@ -6807,6 +6911,7 @@
         }
       },
       "RiotDataInvalidationRequest" : {
+        "required" : [ "confirmation" ],
         "type" : "object",
         "properties" : {
           "confirmation" : {
@@ -6815,6 +6920,7 @@
         }
       },
       "RiotDataInventoryDto" : {
+        "required" : [ "available", "findings", "linkedAccounts", "riotDocuments", "teamSlots", "teams" ],
         "type" : "object",
         "properties" : {
           "available" : {
@@ -6843,6 +6949,7 @@
         }
       },
       "RiotIngestDto" : {
+        "required" : [ "backfill", "estimatedReadyAt", "pending", "running" ],
         "type" : "object",
         "properties" : {
           "backfill" : {
@@ -6863,6 +6970,7 @@
         }
       },
       "RiotIngestProgressDto" : {
+        "required" : [ "estimatedReadyAt", "pending", "running" ],
         "type" : "object",
         "properties" : {
           "estimatedReadyAt" : {
@@ -6880,6 +6988,7 @@
         }
       },
       "RoleDto" : {
+        "required" : [ "id", "name", "permissions", "system" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -6902,6 +7011,7 @@
         }
       },
       "RoleSummaryDto" : {
+        "required" : [ "name", "permissions" ],
         "type" : "object",
         "properties" : {
           "name" : {
@@ -6918,6 +7028,7 @@
         }
       },
       "Row" : {
+        "required" : [ "seeds", "tier", "tracked" ],
         "type" : "object",
         "properties" : {
           "seeds" : {
@@ -6934,6 +7045,7 @@
         }
       },
       "RuleOutcomeDto" : {
+        "required" : [ "outcome", "rule" ],
         "type" : "object",
         "properties" : {
           "outcome" : {
@@ -6946,6 +7058,7 @@
         }
       },
       "SearchedPlayerDto" : {
+        "required" : [ "collecting", "gameName", "known", "knownGames", "masteries", "rankings", "slug", "stats", "tagLine" ],
         "type" : "object",
         "properties" : {
           "collecting" : {
@@ -7002,6 +7115,7 @@
         }
       },
       "SessionSummariesDto" : {
+        "required" : [ "free", "planned" ],
         "type" : "object",
         "properties" : {
           "free" : {
@@ -7013,6 +7127,7 @@
         }
       },
       "SessionSummaryEmbedDto" : {
+        "required" : [ "color", "description", "fields", "footer", "title", "url" ],
         "type" : "object",
         "properties" : {
           "color" : {
@@ -7040,6 +7155,7 @@
         }
       },
       "SessionSummaryTestDto" : {
+        "required" : [ "detail", "embeds", "status" ],
         "type" : "object",
         "properties" : {
           "detail" : {
@@ -7058,6 +7174,7 @@
         }
       },
       "SideRanksDto" : {
+        "required" : [ "flex", "solo" ],
         "type" : "object",
         "properties" : {
           "flex" : {
@@ -7069,6 +7186,7 @@
         }
       },
       "StatComparisonDto" : {
+        "required" : [ "kdaDelta", "referenceGames", "winRateDelta" ],
         "type" : "object",
         "properties" : {
           "kdaDelta" : {
@@ -7086,6 +7204,7 @@
         }
       },
       "StatLineDto" : {
+        "required" : [ "afkGames", "assistsPerGame", "controlWardsPlaced", "csDiffAt15", "csPerMinute", "damagePerMinute", "damageShare", "damageTakenPerMinute", "deathShare", "deathsPer10", "deathsPerGame", "epicMonsterDamagePerMinute", "firstPlayedAt", "games", "goldDiffAt15", "goldPerMinute", "iconUrl", "kda", "key", "killParticipation", "killsDiffAt15", "killsPerGame", "label", "laningGames", "lastPlayedAt", "platesDiff", "secondsPlayed", "timeDeadShare", "turretDamagePerMinute", "turretTakedowns", "versusRest", "visionPerMinute", "wardsKilledPerMinute", "winRate", "wins", "xpDiffAt15" ],
         "type" : "object",
         "properties" : {
           "afkGames" : {
@@ -7233,6 +7352,7 @@
         "description" : "Sur les parties d'Ã©quipe de la pÃ©riode seulement. Absente : aucune partie d'Ã©quipe."
       },
       "StaticPortRuleDto" : {
+        "required" : [ "enabled", "id", "lanIp", "lanPort", "name", "proto", "wanPortEnd", "wanPortStart" ],
         "type" : "object",
         "properties" : {
           "enabled" : {
@@ -7265,6 +7385,7 @@
         }
       },
       "StaticPortRuleRequest" : {
+        "required" : [ "enabled", "lanIp", "lanPort", "name", "proto", "wanPortEnd", "wanPortStart" ],
         "type" : "object",
         "properties" : {
           "enabled" : {
@@ -7294,6 +7415,7 @@
         }
       },
       "StatsCoverageDto" : {
+        "required" : [ "firstPlayedAt", "games", "knownMatches", "lastPlayedAt", "lastSyncAt", "pendingMatches", "tracked" ],
         "type" : "object",
         "properties" : {
           "firstPlayedAt" : {
@@ -7326,6 +7448,7 @@
         }
       },
       "StatsRefreshDto" : {
+        "required" : [ "nextAllowedAt", "playersQueued", "triggered" ],
         "type" : "object",
         "properties" : {
           "nextAllowedAt" : {
@@ -7342,6 +7465,7 @@
         }
       },
       "StrongSideDto" : {
+        "required" : [ "enemyGanks", "enemyGanksOnWeakSide", "games", "side", "wins" ],
         "type" : "object",
         "properties" : {
           "enemyGanks" : {
@@ -7366,6 +7490,7 @@
         }
       },
       "TeamDto" : {
+        "required" : [ "createdAt", "id", "memberCount", "members", "name", "publicPage", "trainingSlots", "updatedAt", "viewerCanEditCompositions", "viewerCanEditRoster", "viewerCanManage", "viewerMemberId" ],
         "type" : "object",
         "properties" : {
           "createdAt" : {
@@ -7394,7 +7519,7 @@
           "trainingSlots" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/TrainingSlot"
+              "$ref" : "#/components/schemas/TrainingSlotDto"
             }
           },
           "updatedAt" : {
@@ -7416,6 +7541,7 @@
         }
       },
       "TeamEarlyGameDto" : {
+        "required" : [ "games", "members", "strongSides" ],
         "type" : "object",
         "properties" : {
           "games" : {
@@ -7437,6 +7563,7 @@
         }
       },
       "TeamGameDetailDto" : {
+        "required" : [ "days", "early", "game", "matchups", "metrics", "ranksObservedAt", "teamId", "timelineAvailable", "viewerMemberId" ],
         "type" : "object",
         "properties" : {
           "days" : {
@@ -7477,6 +7604,7 @@
         }
       },
       "TeamGameDto" : {
+        "required" : [ "allies", "allyRanks", "durationSeconds", "enemies", "enemyRanks", "matchId", "patch", "players", "presentPlayers", "queue", "queueId", "ranksObservedAt", "splitSides", "startedAt", "win" ],
         "type" : "object",
         "properties" : {
           "allies" : {
@@ -7541,6 +7669,7 @@
         }
       },
       "TeamGamePlayerDto" : {
+        "required" : [ "afk", "assists", "at15", "championId", "championName", "damageTaken", "damageToChampions", "deaths", "displayName", "flexRank", "goldEarned", "iconUrl", "kills", "memberId", "minionsKilled", "position", "riotId", "side", "soloRank", "visionScore", "win" ],
         "type" : "object",
         "properties" : {
           "afk" : {
@@ -7619,6 +7748,7 @@
         }
       },
       "TeamGamesStatsDto" : {
+        "required" : [ "byPatch", "byQueue", "bySide", "days", "firstPlayedAt", "games", "generatedAt", "lastPlayedAt", "minimumPlayers", "overall", "presence", "rosterSize", "state", "teamId", "teamName", "totalGames", "truncated", "undecidedGames", "viewerMemberId" ],
         "type" : "object",
         "properties" : {
           "byPatch" : {
@@ -7705,6 +7835,7 @@
         }
       },
       "TeamLevelDto" : {
+        "required" : [ "games", "metrics", "patches", "tier" ],
         "type" : "object",
         "properties" : {
           "games" : {
@@ -7729,6 +7860,7 @@
         }
       },
       "TeamLevelMetric" : {
+        "required" : [ "games", "gamesAtEnd", "inTier", "key", "level", "mean", "meanAtEnd", "meanChange", "polarity" ],
         "type" : "object",
         "properties" : {
           "games" : {
@@ -7767,6 +7899,7 @@
         }
       },
       "TeamMemberDto" : {
+        "required" : [ "avatarUrl", "captain", "coach", "displayName", "hiddenOnPublicPage", "linked", "memberId", "riotGameName", "riotTagLine", "roles", "status" ],
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
@@ -7810,6 +7943,7 @@
         }
       },
       "TeamMemberPresenceDto" : {
+        "required" : [ "displayName", "games", "memberId", "presenceRate", "state", "status", "winRate", "wins" ],
         "type" : "object",
         "properties" : {
           "displayName" : {
@@ -7845,6 +7979,7 @@
         }
       },
       "TeamNameRequest" : {
+        "required" : [ "name" ],
         "type" : "object",
         "properties" : {
           "name" : {
@@ -7853,6 +7988,7 @@
         }
       },
       "TeamOppositionDto" : {
+        "required" : [ "byEnemyTier", "byGap", "byPosition", "ceilingMinimumGames", "ceilingTier", "days", "early", "games", "gamesWithRanks", "generatedAt", "level", "medianLagDays", "state", "teamId" ],
         "type" : "object",
         "properties" : {
           "byEnemyTier" : {
@@ -7916,6 +8052,7 @@
         }
       },
       "TeamPlayersStatsDto" : {
+        "required" : [ "championsPerPlayer", "days", "generatedAt", "players", "premadeGames", "premadeMinimum", "teamId", "teamName", "viewerMemberId" ],
         "type" : "object",
         "properties" : {
           "championsPerPlayer" : {
@@ -7957,6 +8094,7 @@
         }
       },
       "TeamRecordDto" : {
+        "required" : [ "averageDurationSeconds", "games", "key", "label", "losses", "winRate", "wins" ],
         "type" : "object",
         "properties" : {
           "averageDurationSeconds" : {
@@ -7987,7 +8125,8 @@
           }
         }
       },
-      "TeamSession" : {
+      "TeamSessionDto" : {
+        "required" : [ "day", "detectedAt", "endedAt", "games", "id", "matchIds", "memberIds", "missed", "planned", "slotId", "startedAt", "teamId", "wins" ],
         "type" : "object",
         "properties" : {
           "day" : {
@@ -8000,7 +8139,8 @@
           },
           "endedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -8028,11 +8168,13 @@
             "type" : "boolean"
           },
           "slotId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "startedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "teamId" : {
             "type" : "string"
@@ -8044,6 +8186,7 @@
         }
       },
       "TeamSummaryDto" : {
+        "required" : [ "createdAt", "id", "memberCount", "name", "updatedAt", "viewerCanEditCompositions", "viewerCanEditRoster", "viewerCanManage", "viewerMemberId" ],
         "type" : "object",
         "properties" : {
           "createdAt" : {
@@ -8079,6 +8222,7 @@
         }
       },
       "TeamSynergyDto" : {
+        "required" : [ "duos", "games", "minimumDuoGames", "resources" ],
         "type" : "object",
         "properties" : {
           "duos" : {
@@ -8104,6 +8248,7 @@
         }
       },
       "Tier" : {
+        "required" : [ "count", "values" ],
         "type" : "object",
         "properties" : {
           "count" : {
@@ -8120,6 +8265,7 @@
         }
       },
       "TierComboChampion" : {
+        "required" : [ "iconUrl", "id", "key", "name" ],
         "type" : "object",
         "properties" : {
           "iconUrl" : {
@@ -8138,6 +8284,7 @@
         }
       },
       "TierCombosDto" : {
+        "required" : [ "combos", "computedAt", "games", "kind", "minGames", "positions", "tier" ],
         "type" : "object",
         "properties" : {
           "combos" : {
@@ -8172,21 +8319,25 @@
           }
         }
       },
-      "TrainingSlot" : {
+      "TrainingSlotDto" : {
+        "required" : [ "date", "day", "end", "id", "start" ],
         "type" : "object",
         "properties" : {
           "date" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "day" : {
             "type" : "string",
+            "nullable" : true,
             "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ]
           },
           "end" : {
             "type" : "string"
           },
           "id" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "start" : {
             "type" : "string"
@@ -8194,6 +8345,7 @@
         }
       },
       "UpdateMemberRequest" : {
+        "required" : [ "coach", "roles", "status" ],
         "type" : "object",
         "properties" : {
           "coach" : {
@@ -8213,6 +8365,7 @@
         }
       },
       "UserDto" : {
+        "required" : [ "avatarUrl", "createdAt", "discordId", "discordUsername", "displayName", "id", "lastLoginAt", "links", "riotGameName", "riotTagLine", "roleId", "roleName" ],
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
@@ -8256,6 +8409,7 @@
         }
       },
       "UserIdentityDto" : {
+        "required" : [ "permissions", "user" ],
         "type" : "object",
         "properties" : {
           "permissions" : {
@@ -8272,6 +8426,7 @@
         }
       },
       "UserStatsDto" : {
+        "required" : [ "active", "activeByApp", "daily", "riotLinked", "total" ],
         "type" : "object",
         "properties" : {
           "active" : {
@@ -8300,6 +8455,7 @@
         }
       },
       "VisibilityRequest" : {
+        "required" : [ "value" ],
         "type" : "object",
         "properties" : {
           "value" : {

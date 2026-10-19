@@ -19,11 +19,12 @@ import schultz.thomas.schub.core.lol.team.api.dto.AddMemberRequest;
 import schultz.thomas.schub.core.lol.team.api.dto.TeamDto;
 import schultz.thomas.schub.core.lol.team.api.dto.TeamNameRequest;
 import schultz.thomas.schub.core.lol.team.api.dto.TeamSummaryDto;
+import schultz.thomas.schub.core.lol.team.api.dto.TrainingSlotDto;
 import schultz.thomas.schub.core.lol.team.api.dto.UpdateMemberRequest;
+import schultz.thomas.schub.core.lol.team.api.mapper.TeamDtoMapper;
 import schultz.thomas.schub.core.lol.team.api.mapper.TeamProjection;
 import schultz.thomas.schub.core.lol.team.business.service.TeamService;
 import schultz.thomas.schub.core.lol.team.data.model.Team;
-import schultz.thomas.schub.core.lol.team.data.model.TrainingSlot;
 
 import java.util.List;
 
@@ -35,6 +36,7 @@ public class TeamController {
     private final TeamService teamService;
     private final TeamProjection projection;
     private final UserService userService;
+    private final TeamDtoMapper dtos;
 
     @GetMapping
     public List<TeamSummaryDto> mine(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
@@ -130,9 +132,9 @@ public class TeamController {
     @PutMapping("/{teamId}/training-slots")
     public TeamDto setTrainingSlots(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                     @PathVariable String teamId,
-                                    @RequestBody List<TrainingSlot> slots) {
+                                    @RequestBody List<TrainingSlotDto> slots) {
         User actor = userService.requireActor(actorId);
-        return projection.toDto(teamService.setTrainingSlots(actor, teamId, slots), actor);
+        return projection.toDto(teamService.setTrainingSlots(actor, teamId, dtos.fromSlotDtos(slots)), actor);
     }
 
     @PostMapping("/claim")

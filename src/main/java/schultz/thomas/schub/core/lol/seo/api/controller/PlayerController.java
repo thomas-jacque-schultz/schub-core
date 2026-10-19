@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
+import schultz.thomas.schub.core.augur.api.dto.EvaluationDto;
 import schultz.thomas.schub.core.augur.api.dto.FindingDto;
 import schultz.thomas.schub.core.augur.api.mapper.AugurDtoMapper;
-import schultz.thomas.schub.core.augur.business.engine.Evaluator;
 import schultz.thomas.schub.core.augur.business.service.AugurService;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
@@ -97,16 +97,16 @@ public class PlayerController {
 
     // La trace complète du moteur, pour régler les seuils : section « Débogage des calculs » de Schub.
     @GetMapping("/trace")
-    public List<Evaluator.Evaluation> trace(
+    public List<EvaluationDto> trace(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @PathVariable String riotId,
             @RequestParam(required = false) String matchId,
             @RequestParam(required = false) Integer days) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
         String puuid = players.resolve(riotId).puuid();
-        return matchId == null || matchId.isBlank()
+        return findingDtos.toEvaluationDtos(matchId == null || matchId.isBlank()
                 ? augur.trace(PatternVersion.Scope.HABIT, puuid, null, days)
-                : augur.trace(PatternVersion.Scope.GAME, puuid, matchId, null);
+                : augur.trace(PatternVersion.Scope.GAME, puuid, matchId, null));
     }
 
     @PostMapping("/collect")
