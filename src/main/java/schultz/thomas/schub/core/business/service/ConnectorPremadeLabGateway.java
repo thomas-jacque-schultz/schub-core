@@ -19,15 +19,15 @@ public class ConnectorPremadeLabGateway {
         this.restClient = restClient;
     }
 
-    public Status sendDirectMessage(String discordId, String content) {
+    public Result sendDirectMessage(String discordId, String content) {
         try {
             Result result = restClient.post().uri("/dm")
                     .body(Map.of("discordId", discordId, "content", content))
                     .retrieve().body(Result.class);
-            return result == null || result.status() == null ? Status.FAILED : result.status();
+            return result == null || result.status() == null ? new Result(Status.FAILED, "Réponse vide") : result;
         } catch (RestClientException indisponible) {
             log.warn("Connecteur PremadeLab injoignable : {}", indisponible.getMessage());
-            return Status.FAILED;
+            return new Result(Status.FAILED, "Connecteur PremadeLab injoignable");
         }
     }
 
@@ -38,6 +38,6 @@ public class ConnectorPremadeLabGateway {
         FAILED
     }
 
-    record Result(Status status, String detail) {
+    public record Result(Status status, String detail) {
     }
 }

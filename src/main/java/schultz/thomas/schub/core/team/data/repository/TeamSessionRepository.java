@@ -11,4 +11,6 @@ public interface TeamSessionRepository extends MongoRepository<TeamSession, Stri
     List<TeamSession> findByTeamIdAndDayGreaterThanEqualOrderByStartedAtDesc(String teamId, LocalDate depuis);
 
     List<TeamSession> findByDay(LocalDate day);
+
+    List<TeamSession> findByDayGreaterThanEqualOrderByStartedAtDesc(LocalDate depuis);
 }
