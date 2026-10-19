@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import schultz.thomas.schub.core.team.api.dto.EarlyGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamEarlyGameDto;
+import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
 import java.util.LinkedHashMap;
@@ -96,12 +97,12 @@ final class EarlyGames {
     }
 
     private static Integer minutesDuCote(RiotStatsGateway.JunglePresence presence, String poste) {
-        return switch (poste == null ? "" : poste) {
-            case "TOP" -> presence.topMinutes();
-            case "MIDDLE" -> presence.midMinutes();
-            case "BOTTOM", "UTILITY" -> presence.botMinutes();
-            default -> null;
-        };
+        return GameRole.dePosition(poste).map(role -> switch (role) {
+            case TOP -> presence.topMinutes();
+            case MID -> presence.midMinutes();
+            case ADC, SUP -> presence.botMinutes();
+            case JGL -> null;
+        }).orElse(null);
     }
 
     private static RiotStatsGateway.JunglePresence jungler(RiotStatsGateway.EarlyGame early, int notreCote,
@@ -167,7 +168,7 @@ final class EarlyGames {
 
         void ajoute(RiotStatsGateway.InsightPlayer joueur, RiotStatsGateway.EarlyGame early) {
             String puuid = joueur.puuid();
-            if ("JUNGLE".equals(joueur.position())) {
+            if (GameRole.JGL.position().equals(joueur.position())) {
                 jungles++;
                 for (RiotStatsGateway.Gank gank : early.ganks()) {
                     if (puuid.equals(gank.junglerPuuid())) {
