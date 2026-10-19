@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.ToIntFunction;
 
 // Mêmes chiffres que riot_team_side dans le connecteur, calculés ici sur les parties de l'équipe.
 final class TeamLevels {
@@ -56,9 +55,9 @@ final class TeamLevels {
 
     static Map<String, Integer> valeurs(RiotStatsGateway.Insight insight, int cote) {
         Map<String, Integer> valeurs = new LinkedHashMap<>();
-        valeurs.put("goldDiffAt15", ecart(insight, cote, RiotStatsGateway.At15::gold));
-        valeurs.put("xpDiffAt15", ecart(insight, cote, RiotStatsGateway.At15::xp));
-        valeurs.put("killsDiffAt15", ecart(insight, cote, RiotStatsGateway.At15::kills));
+        valeurs.put("goldDiffAt15", VueDePartie.ecartDesCampsA15(insight, cote, RiotStatsGateway.At15::gold));
+        valeurs.put("xpDiffAt15", VueDePartie.ecartDesCampsA15(insight, cote, RiotStatsGateway.At15::xp));
+        valeurs.put("killsDiffAt15", VueDePartie.ecartDesCampsA15(insight, cote, RiotStatsGateway.At15::kills));
         RiotStatsGateway.Objectives objectifs = insight.early().objectives().stream()
                 .filter(o -> o.side() == cote).findFirst().orElse(null);
         valeurs.put("dragons", objectifs == null ? 0 : objectifs.dragons());
@@ -73,9 +72,9 @@ final class TeamLevels {
 
     static Map<String, Integer> fins(RiotStatsGateway.Insight insight, int cote) {
         Map<String, Integer> fins = new LinkedHashMap<>();
-        fins.put("goldDiffAt15", ecartFinal(insight, cote, RiotStatsGateway.AtEnd::gold));
-        fins.put("xpDiffAt15", ecartFinal(insight, cote, RiotStatsGateway.AtEnd::xp));
-        fins.put("killsDiffAt15", ecartFinal(insight, cote, RiotStatsGateway.AtEnd::kills));
+        fins.put("goldDiffAt15", VueDePartie.ecartDesCampsEnFin(insight, cote, RiotStatsGateway.AtEnd::gold));
+        fins.put("xpDiffAt15", VueDePartie.ecartDesCampsEnFin(insight, cote, RiotStatsGateway.AtEnd::xp));
+        fins.put("killsDiffAt15", VueDePartie.ecartDesCampsEnFin(insight, cote, RiotStatsGateway.AtEnd::kills));
         RiotStatsGateway.EndObjectives objectifs = insight.endObjectives() == null ? null
                 : insight.endObjectives().stream().filter(o -> o.side() == cote).findFirst().orElse(null);
         if (objectifs != null) {
@@ -83,31 +82,6 @@ final class TeamLevels {
             fins.put("heralds", objectifs.heralds());
         }
         return fins;
-    }
-
-    private static Integer ecartFinal(RiotStatsGateway.Insight insight, int cote,
-                                      ToIntFunction<RiotStatsGateway.AtEnd> valeur) {
-        if (insight.participants().stream().anyMatch(joueur -> joueur.atEnd() == null)) {
-            return null;
-        }
-        int nous = insight.participants().stream().filter(j -> j.side() == cote)
-                .mapToInt(j -> valeur.applyAsInt(j.atEnd())).sum();
-        int eux = insight.participants().stream().filter(j -> j.side() != cote)
-                .mapToInt(j -> valeur.applyAsInt(j.atEnd())).sum();
-        return nous - eux;
-    }
-
-    // Les dix chiffres à 15 min, sinon pas d'écart.
-    private static Integer ecart(RiotStatsGateway.Insight insight, int cote,
-                                 ToIntFunction<RiotStatsGateway.At15> valeur) {
-        if (insight.participants().stream().anyMatch(joueur -> joueur.at15() == null)) {
-            return null;
-        }
-        int nous = insight.participants().stream().filter(j -> j.side() == cote)
-                .mapToInt(j -> valeur.applyAsInt(j.at15())).sum();
-        int eux = insight.participants().stream().filter(j -> j.side() != cote)
-                .mapToInt(j -> valeur.applyAsInt(j.at15())).sum();
-        return nous - eux;
     }
 
     private static final class Cumul {
