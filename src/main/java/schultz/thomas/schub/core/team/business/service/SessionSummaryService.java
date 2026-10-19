@@ -32,7 +32,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
+import java.util.stream.Stream;
 
 // Le résumé de session en MP, le lendemain (Schub#99). Un MP par personne et par jour, aux seuls présents ;
 // planifiées activées par défaut, libres désactivées (réponse du 05/10).
@@ -67,6 +69,7 @@ public class SessionSummaryService {
     private final TeamRepository teams;
     private final UserRepository users;
     private final RiotStatsGateway statsGateway;
+    private final RiotChampionGateway championGateway;
     private final TeamGamesStatsService gamesStats;
     private final ConnectorPremadeLabGateway premadelab;
 
@@ -211,7 +214,7 @@ public class SessionSummaryService {
         return parMembre;
     }
 
-    // Une ligne par partie (poste, champions, début de partie, l'équipe), puis le bilan de la session.
+    // Une ligne par partie (poste, champions, début de partie, écart final), puis le bilan de la session.
     Embed compose(Team team, TeamSession session, String memberId) {
         if (team == null) {
             return null;
@@ -230,9 +233,11 @@ public class SessionSummaryService {
         statsGateway.insights(session.matchIds()).orElseGet(List::of)
                 .forEach(insight -> insights.put(insight.matchId(), insight));
 
+        Function<RiotStatsGateway.SharedMatchPlayer, String> champion = icones(parties, monPuuid);
+
         List<Embed.Field> champs = new ArrayList<>();
         parties.stream().limit(PARTIES_MAX).forEach(partie -> champs.add(
-                partie(partie, monPuuid, insights.get(partie.matchId()))));
+                partie(partie, monPuuid, insights.get(partie.matchId()), champion)));
         champs.add(new Embed.Field("Bilan", bilan(team, session, monPuuid, parties, parPuuid, noms, insights), false));
 
         List<String> avec = joueurs.stream()
@@ -252,14 +257,48 @@ public class SessionSummaryService {
                 new Embed.Footer("PremadeLab"));
     }
 
-    private static Embed.Field partie(RiotStatsGateway.SharedMatch partie, String monPuuid,
-                                      RiotStatsGateway.Insight insight) {
-        RiotStatsGateway.SharedMatchPlayer moi = partie.players().stream()
-                .filter(j -> j.puuid().equals(monPuuid)).findFirst().orElse(null);
-        String poste = moi == null ? null : POSTES.get(moi.position());
-        RiotStatsGateway.SharedMatchPlayer adverse = poste == null ? null : partie.others().stream()
+    // Les icônes de mes champions et de mes vis-à-vis ; sans emoji, le nom en gras.
+    private Function<RiotStatsGateway.SharedMatchPlayer, String> icones(List<RiotStatsGateway.SharedMatch> parties,
+                                                                      String monPuuid) {
+        Map<Integer, RiotChampionGateway.Champion> catalogue = championGateway.catalogue()
+                .map(RiotChampionGateway.Catalogue::parId).orElseGet(Map::of);
+        List<ConnectorPremadeLabGateway.ChampionIcon> demandes = parties.stream()
+                .flatMap(p -> {
+                    RiotStatsGateway.SharedMatchPlayer moi = moi(p, monPuuid);
+                    RiotStatsGateway.SharedMatchPlayer adverse = adverse(p, moi);
+                    return Stream.of(moi, adverse);
+                })
+                .filter(Objects::nonNull)
+                .map(j -> catalogue.get(j.championId()))
+                .filter(c -> c != null && c.key() != null && c.iconUrl() != null)
+                .distinct()
+                .map(c -> new ConnectorPremadeLabGateway.ChampionIcon(c.key(), c.iconUrl()))
+                .toList();
+        Map<String, String> emojis = premadelab.championEmojis(demandes);
+        return joueur -> {
+            RiotChampionGateway.Champion c = catalogue.get(joueur.championId());
+            String emoji = c == null ? null : emojis.get(c.key());
+            return emoji != null ? emoji : "**" + joueur.championName() + "**";
+        };
+    }
+
+    private static RiotStatsGateway.SharedMatchPlayer moi(RiotStatsGateway.SharedMatch partie, String monPuuid) {
+        return partie.players().stream().filter(j -> j.puuid().equals(monPuuid)).findFirst().orElse(null);
+    }
+
+    private static RiotStatsGateway.SharedMatchPlayer adverse(RiotStatsGateway.SharedMatch partie,
+                                                              RiotStatsGateway.SharedMatchPlayer moi) {
+        return moi == null || !POSTES.containsKey(moi.position()) ? null : partie.others().stream()
                 .filter(j -> j.side() != moi.side() && moi.position().equals(j.position()))
                 .findFirst().orElse(null);
+    }
+
+    private static Embed.Field partie(RiotStatsGateway.SharedMatch partie, String monPuuid,
+                                      RiotStatsGateway.Insight insight,
+                                      Function<RiotStatsGateway.SharedMatchPlayer, String> champion) {
+        RiotStatsGateway.SharedMatchPlayer moi = moi(partie, monPuuid);
+        String poste = moi == null ? null : POSTES.get(moi.position());
+        RiotStatsGateway.SharedMatchPlayer adverse = adverse(partie, moi);
         String resultat = partie.win() == null ? "➖" : partie.win() ? "✅ Victoire" : "❌ Défaite";
         String contexte = moi == null ? "sans toi" : poste != null ? poste : MODES.get(partie.queue());
         String nom = resultat + (contexte == null ? "" : " · " + contexte) + " · "
@@ -267,7 +306,7 @@ public class SessionSummaryService {
 
         List<String> lignes = new ArrayList<>();
         if (moi != null) {
-            lignes.add("**" + moi.championName() + "**" + (adverse == null ? "" : " contre " + adverse.championName())
+            lignes.add(champion.apply(moi) + (adverse == null ? "" : " contre " + champion.apply(adverse))
                     + " · " + moi.kills() + "/" + moi.deaths() + "/" + moi.assists());
         }
         Map<String, RiotStatsGateway.At15> a15 = new HashMap<>();
@@ -280,11 +319,32 @@ public class SessionSummaryService {
             lignes.add("À 15 min : " + signe(nous.gold() - eux.gold()) + " or et " + signe(nous.cs() - eux.cs())
                     + " CS sur lui, " + nous.kills() + "/" + nous.deaths() + "/" + nous.assists());
         }
-        Integer avance = avance(insight, partie);
-        if (avance != null) {
-            lignes.add("Équipe : " + signe(avance) + " or à 15 min");
+        Integer ecart = ecartFinal(partie);
+        if (ecart != null) {
+            lignes.add("Résultat : " + signe(ecart) + " or en fin de partie");
         }
         return new Embed.Field(nom, lignes.isEmpty() ? "—" : String.join("\n", lignes), false);
+    }
+
+    // L'or gagné par chaque camp, sur les dix joueurs : sans timeline, il est toujours connu.
+    // Seulement à cinq contre cinq : les modes à neuf contre neuf ne se comparent pas ainsi.
+    static Integer ecartFinal(RiotStatsGateway.SharedMatch partie) {
+        if (partie.players().isEmpty() || partie.others() == null) {
+            return null;
+        }
+        int camp = partie.players().get(0).side();
+        Map<String, RiotStatsGateway.SharedMatchPlayer> parPuuid = new LinkedHashMap<>();
+        Stream.concat(partie.players().stream(), partie.others().stream())
+                .forEach(j -> parPuuid.putIfAbsent(j.puuid(), j));
+        long nous = parPuuid.values().stream().filter(j -> j.side() == camp).count();
+        if (nous != 5 || parPuuid.size() != 10) {
+            return null;
+        }
+        int ecart = 0;
+        for (RiotStatsGateway.SharedMatchPlayer joueur : parPuuid.values()) {
+            ecart += joueur.side() == camp ? joueur.goldEarned() : -joueur.goldEarned();
+        }
+        return ecart;
     }
 
     static String sansTag(String riotId) {
@@ -299,10 +359,31 @@ public class SessionSummaryService {
         lignes.add("**" + session.wins() + " V – " + (session.games() - session.wins()) + " D** en "
                 + session.games() + " parties · " + duree(secondes) + " de jeu");
         if (monPuuid != null) {
-            lignes.addAll(toi(monPuuid, session));
+            List<RiotStatsGateway.SharedMatchPlayer> miennes = parties.stream().map(p -> moi(p, monPuuid))
+                    .filter(Objects::nonNull).toList();
+            if (!miennes.isEmpty()) {
+                lignes.add("Postes : " + postes(parties, monPuuid));
+            }
+            lignes.addAll(toi(monPuuid, session, miennes));
         }
         lignes.addAll(equipe(team, session, parties, parPuuid, noms, insights));
         return String.join("\n", lignes);
+    }
+
+    // « Top ×6, Mid ×1, ARAM ×1 », dans l'ordre du nombre de parties.
+    static String postes(List<RiotStatsGateway.SharedMatch> parties, String monPuuid) {
+        Map<String, Integer> compte = new LinkedHashMap<>();
+        for (RiotStatsGateway.SharedMatch partie : parties) {
+            RiotStatsGateway.SharedMatchPlayer moi = moi(partie, monPuuid);
+            if (moi != null) {
+                String poste = POSTES.getOrDefault(moi.position(), MODES.getOrDefault(partie.queue(), "autre mode"));
+                compte.merge(poste, 1, Integer::sum);
+            }
+        }
+        return String.join(", ", compte.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .map(e -> e.getKey() + " ×" + e.getValue())
+                .toList());
     }
 
     static String signe(int valeur) {
@@ -321,8 +402,11 @@ public class SessionSummaryService {
                           String format) {
     }
 
+    private static final Mesure KDA =
+            new Mesure("KDA", b -> (b.kills() + b.assists()) / (double) Math.max(1, b.deaths()), true, "%.1f");
+
+    // Le KDA a sa propre ligne : il n'entre pas dans les points forts et faibles.
     private static final List<Mesure> MESURES = List.of(
-            new Mesure("KDA", b -> (b.kills() + b.assists()) / (double) Math.max(1, b.deaths()), true, "%.1f"),
             new Mesure("CS/min", b -> b.minionsKilled() / minutes(b), true, "%.1f"),
             new Mesure("Or/min", b -> b.goldEarned() / minutes(b), true, "%.0f"),
             new Mesure("Dégâts/min", b -> b.damageToChampions() / minutes(b), true, "%.0f"),
@@ -333,8 +417,9 @@ public class SessionSummaryService {
         return Math.max(1, b.secondsPlayed() / 60.0);
     }
 
-    // Le joueur comparé à lui-même, jamais aux autres : son point le plus fort, et le plus faible.
-    private List<String> toi(String puuid, TeamSession session) {
+    // Le joueur comparé à lui-même, jamais aux autres : son KDA, son point le plus fort, et le plus faible.
+    private List<String> toi(String puuid, TeamSession session, List<RiotStatsGateway.SharedMatchPlayer> miennes) {
+        List<String> lignes = new ArrayList<>();
         Optional<RiotStatsGateway.Bucket> soir = statsGateway.aggregate(List.of(puuid),
                         RiotStatsGateway.Grouping.OVERALL, RiotStatsGateway.Scope.RIFT, null, session.matchIds())
                 .flatMap(l -> l.stream().findFirst());
@@ -342,8 +427,17 @@ public class SessionSummaryService {
                         RiotStatsGateway.Grouping.OVERALL, RiotStatsGateway.Scope.RIFT,
                         Instant.now().minus(REFERENCE_JOURS, ChronoUnit.DAYS))
                 .flatMap(l -> l.stream().findFirst());
+        if (!miennes.isEmpty()) {
+            int k = miennes.stream().mapToInt(RiotStatsGateway.SharedMatchPlayer::kills).sum();
+            int d = miennes.stream().mapToInt(RiotStatsGateway.SharedMatchPlayer::deaths).sum();
+            int a = miennes.stream().mapToInt(RiotStatsGateway.SharedMatchPlayer::assists).sum();
+            lignes.add("KDA " + String.format(Locale.FRANCE, KDA.format(), (k + a) / (double) Math.max(1, d))
+                    + " · " + k + "/" + d + "/" + a
+                    + habitude.map(h -> " (ta moyenne " + String.format(Locale.FRANCE, KDA.format(),
+                            KDA.valeur().applyAsDouble(h)) + ")").orElse(""));
+        }
         if (soir.isEmpty() || habitude.isEmpty() || soir.get().games() == 0) {
-            return List.of();
+            return lignes;
         }
         record Ecart(Mesure mesure, double soir, double habitude, double relatif) {
         }
@@ -356,7 +450,6 @@ public class SessionSummaryService {
                 ecarts.add(new Ecart(mesure, s, h, relatif));
             }
         }
-        List<String> lignes = new ArrayList<>();
         ecarts.stream().filter(e -> e.relatif() >= ECART_NOTABLE).max(Comparator.comparingDouble(Ecart::relatif))
                 .ifPresent(e -> lignes.add("✅ " + ligne(e.mesure(), e.soir(), e.habitude())));
         ecarts.stream().filter(e -> e.relatif() <= -ECART_NOTABLE).min(Comparator.comparingDouble(Ecart::relatif))
