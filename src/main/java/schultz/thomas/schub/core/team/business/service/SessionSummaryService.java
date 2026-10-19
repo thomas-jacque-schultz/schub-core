@@ -321,7 +321,7 @@ public class SessionSummaryService {
         }
         Integer ecart = ecartFinal(partie);
         if (ecart != null) {
-            lignes.add("Résultat : " + signe(ecart) + " or en fin de partie");
+            lignes.add("Résultat équipe : " + signe(ecart) + " or en fin de partie");
         }
         return new Embed.Field(nom, lignes.isEmpty() ? "—" : String.join("\n", lignes), false);
     }
