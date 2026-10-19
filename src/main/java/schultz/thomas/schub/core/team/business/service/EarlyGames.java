@@ -1,6 +1,6 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.business.model.EarlyGame;
+import schultz.thomas.schub.core.team.business.model.EarlyGameView;
 import schultz.thomas.schub.core.team.business.model.TeamEarlyGame;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -20,21 +20,21 @@ final class EarlyGames {
     private EarlyGames() {
     }
 
-    static EarlyGame vue(RiotStatsGateway.EarlyGame early, int notreCote, Map<String, TeamMember> parPuuid) {
+    static EarlyGameView vue(RiotStatsGateway.EarlyGame early, int notreCote, Map<String, TeamMember> parPuuid) {
         if (early == null) {
             return null;
         }
-        List<EarlyGame.Gank> ganks = early.ganks().stream()
+        List<EarlyGameView.Gank> ganks = early.ganks().stream()
                 .map(gank -> {
                     boolean nous = gank.attackerSide() == notreCote;
-                    return new EarlyGame.Gank(gank.second(), gank.lane(), nous, gank.outcome(), gank.decisive(),
+                    return new EarlyGameView.Gank(gank.second(), gank.lane(), nous, gank.outcome(), gank.decisive(),
                             gank.objectiveFollowUp(), membres(gank.targetPuuids(), parPuuid),
                             membres(gank.casualtyPuuids(), parPuuid),
                             nous ? gank.attackersLost() : gank.defendersLost(),
                             nous ? gank.defendersLost() : gank.attackersLost());
                 })
                 .toList();
-        return new EarlyGame(ganks,
+        return new EarlyGameView(ganks,
                 presence(jungler(early, notreCote, true), parPuuid),
                 presence(jungler(early, notreCote, false), parPuuid),
                 objectifs(early, notreCote, true),
@@ -113,23 +113,23 @@ final class EarlyGames {
                 .orElse(null);
     }
 
-    private static EarlyGame.JunglePresence presence(RiotStatsGateway.JunglePresence presence,
+    private static EarlyGameView.JunglePresence presence(RiotStatsGateway.JunglePresence presence,
                                                            Map<String, TeamMember> parPuuid) {
         if (presence == null) {
             return null;
         }
         TeamMember membre = parPuuid.get(presence.puuid());
-        return new EarlyGame.JunglePresence(membre == null ? null : membre.getMemberId(),
+        return new EarlyGameView.JunglePresence(membre == null ? null : membre.getMemberId(),
                 presence.topMinutes(), presence.midMinutes(), presence.botMinutes(), coteFort(presence));
     }
 
-    private static EarlyGame.Objectives objectifs(RiotStatsGateway.EarlyGame early, int notreCote,
+    private static EarlyGameView.Objectives objectifs(RiotStatsGateway.EarlyGame early, int notreCote,
                                                         boolean notre) {
         return early.objectives().stream()
                 .filter(o -> (o.side() == notreCote) == notre)
                 .findFirst()
-                .map(o -> new EarlyGame.Objectives(o.dragons(), o.grubs(), o.heralds()))
-                .orElse(new EarlyGame.Objectives(0, 0, 0));
+                .map(o -> new EarlyGameView.Objectives(o.dragons(), o.grubs(), o.heralds()))
+                .orElse(new EarlyGameView.Objectives(0, 0, 0));
     }
 
     private static List<String> membres(List<String> puuids, Map<String, TeamMember> parPuuid) {

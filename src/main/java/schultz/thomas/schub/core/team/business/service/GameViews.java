@@ -2,7 +2,6 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.team.business.model.At15;
 import schultz.thomas.schub.core.team.business.model.GamePlayerMetrics;
 import schultz.thomas.schub.core.team.business.model.Matchup;
 import schultz.thomas.schub.core.team.business.model.RankedStanding;
@@ -205,15 +204,11 @@ public class GameViews {
                 joueur.afk(),
                 insight == null ? null : standing(insight.solo()),
                 insight == null ? null : standing(insight.flex()),
-                insight == null || insight.at15() == null ? null : at15(insight.at15())));
+                insight == null ? null : insight.at15()));
     }
 
     private static RankedStanding standing(RiotStatsGateway.Standing s) {
         return s == null ? null : new RankedStanding(s.queue(), s.riotQueueType(), s.tier(), s.division(),
                 s.leaguePoints(), s.wins(), s.losses(), s.hotStreak(), s.inactive(), s.observedAt());
-    }
-
-    private static At15 at15(RiotStatsGateway.At15 a) {
-        return new At15(a.gold(), a.xp(), a.cs(), a.damageToChampions(), a.kills(), a.deaths(), a.assists());
     }
 }

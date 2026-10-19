@@ -1,5 +1,7 @@
 package schultz.thomas.schub.core.team.business.model;
 
+import schultz.thomas.schub.core.team.business.service.RiotStatsGateway;
+
 public record TeamGamePlayer(
         String memberId,
         String displayName,
@@ -21,6 +23,6 @@ public record TeamGamePlayer(
         boolean afk,
         RankedStanding soloRank,
         RankedStanding flexRank,
-        At15 at15
+        RiotStatsGateway.At15 at15
 ) {
 }
