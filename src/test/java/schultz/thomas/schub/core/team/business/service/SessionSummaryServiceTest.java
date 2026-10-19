@@ -58,11 +58,12 @@ class SessionSummaryServiceTest {
                         joueur("e4", 200, "BOTTOM", 10000), joueur("e5", 200, "UTILITY", 4000),
                         joueur("e5", 200, "UTILITY", 4000)));
 
-        assertThat(SessionSummaryService.ecartFinal(p)).isEqualTo(4000);
-        assertThat(SessionSummaryService.ecartFinal(partie("OTHER",
-                List.of(joueur("moi", 100, "UNKNOWN", 1)), List.of(joueur("eux", 200, "UNKNOWN", 1)))))
+        assertThat(VueDePartie.de(p).ecartDOrFinal()).isEqualTo(4000);
+        assertThat(VueDePartie.de(partie("OTHER",
+                List.of(joueur("moi", 100, "UNKNOWN", 1)), List.of(joueur("eux", 200, "UNKNOWN", 1))))
+                .ecartDOrFinal())
                 .isNull();
-        assertThat(SessionSummaryService.ecartFinal(partie("ARAM", List.of(joueur("moi", 100, "", 1)), List.of())))
+        assertThat(VueDePartie.de(partie("ARAM", List.of(joueur("moi", 100, "", 1)), List.of())).ecartDOrFinal())
                 .isNull();
     }
 
