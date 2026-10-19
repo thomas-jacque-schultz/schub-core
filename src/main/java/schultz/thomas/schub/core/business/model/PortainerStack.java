@@ -1,4 +1,6 @@
-package schultz.thomas.schub.core.api.dto;
+package schultz.thomas.schub.core.business.model;
+
+import schultz.thomas.schub.core.data.model.GameServerCommandFailure;
 
 import java.time.Instant;
 
@@ -8,6 +10,6 @@ public record PortainerStack(
         Integer endpointId,
         boolean running,
         Instant observedAt,
-        GameServerCommandFailureDto lastCommandFailure
+        GameServerCommandFailure lastCommandFailure
 ) {
 }

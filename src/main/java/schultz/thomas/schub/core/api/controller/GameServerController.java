@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
 import schultz.thomas.schub.core.api.dto.PublicServerStatusDto;
-import schultz.thomas.schub.core.business.mapper.GameServerMapper;
+import schultz.thomas.schub.core.api.mapper.GameServerMapper;
+import schultz.thomas.schub.core.api.mapper.GameServerProjection;
 import schultz.thomas.schub.core.business.service.DeploymentService;
 import schultz.thomas.schub.core.business.service.GameServerControlPolicy;
-import schultz.thomas.schub.core.business.service.GameServerProjectionService;
 import schultz.thomas.schub.core.business.service.GameServerService;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.UserService;
@@ -36,7 +36,7 @@ public class GameServerController {
 
     private final GameServerService gameServerService;
     private final DeploymentService deploymentService;
-    private final GameServerProjectionService projectionService;
+    private final GameServerProjection projectionService;
     private final PermissionEvaluator permissionEvaluator;
     private final UserService userService;
     private final GameServerMapper mapper;

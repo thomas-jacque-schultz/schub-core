@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.dto.RoleDto;
+import schultz.thomas.schub.core.api.mapper.AccountDtoMapper;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RoleService;
 import schultz.thomas.schub.core.business.service.UserService;
@@ -30,6 +31,7 @@ public class RoleController {
     private final RoleService roleService;
     private final UserService userService;
     private final PermissionEvaluator permissionEvaluator;
+    private final AccountDtoMapper accounts;
 
     @GetMapping
     public List<RoleDto> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
@@ -38,7 +40,7 @@ public class RoleController {
                 && !permissionEvaluator.can(actor, Permission.ROLE_MANAGE, null)) {
             throw new AccessDeniedException("Permission USER_VIEW ou ROLE_MANAGE requise");
         }
-        return roleService.findAll().stream().map(roleService::toDto).toList();
+        return accounts.toRoleDtos(roleService.findAll());
     }
 
     @PostMapping
@@ -46,7 +48,8 @@ public class RoleController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody RoleDto body) {
         requireRoleManage(actorId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(roleService.toDto(roleService.create(body)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(accounts.toDto(roleService.create(body.name(), body.permissions())));
     }
 
     @PutMapping("/{id}")
@@ -54,7 +57,7 @@ public class RoleController {
                           @PathVariable String id,
                           @RequestBody RoleDto body) {
         requireRoleManage(actorId);
-        return roleService.toDto(roleService.update(id, body));
+        return accounts.toDto(roleService.update(id, body.name(), body.permissions()));
     }
 
     @DeleteMapping("/{id}")

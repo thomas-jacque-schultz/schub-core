@@ -1,11 +1,11 @@
-package schultz.thomas.schub.core.business.mapper;
+package schultz.thomas.schub.core.api.mapper;
 
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import schultz.thomas.schub.core.api.dto.StaticPortRuleDto;
 import schultz.thomas.schub.core.api.dto.StaticPortRuleRequest;
 import schultz.thomas.schub.core.data.model.StaticPortRuleEntity;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import java.util.List;
 
 @Mapper(componentModel = "spring")

@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.UpdateDefinition;
-import schultz.thomas.schub.core.business.mapper.GameServerMapper;
+import schultz.thomas.schub.core.business.mapper.GameServerMerger;
 import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.GameServerStatus;
 import schultz.thomas.schub.core.data.model.GameServerStatusHistoryEntry;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 class GameServerServiceTest {
 
     private final GameServerRepository repository = mock(GameServerRepository.class);
-    private final GameServerMapper mapper = mock(GameServerMapper.class);
+    private final GameServerMerger mapper = mock(GameServerMerger.class);
     private final MongoTemplate mongo = mock(MongoTemplate.class);
     private GameServerService service;
 

@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.api.controller;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
+import schultz.thomas.schub.core.api.mapper.AccountDtoMapper;
 import schultz.thomas.schub.core.business.service.NotReferentException;
 import schultz.thomas.schub.core.business.service.RiotAccountChangeNotConfirmedException;
 import schultz.thomas.schub.core.business.service.RiotConnectorBusyException;
@@ -21,7 +23,10 @@ import java.util.NoSuchElementException;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class CoreExceptionHandler {
+
+    private final AccountDtoMapper accounts;
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> handleMissing(NoSuchElementException e) {
@@ -49,7 +54,7 @@ public class CoreExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleUnconfirmedChange(
             RiotAccountChangeNotConfirmedException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", e.getMessage(), "change", e.getChange()));
+                .body(Map.of("error", e.getMessage(), "change", accounts.toDto(e.getChange())));
     }
 
     @ExceptionHandler(UnknownRiotAccountException.class)

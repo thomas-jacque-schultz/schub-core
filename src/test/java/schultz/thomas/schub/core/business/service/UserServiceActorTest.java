@@ -25,7 +25,7 @@ class UserServiceActorTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         userService = new UserService(userRepository, mock(RoleRepository.class),
-                mock(PermissionEvaluator.class), mock(RiotAccountService.class));
+                mock(PermissionEvaluator.class));
     }
 
     @Test

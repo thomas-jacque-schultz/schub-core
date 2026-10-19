@@ -13,11 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import schultz.thomas.schub.core.api.dto.PortForwardingReport;
-import schultz.thomas.schub.core.api.dto.PortRule;
+import schultz.thomas.schub.core.api.dto.PortForwardingReportDto;
+import schultz.thomas.schub.core.api.dto.PortRuleDto;
 import schultz.thomas.schub.core.api.dto.StaticPortRuleDto;
 import schultz.thomas.schub.core.api.dto.StaticPortRuleRequest;
-import schultz.thomas.schub.core.business.mapper.StaticPortRuleMapper;
+import schultz.thomas.schub.core.api.mapper.PortForwardingDtoMapper;
+import schultz.thomas.schub.core.api.mapper.StaticPortRuleMapper;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.PortForwardingService;
 import schultz.thomas.schub.core.business.service.RedirectionRequestService;
@@ -44,19 +45,20 @@ public class PortForwardingController {
 
     private final StaticPortRuleService staticPortRuleService;
     private final StaticPortRuleMapper staticPortRuleMapper;
+    private final PortForwardingDtoMapper dtoMapper;
 
     private final PermissionEvaluator permissionEvaluator;
 
     private final UserService userService;
 
     @GetMapping("/rules")
-    public ResponseEntity<List<PortRule>> listRules(
+    public ResponseEntity<List<PortRuleDto>> listRules(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         require(actorId, Permission.PORT_VIEW);
         if (!portForwardingProperties.isEnabled()) {
             return ResponseEntity.status(503).build();
         }
-        return ResponseEntity.ok(redirectionRequestService.listRules());
+        return ResponseEntity.ok(dtoMapper.toRuleDtos(redirectionRequestService.listRules()));
     }
 
     @GetMapping("/static-rules")
@@ -89,10 +91,10 @@ public class PortForwardingController {
     }
 
     @PostMapping("/reconcile")
-    public PortForwardingReport reconcile(
+    public PortForwardingReportDto reconcile(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         require(actorId, Permission.PORT_RULE_EDIT);
-        return portForwardingService.reconcile();
+        return dtoMapper.toDto(portForwardingService.reconcile());
     }
 
     @GetMapping("/status")

@@ -3,8 +3,7 @@ package schultz.thomas.schub.core.augur.business.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import schultz.thomas.schub.core.augur.api.dto.PatternDto;
-import schultz.thomas.schub.core.augur.api.dto.PatternRequest;
+import schultz.thomas.schub.core.augur.business.model.PatternDraft;
 import schultz.thomas.schub.core.augur.data.model.Condition;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 import schultz.thomas.schub.core.augur.data.repository.FindingRecordRepository;
@@ -38,7 +37,7 @@ class PatternServiceTest {
     void nouvelleRegleExperimentale() {
         when(patterns.findByKeyOrderByVersionDesc("regle-neuve")).thenReturn(List.of());
 
-        assertThat(service.draft(owner, requete("regle-neuve", null)).experimental()).isTrue();
+        assertThat(service.draft(owner, requete("regle-neuve", null)).isExperimental()).isTrue();
     }
 
     @Test
@@ -50,14 +49,14 @@ class PatternServiceTest {
         validee.setStatus(PatternVersion.Status.ACTIVE);
         when(patterns.findByKeyOrderByVersionDesc("regle-validee")).thenReturn(List.of(validee));
 
-        assertThat(service.draft(owner, requete("regle-validee", null)).experimental()).isFalse();
-        PatternDto cochee = service.draft(owner, requete("regle-validee", true));
-        assertThat(cochee.experimental()).isTrue();
-        assertThat(cochee.limits()).containsEntry("fr", "Mesure à la minute.");
+        assertThat(service.draft(owner, requete("regle-validee", null)).isExperimental()).isFalse();
+        PatternVersion cochee = service.draft(owner, requete("regle-validee", true));
+        assertThat(cochee.isExperimental()).isTrue();
+        assertThat(cochee.getLimits()).containsEntry("fr", "Mesure à la minute.");
     }
 
-    private static PatternRequest requete(String key, Boolean experimental) {
-        return new PatternRequest(key, PatternVersion.Scope.GAME, PatternVersion.Polarity.WEAKNESS,
+    private static PatternDraft requete(String key, Boolean experimental) {
+        return new PatternDraft(key, PatternVersion.Scope.GAME, PatternVersion.Polarity.WEAKNESS,
                 PatternVersion.Category.BEHAVIOUR, PatternVersion.Nature.ACTION,
                 List.of(new Condition("deaths", Condition.Unit.VALUE, 5, 10, 1)), null, null, null, null,
                 Map.of("fr", "Titre"), Map.of("fr", "Phrase"), experimental, Map.of("fr", "Mesure à la minute."),

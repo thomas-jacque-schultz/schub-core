@@ -1,5 +1,9 @@
-package schultz.thomas.schub.core.business.mapper;
+package schultz.thomas.schub.core.api.mapper;
 
+import org.mapstruct.CollectionMappingStrategy;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
 import schultz.thomas.schub.core.api.dto.GameServerMemberDto;
 import schultz.thomas.schub.core.api.dto.GameServerStatusHistoryEntryDto;
@@ -8,28 +12,12 @@ import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.GameServerStatus;
 import schultz.thomas.schub.core.data.model.GameServerStatusHistoryEntry;
 
-import org.mapstruct.BeanMapping;
-import org.mapstruct.CollectionMappingStrategy;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 @Mapper(componentModel = "spring", collectionMappingStrategy = CollectionMappingStrategy.TARGET_IMMUTABLE)
 public interface GameServerMapper {
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "lastStatusCheckAt", ignore = true)
-    @Mapping(target = "lastStatusChangeAt", ignore = true)
-    @Mapping(target = "statusHistory", ignore = true)
-    @Mapping(target = "lastCommandFailure", ignore = true)
-    void updateFromSource(GameServer source, @MappingTarget GameServer target);
 
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "lastStatusCheckAt", ignore = true)

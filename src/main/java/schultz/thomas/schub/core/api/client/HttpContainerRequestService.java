@@ -1,11 +1,5 @@
 package schultz.thomas.schub.core.api.client;
 
-import schultz.thomas.schub.core.api.dto.GameServerCommandFailureDto;
-import schultz.thomas.schub.core.api.dto.PortainerStack;
-import schultz.thomas.schub.core.data.model.GameServerCommandFailure;
-import schultz.thomas.schub.core.business.model.DockerContainerState;
-import schultz.thomas.schub.core.config.ConnectorPortainerProperties;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,7 +7,11 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import schultz.thomas.schub.core.business.model.DockerContainerState;
+import schultz.thomas.schub.core.business.model.PortainerStack;
 import schultz.thomas.schub.core.business.service.ContainerRequestService;
+import schultz.thomas.schub.core.config.ConnectorPortainerProperties;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -61,10 +59,7 @@ public class HttpContainerRequestService implements ContainerRequestService {
 
         DockerContainerState state = new DockerContainerState();
         state.setRunning(stack.running());
-        GameServerCommandFailureDto failure = stack.lastCommandFailure();
-        if (failure != null) {
-            state.setCommandFailure(new GameServerCommandFailure(failure.action(), failure.message(), failure.at()));
-        }
+        state.setCommandFailure(stack.lastCommandFailure());
         return state;
     }
 

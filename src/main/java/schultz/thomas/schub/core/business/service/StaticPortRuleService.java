@@ -1,15 +1,15 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.api.dto.Protocol;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Service;
+import schultz.thomas.schub.core.business.model.Protocol;
 import schultz.thomas.schub.core.config.PortForwardingProperties;
 import schultz.thomas.schub.core.data.model.StaticPortRuleEntity;
 import schultz.thomas.schub.core.data.repository.StaticPortRuleRepository;
 
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
 

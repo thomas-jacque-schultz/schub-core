@@ -12,6 +12,7 @@ import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.augur.api.dto.ImpactDto;
 import schultz.thomas.schub.core.augur.api.dto.PatternDto;
 import schultz.thomas.schub.core.augur.api.dto.PatternRequest;
+import schultz.thomas.schub.core.augur.api.mapper.AugurDtoMapper;
 import schultz.thomas.schub.core.augur.business.service.PatternService;
 import schultz.thomas.schub.core.business.service.UserService;
 
@@ -27,40 +28,41 @@ public class PatternController {
 
     private final PatternService patterns;
     private final UserService userService;
+    private final AugurDtoMapper dtos;
 
     @GetMapping
     public List<PatternDto> list(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
-        return patterns.list(userService.requireActor(actorId));
+        return dtos.toPatternDtos(patterns.list(userService.requireActor(actorId)));
     }
 
     @GetMapping("/{key}/versions")
     public List<PatternDto> history(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                     @PathVariable String key) {
-        return patterns.history(userService.requireActor(actorId), key);
+        return dtos.toPatternDtos(patterns.history(userService.requireActor(actorId), key));
     }
 
     @PostMapping
     public PatternDto draft(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                             @RequestBody PatternRequest request) {
-        return patterns.draft(userService.requireActor(actorId), request);
+        return dtos.toDto(patterns.draft(userService.requireActor(actorId), dtos.toDraft(request)));
     }
 
     @GetMapping("/{key}/versions/{version}/impact")
     public ImpactDto impact(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                             @PathVariable String key, @PathVariable int version) {
-        return patterns.impact(userService.requireActor(actorId), key, version);
+        return dtos.toDto(patterns.impact(userService.requireActor(actorId), key, version));
     }
 
     @PostMapping("/{key}/versions/{version}/activate")
     public PatternDto activate(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                @PathVariable String key, @PathVariable int version,
                                @RequestBody CommentRequest request) {
-        return patterns.activate(userService.requireActor(actorId), key, version, request.comment());
+        return dtos.toDto(patterns.activate(userService.requireActor(actorId), key, version, request.comment()));
     }
 
     @PostMapping("/{key}/rollback")
     public PatternDto rollback(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                @PathVariable String key, @RequestBody CommentRequest request) {
-        return patterns.rollback(userService.requireActor(actorId), key, request.comment());
+        return dtos.toDto(patterns.rollback(userService.requireActor(actorId), key, request.comment()));
     }
 }

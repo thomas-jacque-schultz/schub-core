@@ -1,10 +1,12 @@
-package schultz.thomas.schub.core.business.service;
+package schultz.thomas.schub.core.api.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
 import schultz.thomas.schub.core.api.dto.GameServerReferentDto;
-import schultz.thomas.schub.core.business.mapper.GameServerMapper;
+import schultz.thomas.schub.core.business.service.GameServerControlPolicy;
+import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class GameServerProjectionService {
+public class GameServerProjection {
 
     private final GameServerMapper mapper;
     private final PermissionEvaluator permissionEvaluator;

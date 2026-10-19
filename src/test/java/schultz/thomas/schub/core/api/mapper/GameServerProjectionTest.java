@@ -1,11 +1,13 @@
-package schultz.thomas.schub.core.business.service;
+package schultz.thomas.schub.core.api.mapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
 import schultz.thomas.schub.core.api.dto.GameServerMemberDto;
-import schultz.thomas.schub.core.business.mapper.GameServerMapperImpl;
+import schultz.thomas.schub.core.business.service.GameServerControlPolicy;
+import schultz.thomas.schub.core.business.service.PermissionEvaluator;
+import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.Game;
 import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.Permission;
@@ -18,10 +20,10 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class GameServerProjectionServiceTest {
+class GameServerProjectionTest {
 
     private PermissionEvaluator permissionEvaluator;
-    private GameServerProjectionService projection;
+    private GameServerProjection projection;
 
     private GameServer serveur;
 
@@ -29,7 +31,7 @@ class GameServerProjectionServiceTest {
     void setUp() {
         permissionEvaluator = mock(PermissionEvaluator.class);
         UserService userService = mock(UserService.class);
-        projection = new GameServerProjectionService(new GameServerMapperImpl(), permissionEvaluator,
+        projection = new GameServerProjection(new GameServerMapperImpl(), permissionEvaluator,
                 new GameServerControlPolicy(permissionEvaluator), userService);
 
         serveur = new GameServer();

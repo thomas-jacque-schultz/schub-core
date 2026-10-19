@@ -18,6 +18,8 @@ import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
 import schultz.thomas.schub.core.api.dto.UserDto;
 import schultz.thomas.schub.core.api.dto.UserIdentityDto;
 import schultz.thomas.schub.core.api.dto.UserStatsDto;
+import schultz.thomas.schub.core.api.mapper.AccountDtoMapper;
+import schultz.thomas.schub.core.api.mapper.UserDtoMapper;
 import schultz.thomas.schub.core.business.service.ActivityService;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotAccountService;
@@ -38,18 +40,20 @@ public class UserController {
     private final PermissionEvaluator permissionEvaluator;
     private final RiotAccountService riotAccountService;
     private final ActivityService activityService;
+    private final UserDtoMapper users;
+    private final AccountDtoMapper accounts;
 
     @GetMapping
     public List<UserDto> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         User actor = userService.requireActor(actorId);
         permissionEvaluator.require(actor, Permission.USER_VIEW, null);
-        return userService.toDtos(userService.findAll());
+        return users.toDtos(userService.findAll());
     }
 
     @GetMapping("/stats")
     public UserStatsDto stats(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.USER_VIEW, null);
-        return activityService.stats();
+        return accounts.toDto(activityService.stats());
     }
 
     // Appelé par le BFF au renouvellement du jeton, soit au plus une fois par heure et par session.
@@ -65,14 +69,14 @@ public class UserController {
                                        @RequestParam(required = false) String avatarUrl) {
         User user = userService.findOrCreateByDiscordId(discordId, discordUsername, avatarUrl);
         riotAccountService.resolvePendingLink(user);
-        return userService.toIdentityDto(user);
+        return users.toIdentityDto(user);
     }
 
     @GetMapping("/{id}/identity")
     public UserIdentityDto identity(@PathVariable String id) {
         User user = userService.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Aucun utilisateur d'identifiant '" + id + "'"));
-        return userService.toIdentityDto(user);
+        return users.toIdentityDto(user);
     }
 
     @GetMapping("/by-discord/{discordId}/permissions")
@@ -85,15 +89,15 @@ public class UserController {
     @GetMapping("/me/riot-account")
     public RiotAccountDto myRiotAccount(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
-        return riotAccountService.of(userService.requireActor(actorId));
+        return accounts.toDto(riotAccountService.of(userService.requireActor(actorId)));
     }
 
     @PutMapping("/me/riot-account")
     public RiotAccountDto linkMyRiotAccount(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestBody RiotAccountRequest request) {
-        return riotAccountService.link(userService.requireActor(actorId),
-                request.riotId(), request.confirmChange());
+        return accounts.toDto(riotAccountService.link(userService.requireActor(actorId),
+                request.riotId(), request.confirmChange()));
     }
 
     @GetMapping("/me/riot-account/suggestions")
@@ -101,7 +105,7 @@ public class UserController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestParam String q,
             @RequestParam(defaultValue = "10") int limit) {
-        return riotAccountService.suggestions(userService.requireActor(actorId), q, limit);
+        return accounts.toSuggestionDtos(riotAccountService.suggestions(userService.requireActor(actorId), q, limit));
     }
 
 
@@ -110,6 +114,6 @@ public class UserController {
                               @PathVariable String id,
                               @RequestBody AssignRoleRequest request) {
         User actor = userService.requireActor(actorId);
-        return userService.toDto(userService.assignRole(actor, id, request.roleId()));
+        return users.toDto(userService.assignRole(actor, id, request.roleId()));
     }
 }

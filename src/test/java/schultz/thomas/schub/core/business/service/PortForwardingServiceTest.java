@@ -1,13 +1,5 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.api.dto.PortForwardingReport;
-import schultz.thomas.schub.core.api.dto.PortForwardingReport.Outcome;
-import schultz.thomas.schub.core.api.dto.PortRule;
-import schultz.thomas.schub.core.api.dto.PortRuleKey;
-import schultz.thomas.schub.core.api.dto.Protocol;
-import schultz.thomas.schub.core.business.model.PortRuleResolution;
-import schultz.thomas.schub.core.config.PortForwardingProperties;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +9,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import schultz.thomas.schub.core.business.model.PortForwardingReport.Outcome;
+import schultz.thomas.schub.core.business.model.PortForwardingReport;
+import schultz.thomas.schub.core.business.model.PortRule;
+import schultz.thomas.schub.core.business.model.PortRuleKey;
+import schultz.thomas.schub.core.business.model.PortRuleResolution;
+import schultz.thomas.schub.core.business.model.Protocol;
+import schultz.thomas.schub.core.config.PortForwardingProperties;
+
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;

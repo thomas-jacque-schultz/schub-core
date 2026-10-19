@@ -3,9 +3,9 @@ package schultz.thomas.schub.core.augur.business.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.augur.api.dto.FindingDto;
 import schultz.thomas.schub.core.augur.business.engine.Evaluator;
 import schultz.thomas.schub.core.augur.business.engine.Signals;
+import schultz.thomas.schub.core.augur.business.model.Finding;
 import schultz.thomas.schub.core.augur.data.model.FindingRecord;
 import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 import schultz.thomas.schub.core.augur.data.repository.FindingRecordRepository;
@@ -39,7 +39,7 @@ public class AugurService {
     private final FindingRecordRepository findings;
     private final Sensors sensors;
 
-    public List<FindingDto> game(String matchId, String puuid, Visibility visibility) {
+    public List<Finding> game(String matchId, String puuid, Visibility visibility) {
         List<PatternVersion> actifs = actifs(PatternVersion.Scope.GAME);
         String sujet = FindingRecord.gameSubject(matchId, puuid);
         List<FindingRecord> connus = findings.findBySubjectIn(List.of(sujet));
@@ -52,7 +52,7 @@ public class AugurService {
         return vues(findings.findBySubjectIn(List.of(sujet)), actifs, visibility);
     }
 
-    public List<FindingDto> habit(String puuid, Integer days, Visibility visibility) {
+    public List<Finding> habit(String puuid, Integer days, Visibility visibility) {
         List<PatternVersion> actifs = actifs(PatternVersion.Scope.HABIT);
         String sujet = FindingRecord.habitSubject(puuid, days);
         List<FindingRecord> connus = findings.findBySubjectIn(List.of(sujet));
@@ -67,7 +67,7 @@ public class AugurService {
         return vues(findings.findBySubjectIn(List.of(sujet)), actifs, visibility);
     }
 
-    public List<FindingDto> team(String teamId, Integer days) {
+    public List<Finding> team(String teamId, Integer days) {
         List<PatternVersion> actifs = actifs(PatternVersion.Scope.TEAM);
         String sujet = FindingRecord.teamSubject(teamId, days);
         List<FindingRecord> connus = findings.findBySubjectIn(List.of(sujet));
@@ -147,7 +147,7 @@ public class AugurService {
         findings.saveAll(lot);
     }
 
-    private static List<FindingDto> vues(List<FindingRecord> records, List<PatternVersion> actifs,
+    private static List<Finding> vues(List<FindingRecord> records, List<PatternVersion> actifs,
                                          Visibility visibility) {
         Map<String, PatternVersion> parCle = actifs.stream()
                 .collect(Collectors.toMap(PatternVersion::getKey, Function.identity()));
@@ -157,7 +157,7 @@ public class AugurService {
                 .filter(r -> visibility == Visibility.ALL
                         || parCle.get(r.patternKey()).getPolarity() == PatternVersion.Polarity.NEUTRAL)
                 .sorted(Comparator.comparingDouble(FindingRecord::degree).reversed())
-                .map(r -> FindingDto.of(r, parCle.get(r.patternKey())))
+                .map(r -> new Finding(r, parCle.get(r.patternKey())))
                 .toList();
     }
 
