@@ -2,13 +2,12 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
-import schultz.thomas.schub.core.team.api.dto.MetricReferenceDto;
-import schultz.thomas.schub.core.team.api.dto.RadarReferencesDto;
-import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
-import schultz.thomas.schub.core.team.api.dto.StatLineDto;
-import schultz.thomas.schub.core.team.api.dto.StatsCoverageDto;
+import schultz.thomas.schub.core.team.business.model.MetricReference;
+import schultz.thomas.schub.core.team.business.model.RadarReferences;
+import schultz.thomas.schub.core.team.business.model.RankedStanding;
+import schultz.thomas.schub.core.team.business.model.StatLine;
+import schultz.thomas.schub.core.team.business.model.StatsCoverage;
 import schultz.thomas.schub.core.team.business.model.StatsState;
 
 import java.time.Instant;
@@ -33,14 +32,14 @@ public class PlayerStatsService {
 
     public record Figures(
             StatsState state,
-            StatsCoverageDto coverage,
-            StatLineDto overall,
-            List<StatLineDto> champions,
-            List<StatLineDto> positions,
-            List<StatLineDto> queues,
-            List<StatLineDto> months,
-            List<StatLineDto> patches,
-            RadarReferencesDto references,
+            StatsCoverage coverage,
+            StatLine overall,
+            List<StatLine> champions,
+            List<StatLine> positions,
+            List<StatLine> queues,
+            List<StatLine> months,
+            List<StatLine> patches,
+            RadarReferences references,
             RiotStatsGateway.Bucket total
     ) {
     }
@@ -75,7 +74,7 @@ public class PlayerStatsService {
                 groupe(propres, RiotStatsGateway.Grouping.MONTH, RiotStatsGateway.Scope.RIFT, since);
         Map<String, List<RiotStatsGateway.Bucket>> patchs =
                 groupe(propres, RiotStatsGateway.Grouping.PATCH, RiotStatsGateway.Scope.RIFT, since);
-        Map<String, RadarReferencesDto> referentiels = referentiels(positions, since);
+        Map<String, RadarReferences> referentiels = referentiels(positions, since);
 
         Map<String, Figures> figures = new LinkedHashMap<>();
         for (String puuid : propres) {
@@ -98,35 +97,35 @@ public class PlayerStatsService {
     }
 
     // Un seul appel pour tous les joueurs ; chacun se compare à son poste le plus joué sur la période.
-    private Map<String, RadarReferencesDto> referentiels(Map<String, List<RiotStatsGateway.Bucket>> positions,
+    private Map<String, RadarReferences> referentiels(Map<String, List<RiotStatsGateway.Bucket>> positions,
                                                          Instant since) {
         List<RiotStatsGateway.ReferenceRequest> demandes = new java.util.ArrayList<>();
         positions.forEach((puuid, buckets) -> buckets.stream()
                 .max(Comparator.comparingLong(RiotStatsGateway.Bucket::games))
                 .ifPresent(principal -> demandes.add(
                         new RiotStatsGateway.ReferenceRequest(puuid, principal.key(), since))));
-        Map<String, RadarReferencesDto> parPuuid = new LinkedHashMap<>();
+        Map<String, RadarReferences> parPuuid = new LinkedHashMap<>();
         statsGateway.references(demandes).orElseGet(List::of).forEach(ref -> parPuuid.put(ref.puuid(),
-                new RadarReferencesDto(ref.position(), ref.tier(), reference(ref.met()))));
+                new RadarReferences(ref.position(), ref.tier(), reference(ref.met()))));
         return parPuuid;
     }
 
-    private static MetricReferenceDto reference(RiotStatsGateway.Reference ref) {
+    private static MetricReference reference(RiotStatsGateway.Reference ref) {
         if (ref == null) {
             return null;
         }
-        Map<String, MetricReferenceDto.Bound> bornes = new LinkedHashMap<>();
-        ref.bounds().forEach((cle, borne) -> bornes.put(cle, new MetricReferenceDto.Bound(borne.low(), borne.high())));
-        return new MetricReferenceDto(ref.tier(), ref.position(), ref.population(), ref.minimumGames(), bornes);
+        Map<String, MetricReference.Bound> bornes = new LinkedHashMap<>();
+        ref.bounds().forEach((cle, borne) -> bornes.put(cle, new MetricReference.Bound(borne.low(), borne.high())));
+        return new MetricReference(ref.tier(), ref.position(), ref.population(), ref.minimumGames(), bornes);
     }
 
-    public List<RankedStandingDto> rankings(String puuid) {
+    public List<RankedStanding> rankings(String puuid) {
         if (puuid == null || puuid.isBlank()) {
             return List.of();
         }
         return statsGateway.rankings(puuid)
                 .orElseGet(List::of).stream()
-                .map(standing -> new RankedStandingDto(standing.queue(), standing.riotQueueType(),
+                .map(standing -> new RankedStanding(standing.queue(), standing.riotQueueType(),
                         standing.tier(), standing.division(), standing.leaguePoints(),
                         standing.wins(), standing.losses(), standing.hotStreak(),
                         standing.inactive(), standing.observedAt()))
@@ -173,13 +172,13 @@ public class PlayerStatsService {
         return StatsState.AUCUNE_PARTIE;
     }
 
-    private static StatsCoverageDto toCoverage(RiotStatsGateway.Coverage couverture,
+    private static StatsCoverage toCoverage(RiotStatsGateway.Coverage couverture,
                                                RiotStatsGateway.Bucket total) {
         if (couverture == null) {
-            return new StatsCoverageDto(total.games(), total.games(), 0, false,
+            return new StatsCoverage(total.games(), total.games(), 0, false,
                     total.firstPlayedAt(), total.lastPlayedAt(), null);
         }
-        return new StatsCoverageDto(
+        return new StatsCoverage(
                 couverture.analysedMatches(),
                 couverture.knownMatches(),
                 Math.max(0, couverture.knownMatches() - couverture.analysedMatches()),
@@ -206,7 +205,7 @@ public class PlayerStatsService {
         return parPuuid;
     }
 
-    private static List<StatLineDto> lignes(List<RiotStatsGateway.Bucket> buckets,
+    private static List<StatLine> lignes(List<RiotStatsGateway.Bucket> buckets,
                                             RiotStatsGateway.Bucket total) {
         return buckets.stream()
                 .sorted(Comparator.comparingLong(RiotStatsGateway.Bucket::games).reversed())
@@ -215,7 +214,7 @@ public class PlayerStatsService {
                 .toList();
     }
 
-    private static List<StatLineDto> lignesChampions(
+    private static List<StatLine> lignesChampions(
             List<RiotStatsGateway.Bucket> buckets, RiotStatsGateway.Bucket total,
             Optional<RiotChampionGateway.Catalogue> catalogue, int max) {
         return buckets.stream()
@@ -232,8 +231,8 @@ public class PlayerStatsService {
                 .toList();
     }
 
-    private static List<StatLineDto> lignesMois(List<RiotStatsGateway.Bucket> buckets) {
-        List<StatLineDto> lignes = buckets.stream()
+    private static List<StatLine> lignesMois(List<RiotStatsGateway.Bucket> buckets) {
+        List<StatLine> lignes = buckets.stream()
                 .sorted(Comparator.comparing(RiotStatsGateway.Bucket::key))
                 .map(bucket -> StatLines.of(bucket, null, null, null))
                 .toList();
@@ -242,8 +241,8 @@ public class PlayerStatsService {
     }
 
     // Le plus ancien d'abord ; firstPlayedAt et lastPlayedAt datent le patch par les parties du joueur.
-    private static List<StatLineDto> lignesPatchs(List<RiotStatsGateway.Bucket> buckets) {
-        List<StatLineDto> lignes = buckets.stream()
+    private static List<StatLine> lignesPatchs(List<RiotStatsGateway.Bucket> buckets) {
+        List<StatLine> lignes = buckets.stream()
                 .filter(bucket -> !bucket.key().isBlank())
                 .sorted(Comparator.comparing(RiotStatsGateway.Bucket::key, TeamGamesStatsService::parVersion))
                 .map(bucket -> StatLines.of(bucket, null, null, null))

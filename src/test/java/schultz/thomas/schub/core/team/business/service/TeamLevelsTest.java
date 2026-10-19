@@ -2,8 +2,8 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
-import schultz.thomas.schub.core.team.api.dto.TeamLevelDto;
+import schultz.thomas.schub.core.team.business.model.ReferenceGrid;
+import schultz.thomas.schub.core.team.business.model.TeamLevel;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,18 +27,18 @@ class TeamLevelsTest {
         moyennes.put("IRON", -900.0);
         moyennes.put("GOLD", 100.0);
         moyennes.put("DIAMOND", 900.0);
-        ReferenceGridDto grille = new ReferenceGridDto(List.of("16.18"), "TEAM", "TEAM", Instant.EPOCH, P,
-                Map.of("goldDiffAt15", new ReferenceGridDto.Metric("HIGHER",
-                                Map.of("GOLD", new ReferenceGridDto.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
+        ReferenceGrid grille = new ReferenceGrid(List.of("16.18"), "TEAM", "TEAM", Instant.EPOCH, P,
+                Map.of("goldDiffAt15", new ReferenceGrid.Metric("HIGHER",
+                                Map.of("GOLD", new ReferenceGrid.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
                                 moyennes, List.of()),
-                        "xpDiffAt15", new ReferenceGridDto.Metric("HIGHER",
-                                Map.of("GOLD", new ReferenceGridDto.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
+                        "xpDiffAt15", new ReferenceGrid.Metric("HIGHER",
+                                Map.of("GOLD", new ReferenceGrid.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
                                 null, List.of())));
 
-        TeamLevelDto niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
+        TeamLevel niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
                 Map.of("a", insight("a", 5200), "b", insight("b", 4800)), grille);
 
-        TeamLevelDto.Metric or = niveau.metrics().stream().filter(m -> m.key().equals("goldDiffAt15")).findFirst()
+        TeamLevel.Metric or = niveau.metrics().stream().filter(m -> m.key().equals("goldDiffAt15")).findFirst()
                 .orElseThrow();
         assertThat(or.games()).isEqualTo(2);
         assertThat(or.mean()).isCloseTo(0, within(1e-9));
@@ -52,9 +52,9 @@ class TeamLevelsTest {
     @Test
     @DisplayName("sans référentiel, les moyennes restent et les notes disparaissent")
     void sansGrille() {
-        TeamLevelDto niveau = TeamLevels.of(List.of(partie("a")), Map.of("a", insight("a", 5200)), null);
+        TeamLevel niveau = TeamLevels.of(List.of(partie("a")), Map.of("a", insight("a", 5200)), null);
 
-        TeamLevelDto.Metric or = niveau.metrics().getFirst();
+        TeamLevel.Metric or = niveau.metrics().getFirst();
         assertThat(or.mean()).isCloseTo(1000, within(1e-9));
         assertThat(or.inTier()).isNull();
         assertThat(or.level()).isNull();
@@ -63,15 +63,15 @@ class TeamLevelsTest {
     @Test
     @DisplayName("la fin de partie et le changement depuis 15 min ; rien à la fin pour les larves et les ganks")
     void finDePartie() {
-        TeamLevelDto niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
+        TeamLevel niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
                 Map.of("a", insight("a", 5200, 12_000), "b", insight("b", 5200)), null);
 
-        TeamLevelDto.Metric or = metrique(niveau, "goldDiffAt15");
+        TeamLevel.Metric or = metrique(niveau, "goldDiffAt15");
         assertThat(or.mean()).isCloseTo(1000, within(1e-9));
         assertThat(or.gamesAtEnd()).isEqualTo(1);
         assertThat(or.meanAtEnd()).isCloseTo(5000, within(1e-9));
         assertThat(or.meanChange()).isCloseTo(4000, within(1e-9));
-        TeamLevelDto.Metric dragons = metrique(niveau, "dragons");
+        TeamLevel.Metric dragons = metrique(niveau, "dragons");
         assertThat(dragons.meanAtEnd()).isCloseTo(3, within(1e-9));
         assertThat(dragons.meanChange()).isCloseTo(2, within(1e-9));
         assertThat(metrique(niveau, "grubs").gamesAtEnd()).isZero();
@@ -79,7 +79,7 @@ class TeamLevelsTest {
         assertThat(metrique(niveau, "ganksDecisive").meanChange()).isNull();
     }
 
-    private static TeamLevelDto.Metric metrique(TeamLevelDto niveau, String cle) {
+    private static TeamLevel.Metric metrique(TeamLevel niveau, String cle) {
         return niveau.metrics().stream().filter(m -> m.key().equals(cle)).findFirst().orElseThrow();
     }
 

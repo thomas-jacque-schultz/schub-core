@@ -2,7 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
+import schultz.thomas.schub.core.team.business.model.TeamSynergy;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 
 import java.util.ArrayList;
@@ -51,8 +51,8 @@ class TeamSynergyServiceTest {
             parties.add(partie(i < 1, List.of("b", "c", "d", "e")));
         }
 
-        List<TeamSynergyDto.Duo> duos = TeamSynergyService.duos(parties, effectif("a", "b", "c", "d", "e"), Map.of());
-        TeamSynergyDto.Duo ab = duos.stream().filter(d -> d.memberA().equals("id-a") && d.memberB().equals("id-b"))
+        List<TeamSynergy.Duo> duos = TeamSynergyService.duos(parties, effectif("a", "b", "c", "d", "e"), Map.of());
+        TeamSynergy.Duo ab = duos.stream().filter(d -> d.memberA().equals("id-a") && d.memberB().equals("id-b"))
                 .findFirst().orElseThrow();
 
         assertThat(ab.games()).isEqualTo(12);
@@ -65,8 +65,8 @@ class TeamSynergyServiceTest {
     @Test
     @DisplayName("les parts d'or et de dégâts d'un poste se lisent sur toute l'équipe, alliés hors effectif compris")
     void parts() {
-        List<TeamSynergyDto.Resource> r = TeamSynergyService.ressources(List.of(partie(true, List.of("adc", "mid"))));
-        TeamSynergyDto.Resource adc = r.stream().filter(l -> l.position().equals("BOTTOM")).findFirst().orElseThrow();
+        List<TeamSynergy.Resource> r = TeamSynergyService.ressources(List.of(partie(true, List.of("adc", "mid"))));
+        TeamSynergy.Resource adc = r.stream().filter(l -> l.position().equals("BOTTOM")).findFirst().orElseThrow();
 
         assertThat(adc.goldShareInWins()).isCloseTo(0.5, within(1e-9));
         assertThat(adc.damageShareInWins()).isCloseTo(1 / 3.0, within(1e-9));

@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.team.api.dto.TierCombosDto;
+import schultz.thomas.schub.core.team.api.mapper.LolDtoMapper;
 import schultz.thomas.schub.core.team.business.service.TierCombosService;
 
 // Public : aucune équipe ni aucun joueur, seulement des champions comptés sur l'échantillon.
@@ -15,9 +16,10 @@ import schultz.thomas.schub.core.team.business.service.TierCombosService;
 public class TierCombosController {
 
     private final TierCombosService tierCombos;
+    private final LolDtoMapper dtos;
 
     @GetMapping("/{tier}/{kind}")
     public TierCombosDto of(@PathVariable String tier, @PathVariable String kind) {
-        return tierCombos.of(tier, kind);
+        return dtos.toDto(tierCombos.of(tier, kind));
     }
 }

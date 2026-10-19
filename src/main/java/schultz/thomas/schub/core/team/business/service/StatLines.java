@@ -1,7 +1,7 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.api.dto.StatComparisonDto;
-import schultz.thomas.schub.core.team.api.dto.StatLineDto;
+import schultz.thomas.schub.core.team.business.model.StatComparison;
+import schultz.thomas.schub.core.team.business.model.StatLine;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,11 +12,11 @@ final class StatLines {
     private StatLines() {
     }
 
-    static StatLineDto of(RiotStatsGateway.Bucket bucket, String label, String iconUrl,
-                          StatComparisonDto versusRest) {
+    static StatLine of(RiotStatsGateway.Bucket bucket, String label, String iconUrl,
+                          StatComparison versusRest) {
         double minutes = bucket.secondsPlayed() / 60.0;
         RiotStatsGateway.Performance perf = bucket.perf();
-        return new StatLineDto(
+        return new StatLine(
                 bucket.key(),
                 label,
                 iconUrl,
@@ -55,12 +55,12 @@ final class StatLines {
                 versusRest);
     }
 
-    static StatComparisonDto versusRest(RiotStatsGateway.Bucket groupe, RiotStatsGateway.Bucket total) {
+    static StatComparison versusRest(RiotStatsGateway.Bucket groupe, RiotStatsGateway.Bucket total) {
         if (total == null || total.games() <= groupe.games()) {
             return null;
         }
         RiotStatsGateway.Bucket reste = soustrait(total, groupe);
-        return new StatComparisonDto(reste.games(), ecart(winRate(groupe), winRate(reste)),
+        return new StatComparison(reste.games(), ecart(winRate(groupe), winRate(reste)),
                 ecart(kda(groupe), kda(reste)));
     }
 

@@ -14,11 +14,11 @@ import schultz.thomas.schub.core.data.model.SystemRole;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
-import schultz.thomas.schub.core.team.api.dto.PlayerStatsDto;
-import schultz.thomas.schub.core.team.api.dto.TeamGamesStatsDto;
-import schultz.thomas.schub.core.team.api.dto.TeamMemberPresenceDto;
-import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
+import schultz.thomas.schub.core.team.business.model.PlayerStats;
 import schultz.thomas.schub.core.team.business.model.StatsState;
+import schultz.thomas.schub.core.team.business.model.TeamGamesStats;
+import schultz.thomas.schub.core.team.business.model.TeamMemberPresence;
+import schultz.thomas.schub.core.team.business.model.TeamPlayersStats;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
@@ -140,7 +140,7 @@ class TeamStatsServiceTest {
     void membreSansCompteRiot() {
         equipe.getMembers().get(2).setRiotPuuid(null);
 
-        TeamPlayersStatsDto panneau = joueurs.of(capitaine, "equipe-1", null, null);
+        TeamPlayersStats panneau = joueurs.of(capitaine, "equipe-1", null, null);
 
         assertThat(panneau.players()).hasSize(5);
         assertThat(colonne(panneau, "m-mid").state()).isEqualTo(StatsState.COMPTE_RIOT_ABSENT);
@@ -151,9 +151,9 @@ class TeamStatsServiceTest {
     @Test
     @DisplayName("Les colonnes sortent dans l'ordre des postes")
     void ordreDesPostes() {
-        TeamPlayersStatsDto panneau = joueurs.of(capitaine, "equipe-1", null, null);
+        TeamPlayersStats panneau = joueurs.of(capitaine, "equipe-1", null, null);
 
-        assertThat(panneau.players()).extracting(PlayerStatsDto::roles)
+        assertThat(panneau.players()).extracting(PlayerStats::roles)
                 .containsExactly(List.of(GameRole.TOP), List.of(GameRole.JGL), List.of(GameRole.MID),
                         List.of(GameRole.ADC), List.of(GameRole.SUP));
     }
@@ -177,7 +177,7 @@ class TeamStatsServiceTest {
                 eq(List.of("EUW1_1", "EUW1_2"))))
                 .thenReturn(Optional.of(List.of(total("puuid-1", 2, 1))));
 
-        TeamPlayersStatsDto panneau = joueurs.of(capitaine, "equipe-1", null, null);
+        TeamPlayersStats panneau = joueurs.of(capitaine, "equipe-1", null, null);
 
         assertThat(panneau.premadeGames()).isEqualTo(2);
         assertThat(colonne(panneau, "m-top").premade().games()).isEqualTo(2);
@@ -199,7 +199,7 @@ class TeamStatsServiceTest {
         equipe.getMembers().get(3).setRiotPuuid(null);
         equipe.getMembers().get(4).setRiotPuuid(null);
 
-        TeamGamesStatsDto panneau = parties.of(capitaine, "equipe-1", null, null);
+        TeamGamesStats panneau = parties.of(capitaine, "equipe-1", null, null);
 
         assertThat(panneau.state()).isEqualTo(StatsState.EFFECTIF_INCOMPLET);
         assertThat(panneau.minimumPlayers()).isEqualTo(4);
@@ -211,10 +211,10 @@ class TeamStatsServiceTest {
     void aucunCompteRiot() {
         equipe.getMembers().forEach(membre -> membre.setRiotPuuid(null));
 
-        TeamGamesStatsDto panneau = parties.of(capitaine, "equipe-1", null, null);
+        TeamGamesStats panneau = parties.of(capitaine, "equipe-1", null, null);
 
         assertThat(panneau.state()).isEqualTo(StatsState.EFFECTIF_INCOMPLET);
-        assertThat(panneau.presence()).extracting(TeamMemberPresenceDto::state)
+        assertThat(panneau.presence()).extracting(TeamMemberPresence::state)
                 .containsOnly(StatsState.COMPTE_RIOT_ABSENT);
     }
 
@@ -233,7 +233,7 @@ class TeamStatsServiceTest {
     @Test
     @DisplayName("Tout est collecté et il n'y a aucune partie à quatre : c'est une réponse")
     void aucunePartieCommune() {
-        TeamGamesStatsDto panneau = parties.of(capitaine, "equipe-1", null, null);
+        TeamGamesStats panneau = parties.of(capitaine, "equipe-1", null, null);
 
         assertThat(panneau.state()).isEqualTo(StatsState.AUCUNE_PARTIE);
         assertThat(panneau.overall().games()).isZero();
@@ -250,7 +250,7 @@ class TeamStatsServiceTest {
                         partie("EUW1_2", 400, "NORMAL_DRAFT", false, 4),
                         partie("EUW1_3", 440, "RANKED_FLEX", true, 4)))));
 
-        TeamGamesStatsDto panneau = parties.of(capitaine, "equipe-1", null, null);
+        TeamGamesStats panneau = parties.of(capitaine, "equipe-1", null, null);
 
         assertThat(panneau.overall().games()).isEqualTo(3);
         assertThat(panneau.overall().wins()).isEqualTo(2);
@@ -271,7 +271,7 @@ class TeamStatsServiceTest {
         when(statsGateway.sharedMatches(any(), anyInt(), any(), any())).thenReturn(Optional.of(
                 new RiotStatsGateway.SharedMatches(4, 1, false, List.of(separee))));
 
-        TeamGamesStatsDto panneau = parties.of(capitaine, "equipe-1", null, null);
+        TeamGamesStats panneau = parties.of(capitaine, "equipe-1", null, null);
 
         assertThat(panneau.games()).singleElement()
                 .satisfies(partie -> assertThat(partie.win()).isNull());
@@ -299,7 +299,7 @@ class TeamStatsServiceTest {
                 .toList());
     }
 
-    private static PlayerStatsDto colonne(TeamPlayersStatsDto panneau, String memberId) {
+    private static PlayerStats colonne(TeamPlayersStats panneau, String memberId) {
         return panneau.players().stream()
                 .filter(colonne -> memberId.equals(colonne.memberId()))
                 .findFirst()

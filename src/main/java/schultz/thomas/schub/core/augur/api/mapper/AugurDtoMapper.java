@@ -1,6 +1,7 @@
 package schultz.thomas.schub.core.augur.api.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 import schultz.thomas.schub.core.augur.api.dto.FindingDto;
 import schultz.thomas.schub.core.augur.api.dto.ImpactDto;
 import schultz.thomas.schub.core.augur.api.dto.PatternDto;
@@ -12,7 +13,7 @@ import schultz.thomas.schub.core.augur.data.model.PatternVersion;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface AugurDtoMapper {
 
     ImpactDto toDto(Impact impact);

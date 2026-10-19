@@ -2,7 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.team.api.dto.CompanionsDto;
+import schultz.thomas.schub.core.team.business.model.Companions;
 import schultz.thomas.schub.core.team.business.model.PlayerRef;
 
 import java.time.Instant;
@@ -29,7 +29,7 @@ public class CompanionsService {
     private final SearchedPlayerService players;
     private final RiotStatsGateway statsGateway;
 
-    public CompanionsDto of(String slug) {
+    public Companions of(String slug) {
         PlayerRef joueur = players.resolve(slug);
         YearMonth mois = YearMonth.now(PARIS);
         Instant debut = mois.atDay(1).atStartOfDay(PARIS).toInstant();
@@ -40,7 +40,7 @@ public class CompanionsService {
         return calcule(joueur.puuid(), mois.toString(), parties);
     }
 
-    static CompanionsDto calcule(String puuid, String mois, List<RiotStatsGateway.SharedMatch> parties) {
+    static Companions calcule(String puuid, String mois, List<RiotStatsGateway.SharedMatch> parties) {
         Map<String, long[]> ensemble = new LinkedHashMap<>();
         Map<String, String> riotIds = new HashMap<>();
         List<Set<String>> presences = new ArrayList<>();
@@ -62,24 +62,24 @@ public class CompanionsService {
         }
         long total = parties.size();
         long totalVictoires = victoires;
-        List<CompanionsDto.Companion> compagnons = ensemble.entrySet().stream()
+        List<Companions.Companion> compagnons = ensemble.entrySet().stream()
                 .filter(e -> e.getValue()[0] >= MINIMUM)
                 .map(e -> {
                     long avec = e.getValue()[0];
                     long sans = total - avec;
                     long victoiresSans = totalVictoires - e.getValue()[1];
                     String riotId = riotIds.get(e.getKey());
-                    return new CompanionsDto.Companion(riotId, riotId.replaceFirst("#([^#]*)$", "-$1"), avec,
+                    return new Companions.Companion(riotId, riotId.replaceFirst("#([^#]*)$", "-$1"), avec,
                             e.getValue()[1], (double) e.getValue()[1] / avec, sans,
                             sans >= MINIMUM ? (double) victoiresSans / sans : null);
                 })
-                .sorted(Comparator.comparingLong(CompanionsDto.Companion::games).reversed())
+                .sorted(Comparator.comparingLong(Companions.Companion::games).reversed())
                 .toList();
-        return new CompanionsDto(mois, MINIMUM, compagnons, trio(compagnons, riotIds, presences));
+        return new Companions(mois, MINIMUM, compagnons, trio(compagnons, riotIds, presences));
     }
 
     // Le trio de compagnons le plus souvent réuni autour du joueur, s'il l'a été au moins 5 fois.
-    private static List<String> trio(List<CompanionsDto.Companion> compagnons, Map<String, String> riotIds,
+    private static List<String> trio(List<Companions.Companion> compagnons, Map<String, String> riotIds,
                                      List<Set<String>> presences) {
         Set<String> retenus = new TreeSet<>();
         riotIds.forEach((puuid, riotId) -> {

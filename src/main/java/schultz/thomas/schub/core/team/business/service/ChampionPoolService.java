@@ -10,11 +10,11 @@ import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.ChampionCatalogEntryDto;
-import schultz.thomas.schub.core.team.api.dto.ChampionPoolColumnDto;
-import schultz.thomas.schub.core.team.api.dto.ChampionPoolDto;
-import schultz.thomas.schub.core.team.api.dto.ChampionPoolEntryDto;
-import schultz.thomas.schub.core.team.api.dto.ChampionPoolMemberDto;
+import schultz.thomas.schub.core.team.business.model.ChampionCatalogEntry;
+import schultz.thomas.schub.core.team.business.model.ChampionPool;
+import schultz.thomas.schub.core.team.business.model.ChampionPoolColumn;
+import schultz.thomas.schub.core.team.business.model.ChampionPoolEntry;
+import schultz.thomas.schub.core.team.business.model.ChampionPoolMember;
 import schultz.thomas.schub.core.team.business.model.PoolState;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.MemberStatus;
@@ -48,7 +48,7 @@ public class ChampionPoolService {
     private final PermissionEvaluator permissionEvaluator;
     private final MongoTemplate mongo;
 
-    public ChampionPoolDto of(User actor, String teamId, Integer plancherDemande) {
+    public ChampionPool of(User actor, String teamId, Integer plancherDemande) {
         Team team = teamService.requireVisible(actor, teamId);
         TeamChampionPool pool = poolDe(teamId);
         int plancher = plancherDemande == null ? pool.getMasteryFloor() : Math.max(0, plancherDemande);
@@ -59,12 +59,12 @@ public class ChampionPoolService {
         Map<String, MemberDirectory.MemberIdentity> identites = resoutLesComptes(joueurs);
         Map<String, RiotStatsGateway.Bucket> parties = partiesParChampion(joueurs);
 
-        List<ChampionPoolColumnDto> colonnes = new ArrayList<>();
+        List<ChampionPoolColumn> colonnes = new ArrayList<>();
         for (GameRole role : GameRole.values()) {
             colonnes.add(colonne(role, pool, joueurs, maitrises, identites, parties, catalogue, plancher));
         }
 
-        return new ChampionPoolDto(
+        return new ChampionPool(
                 team.getId(),
                 team.getName(),
                 catalogue.map(RiotChampionGateway.Catalogue::version).orElse(null),
@@ -78,7 +78,7 @@ public class ChampionPoolService {
                 Instant.now());
     }
 
-    public ChampionPoolDto setChampions(User actor, String teamId, GameRole role, List<String> championKeys) {
+    public ChampionPool setChampions(User actor, String teamId, GameRole role, List<String> championKeys) {
         teamService.requireVisible(actor, teamId);
         permissionEvaluator.require(actor, Permission.COMPOSITION_EDIT, TeamService.ref(teamId));
 
@@ -106,7 +106,7 @@ public class ChampionPoolService {
         return of(actor, teamId, null);
     }
 
-    public ChampionPoolDto setMasteryFloor(User actor, String teamId, int masteryFloor) {
+    public ChampionPool setMasteryFloor(User actor, String teamId, int masteryFloor) {
         teamService.requireVisible(actor, teamId);
         permissionEvaluator.require(actor, Permission.COMPOSITION_EDIT, TeamService.ref(teamId));
         if (masteryFloor < 0) {
@@ -135,7 +135,7 @@ public class ChampionPoolService {
         return permissionEvaluator.can(actor, Permission.COMPOSITION_EDIT, TeamService.ref(teamId));
     }
 
-    private ChampionPoolColumnDto colonne(
+    private ChampionPoolColumn colonne(
             GameRole role,
             TeamChampionPool pool,
             List<TeamMember> joueurs,
@@ -147,27 +147,27 @@ public class ChampionPoolService {
 
         List<TeamMember> duPoste = joueurs.stream().filter(membre -> membre.playsRole(role)).toList();
 
-        List<ChampionPoolMemberDto> muets = duPoste.stream()
+        List<ChampionPoolMember> muets = duPoste.stream()
                 .filter(membre -> etat(membre, maitrises) != PoolState.MAITRISES_CONNUES)
                 .map(membre -> projette(membre, maitrises, identites, null, null))
                 .toList();
 
         if (catalogue.isEmpty()) {
-            return new ChampionPoolColumnDto(role, List.of(), muets, 0);
+            return new ChampionPoolColumn(role, List.of(), muets, 0);
         }
 
         Map<String, RiotChampionGateway.Champion> parCle = new HashMap<>();
         catalogue.get().parId().values().forEach(champion -> parCle.put(champion.key(), champion));
 
-        List<ChampionPoolEntryDto> champions = new ArrayList<>();
+        List<ChampionPoolEntry> champions = new ArrayList<>();
         int masques = 0;
         for (String key : pool.championKeys(role)) {
             RiotChampionGateway.Champion champion = parCle.get(key);
             if (champion == null) {
-                champions.add(new ChampionPoolEntryDto(0, key, null, null, List.of(), 0));
+                champions.add(new ChampionPoolEntry(0, key, null, null, List.of(), 0));
                 continue;
             }
-            ChampionPoolEntryDto entree = entree(champion, duPoste, maitrises, identites, parties, plancher);
+            ChampionPoolEntry entree = entree(champion, duPoste, maitrises, identites, parties, plancher);
             if (entree.players().isEmpty() && entree.name() != null) {
                 masques++;
                 continue;
@@ -178,19 +178,19 @@ public class ChampionPoolService {
         champions.sort(Comparator.comparingDouble(ChampionPoolService::maitriseMoyenne).reversed()
                 .thenComparing(entree -> entree.name() == null ? "" : entree.name()));
 
-        return new ChampionPoolColumnDto(role, champions, muets, masques);
+        return new ChampionPoolColumn(role, champions, muets, masques);
     }
 
-    private static double maitriseMoyenne(ChampionPoolEntryDto entree) {
+    private static double maitriseMoyenne(ChampionPoolEntry entree) {
         return entree.players().stream()
-                .map(ChampionPoolMemberDto::masteryPoints)
+                .map(ChampionPoolMember::masteryPoints)
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .average()
                 .orElse(0d);
     }
 
-    private ChampionPoolEntryDto entree(
+    private ChampionPoolEntry entree(
             RiotChampionGateway.Champion champion,
             List<TeamMember> duPoste,
             Map<String, Maitrises> maitrises,
@@ -198,7 +198,7 @@ public class ChampionPoolService {
             Map<String, RiotStatsGateway.Bucket> parties,
             int plancher) {
 
-        List<ChampionPoolMemberDto> retenus = new ArrayList<>();
+        List<ChampionPoolMember> retenus = new ArrayList<>();
         int ecartes = 0;
 
         for (TeamMember membre : duPoste) {
@@ -220,14 +220,14 @@ public class ChampionPoolService {
         }
 
         retenus.sort(Comparator.comparingInt(
-                (ChampionPoolMemberDto joueur) -> joueur.masteryPoints() == null ? 0 : joueur.masteryPoints())
+                (ChampionPoolMember joueur) -> joueur.masteryPoints() == null ? 0 : joueur.masteryPoints())
                 .reversed());
 
-        return new ChampionPoolEntryDto(champion.id(), champion.key(), champion.name(),
+        return new ChampionPoolEntry(champion.id(), champion.key(), champion.name(),
                 champion.iconUrl(), retenus, ecartes);
     }
 
-    private ChampionPoolMemberDto projette(
+    private ChampionPoolMember projette(
             TeamMember membre,
             Map<String, Maitrises> maitrises,
             Map<String, MemberDirectory.MemberIdentity> identites,
@@ -242,7 +242,7 @@ public class ChampionPoolService {
                 ? (maitrise == null ? 0 : maitrise.points())
                 : null;
 
-        return new ChampionPoolMemberDto(
+        return new ChampionPoolMember(
                 membre.getMemberId(),
                 nomAffiche(membre, identite),
                 identite == null ? null : identite.avatarUrl(),
@@ -334,9 +334,9 @@ public class ChampionPoolService {
         return new Maitrises(PoolState.MAITRISES_CONNUES, parChampion, observedAt);
     }
 
-    private static List<ChampionCatalogEntryDto> catalogue(RiotChampionGateway.Catalogue catalogue) {
+    private static List<ChampionCatalogEntry> catalogue(RiotChampionGateway.Catalogue catalogue) {
         return catalogue.parId().values().stream()
-                .map(champion -> new ChampionCatalogEntryDto(
+                .map(champion -> new ChampionCatalogEntry(
                         champion.id(), champion.key(), champion.name(), champion.iconUrl()))
                 .sorted(Comparator.comparing(
                         entree -> Optional.ofNullable(entree.name()).orElse(entree.championKey()),

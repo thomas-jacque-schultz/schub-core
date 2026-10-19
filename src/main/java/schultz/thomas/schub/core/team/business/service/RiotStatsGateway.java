@@ -1,7 +1,7 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.api.dto.ChampionGridDto;
-import schultz.thomas.schub.core.team.api.dto.ReferenceGridDto;
+import schultz.thomas.schub.core.team.business.model.ChampionGrid;
+import schultz.thomas.schub.core.team.business.model.ReferenceGrid;
 
 import java.time.Instant;
 import java.util.List;
@@ -74,11 +74,11 @@ public interface RiotStatsGateway {
     // Le plus récent d'abord.
     Optional<List<PatchStart>> patches(int count);
 
-    Optional<ReferenceGridDto> referenceGrid(String position, String scope, String tier, String patch);
+    Optional<ReferenceGrid> referenceGrid(String position, String scope, String tier, String patch);
 
-    Optional<ChampionGridDto> championGrid(int championId, String tier);
+    Optional<ChampionGrid> championGrid(int championId, String tier);
 
-    Optional<ReferenceGridDto> teamGrid();
+    Optional<ReferenceGrid> teamGrid();
 
     record PatchStart(String patch, Instant startedAt) {
     }

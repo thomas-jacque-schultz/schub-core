@@ -20,10 +20,9 @@ import schultz.thomas.schub.core.team.api.dto.TeamDto;
 import schultz.thomas.schub.core.team.api.dto.TeamNameRequest;
 import schultz.thomas.schub.core.team.api.dto.TeamSummaryDto;
 import schultz.thomas.schub.core.team.api.dto.UpdateMemberRequest;
-import schultz.thomas.schub.core.team.business.service.TeamProjectionService;
+import schultz.thomas.schub.core.team.api.mapper.TeamProjection;
 import schultz.thomas.schub.core.team.business.service.TeamService;
 import schultz.thomas.schub.core.team.data.model.Team;
-
 import schultz.thomas.schub.core.team.data.model.TrainingSlot;
 
 import java.util.List;
@@ -34,20 +33,20 @@ import java.util.List;
 public class TeamController {
 
     private final TeamService teamService;
-    private final TeamProjectionService projectionService;
+    private final TeamProjection projection;
     private final UserService userService;
 
     @GetMapping
     public List<TeamSummaryDto> mine(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toSummaries(teamService.mine(actor), actor);
+        return projection.toSummaries(teamService.mine(actor), actor);
     }
 
     @GetMapping("/{teamId}")
     public TeamDto byId(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                         @PathVariable String teamId) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(teamService.requireVisible(actor, teamId), actor);
+        return projection.toDto(teamService.requireVisible(actor, teamId), actor);
     }
 
     @PostMapping
@@ -56,7 +55,7 @@ public class TeamController {
             @RequestBody TeamNameRequest request) {
         User actor = userService.requireActor(actorId);
         Team created = teamService.create(actor, request.name());
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toDto(created, actor));
+        return ResponseEntity.status(HttpStatus.CREATED).body(projection.toDto(created, actor));
     }
 
     @PutMapping("/{teamId}")
@@ -64,7 +63,7 @@ public class TeamController {
                           @PathVariable String teamId,
                           @RequestBody TeamNameRequest request) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(teamService.rename(actor, teamId, request.name()), actor);
+        return projection.toDto(teamService.rename(actor, teamId, request.name()), actor);
     }
 
     @DeleteMapping("/{teamId}")
@@ -84,7 +83,7 @@ public class TeamController {
         Team team = teamService.addMember(actor, teamId, new TeamService.NewMember(
                 request.riotGameName(), request.riotTagLine(), request.riotPuuid(),
                 request.roles(), request.status(), Boolean.TRUE.equals(request.coach())));
-        return ResponseEntity.status(HttpStatus.CREATED).body(projectionService.toDto(team, actor));
+        return ResponseEntity.status(HttpStatus.CREATED).body(projection.toDto(team, actor));
     }
 
     @PutMapping("/{teamId}/members/{memberId}")
@@ -94,7 +93,7 @@ public class TeamController {
             @PathVariable String memberId,
             @RequestBody UpdateMemberRequest request) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(
+        return projection.toDto(
                 teamService.updateMember(actor, teamId, memberId, request.roles(), request.status(),
                         request.coach()), actor);
     }
@@ -105,7 +104,7 @@ public class TeamController {
             @PathVariable String teamId,
             @PathVariable String memberId) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(teamService.removeMember(actor, teamId, memberId), actor);
+        return projection.toDto(teamService.removeMember(actor, teamId, memberId), actor);
     }
 
     @PutMapping("/{teamId}/public")
@@ -113,7 +112,7 @@ public class TeamController {
                              @PathVariable String teamId,
                              @RequestBody VisibilityRequest request) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(teamService.setPublicPage(actor, teamId, request.value()), actor);
+        return projection.toDto(teamService.setPublicPage(actor, teamId, request.value()), actor);
     }
 
     @PutMapping("/{teamId}/members/{memberId}/hidden")
@@ -122,7 +121,7 @@ public class TeamController {
                                    @PathVariable String memberId,
                                    @RequestBody VisibilityRequest request) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(teamService.setMemberHidden(actor, teamId, memberId, request.value()), actor);
+        return projection.toDto(teamService.setMemberHidden(actor, teamId, memberId, request.value()), actor);
     }
 
     public record VisibilityRequest(boolean value) {
@@ -133,13 +132,13 @@ public class TeamController {
                                     @PathVariable String teamId,
                                     @RequestBody List<TrainingSlot> slots) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toDto(teamService.setTrainingSlots(actor, teamId, slots), actor);
+        return projection.toDto(teamService.setTrainingSlots(actor, teamId, slots), actor);
     }
 
     @PostMapping("/claim")
     public List<TeamSummaryDto> claim(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         User actor = userService.requireActor(actorId);
-        return projectionService.toSummaries(teamService.claim(actor), actor);
+        return projection.toSummaries(teamService.claim(actor), actor);
     }
 }

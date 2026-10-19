@@ -2,8 +2,8 @@ package schultz.thomas.schub.core.team.business.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.team.api.dto.PublicTeamDto;
-import schultz.thomas.schub.core.team.api.dto.TeamSynergyDto;
+import schultz.thomas.schub.core.team.business.model.PublicTeam;
+import schultz.thomas.schub.core.team.business.model.TeamSynergy;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
@@ -31,13 +31,13 @@ public class PublicTeamService {
     private final RiotChampionGateway championGateway;
     private final TeamSynergyService synergy;
 
-    public List<PublicTeamDto.Listed> listed() {
+    public List<PublicTeam.Listed> listed() {
         return teams.findByPublicPageTrue().stream()
-                .map(team -> new PublicTeamDto.Listed(team.getId(), team.getName()))
+                .map(team -> new PublicTeam.Listed(team.getId(), team.getName()))
                 .toList();
     }
 
-    public PublicTeamDto of(String teamId) {
+    public PublicTeam of(String teamId) {
         Team team = teamService.require(teamId);
         if (!team.isPublicPage()) {
             throw new NoSuchElementException("Aucune équipe publique d'identifiant '" + teamId + "'");
@@ -58,10 +58,10 @@ public class PublicTeamService {
         List<RiotStatsGateway.SharedMatch> duMois = parties.stream()
                 .filter(p -> p.startedAt() != null && p.startedAt().isAfter(mois)).toList();
 
-        return new PublicTeamDto(team.getId(), team.getName(),
+        return new PublicTeam(team.getId(), team.getName(),
                 joueurs.stream().map(m -> {
                     String riotId = publics.get(m.getMemberId());
-                    return new PublicTeamDto.Member(riotId,
+                    return new PublicTeam.Member(riotId,
                             riotId == null ? null : riotId.replaceFirst("#([^#]*)$", "-$1"), m.getRoles());
                 }).toList(),
                 parties.size(), victoires(parties), duMois.size(), victoires(duMois),
@@ -81,17 +81,17 @@ public class PublicTeamService {
     }
 
     // Seulement un duo qui gagne mieux ensemble qu'attendu, et dont les deux noms sont publics.
-    private PublicTeamDto.BestDuo meilleurDuo(String teamId, Map<String, String> publics) {
+    private PublicTeam.BestDuo meilleurDuo(String teamId, Map<String, String> publics) {
         return synergy.of(teamId, null).duos().stream()
                 .filter(d -> d.delta() != null && d.delta() > 0)
                 .filter(d -> publics.get(d.memberA()) != null && publics.get(d.memberB()) != null)
-                .max(Comparator.comparingDouble(TeamSynergyDto.Duo::delta))
-                .map(d -> new PublicTeamDto.BestDuo(publics.get(d.memberA()), publics.get(d.memberB()), d.games(),
+                .max(Comparator.comparingDouble(TeamSynergy.Duo::delta))
+                .map(d -> new PublicTeam.BestDuo(publics.get(d.memberA()), publics.get(d.memberB()), d.games(),
                         d.wins(), d.delta()))
                 .orElse(null);
     }
 
-    private List<PublicTeamDto.Champion> champions(List<RiotStatsGateway.SharedMatch> parties) {
+    private List<PublicTeam.Champion> champions(List<RiotStatsGateway.SharedMatch> parties) {
         Map<Integer, long[]> comptes = new HashMap<>();
         for (RiotStatsGateway.SharedMatch partie : parties) {
             boolean victoire = Boolean.TRUE.equals(partie.win());
@@ -108,7 +108,7 @@ public class PublicTeamService {
                 .limit(CHAMPIONS)
                 .map(e -> {
                     RiotChampionGateway.Champion champion = catalogue.get(e.getKey());
-                    return new PublicTeamDto.Champion(e.getKey(), champion == null ? null : champion.name(),
+                    return new PublicTeam.Champion(e.getKey(), champion == null ? null : champion.name(),
                             champion == null ? null : champion.iconUrl(), e.getValue()[0], e.getValue()[1]);
                 })
                 .filter(c -> Objects.nonNull(c.name()))

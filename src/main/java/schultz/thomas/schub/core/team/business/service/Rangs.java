@@ -1,6 +1,6 @@
 package schultz.thomas.schub.core.team.business.service;
 
-import schultz.thomas.schub.core.team.api.dto.AverageRankDto;
+import schultz.thomas.schub.core.team.business.model.AverageRank;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,13 +38,13 @@ final class Rangs {
         return valeur != null ? valeur : valeur(flex);
     }
 
-    static AverageRankDto moyenne(List<RiotStatsGateway.Standing> standings) {
+    static AverageRank moyenne(List<RiotStatsGateway.Standing> standings) {
         List<Double> valeurs = standings.stream().map(Rangs::valeur).filter(Objects::nonNull).toList();
         if (valeurs.isEmpty()) {
             return null;
         }
         double moyenne = valeurs.stream().mapToDouble(Double::doubleValue).average().orElseThrow();
-        return new AverageRankDto(moyenne, palier(moyenne), division(moyenne), valeurs.size());
+        return new AverageRank(moyenne, palier(moyenne), division(moyenne), valeurs.size());
     }
 
     static String palier(double valeur) {

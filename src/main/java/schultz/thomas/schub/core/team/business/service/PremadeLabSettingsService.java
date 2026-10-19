@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.PremadeLabSettingsDto;
 import schultz.thomas.schub.core.team.data.model.PremadeLabSettings;
 import schultz.thomas.schub.core.team.data.repository.PremadeLabSettingsRepository;
 
@@ -22,25 +21,21 @@ public class PremadeLabSettingsService {
         return repository.findById(PremadeLabSettings.ID).orElseGet(PremadeLabSettings::new);
     }
 
-    public PremadeLabSettingsDto view(User actor) {
+    public PremadeLabSettings view(User actor) {
         permissionEvaluator.require(actor, Permission.INGEST_VIEW, null);
-        return dto(current());
+        return current();
     }
 
-    public PremadeLabSettingsDto update(User actor, PremadeLabSettingsDto request) {
+    public PremadeLabSettings update(User actor, int unknownPlayerBudget, int budgetWindowMinutes) {
         permissionEvaluator.require(actor, Permission.INGEST_MANAGE, null);
-        if (request.unknownPlayerBudget() < 0 || request.budgetWindowMinutes() < 1) {
+        if (unknownPlayerBudget < 0 || budgetWindowMinutes < 1) {
             throw new IllegalArgumentException("Budget positif ou nul, fenêtre d'au moins une minute");
         }
         PremadeLabSettings settings = current();
-        settings.setUnknownPlayerBudget(request.unknownPlayerBudget());
-        settings.setBudgetWindowMinutes(request.budgetWindowMinutes());
+        settings.setUnknownPlayerBudget(unknownPlayerBudget);
+        settings.setBudgetWindowMinutes(budgetWindowMinutes);
         log.info("Budget de recherche PremadeLab : {} joueurs inconnus par {} min, par {}",
-                request.unknownPlayerBudget(), request.budgetWindowMinutes(), actor.getId());
-        return dto(repository.save(settings));
-    }
-
-    private static PremadeLabSettingsDto dto(PremadeLabSettings settings) {
-        return new PremadeLabSettingsDto(settings.getUnknownPlayerBudget(), settings.getBudgetWindowMinutes());
+                unknownPlayerBudget, budgetWindowMinutes, actor.getId());
+        return repository.save(settings);
     }
 }

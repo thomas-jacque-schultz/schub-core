@@ -9,12 +9,12 @@ import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableExcept
 import schultz.thomas.schub.core.business.service.RiotIdResolution;
 import schultz.thomas.schub.core.business.service.RiotIdResolver;
 import schultz.thomas.schub.core.business.service.UnknownRiotAccountException;
-import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
-import schultz.thomas.schub.core.team.api.dto.PlayerCollectDto;
-import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
-import schultz.thomas.schub.core.team.api.dto.SearchedPlayerDto;
-import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.business.model.MyGames;
+import schultz.thomas.schub.core.team.business.model.PlayerCollect;
 import schultz.thomas.schub.core.team.business.model.PlayerRef;
+import schultz.thomas.schub.core.team.business.model.RankedStanding;
+import schultz.thomas.schub.core.team.business.model.SearchedPlayer;
+import schultz.thomas.schub.core.team.business.model.TeamGameDetail;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,17 +40,17 @@ public class SearchedPlayerService {
 
     // light : sans rang ni maîtrises, donc sans appel à Riot. Pour rafraîchir la page pendant une collecte.
     // masteries=false : la page d'un robot, qui ne les affiche pas et ne doit pas entamer le quota.
-    public SearchedPlayerDto page(String slug, Integer days, Integer champions, boolean light, boolean masteries) {
+    public SearchedPlayer page(String slug, Integer days, Integer champions, boolean light, boolean masteries) {
         PlayerRef joueur = resolve(slug);
-        var rangs = Parallele.lance(() -> light ? List.<RankedStandingDto>of()
+        var rangs = Parallele.lance(() -> light ? List.<RankedStanding>of()
                 : playerStatsService.rankings(joueur.puuid()));
-        var maitrises = Parallele.lance(() -> light || !masteries ? List.<SearchedPlayerDto.MasteryDto>of()
+        var maitrises = Parallele.lance(() -> light || !masteries ? List.<SearchedPlayer.Mastery>of()
                 : maitrises(joueur.puuid()));
         var enCollecte = Parallele.lance(() -> riotConnector.ingestOf(joueur.puuid())
                 .map(en -> en.priorityPending() > 0).orElse(false));
         var stats = Parallele.lance(() -> myStats.of(joueur, days, champions));
         Optional<RiotStatsGateway.Coverage> couverture = couverture(joueur.puuid());
-        return new SearchedPlayerDto(
+        return new SearchedPlayer(
                 joueur.gameName(),
                 joueur.tagLine(),
                 slugOf(joueur.gameName(), joueur.tagLine()),
@@ -62,20 +62,20 @@ public class SearchedPlayerService {
                 Parallele.attend(stats));
     }
 
-    public MyGamesDto games(String slug, Integer days, Integer limit) {
+    public MyGames games(String slug, Integer days, Integer limit) {
         return myGames.games(resolve(slug), days, limit);
     }
 
-    public TeamGameDetailDto game(String slug, String matchId, Integer days) {
+    public TeamGameDetail game(String slug, String matchId, Integer days) {
         return myGames.game(resolve(slug), matchId, days);
     }
 
     // Jamais de refus : au-delà du budget du visiteur, ses parties arrivent seulement plus lentement.
-    public PlayerCollectDto collect(String slug, String visitor) {
+    public PlayerCollect collect(String slug, String visitor) {
         PlayerRef joueur = resolve(slug);
         boolean connu = couverture(joueur.puuid()).map(ligne -> ligne.lastSyncAt() != null).orElse(false);
         if (connu) {
-            return new PlayerCollectDto(PlayerCollectDto.Lane.KNOWN);
+            return new PlayerCollect(PlayerCollect.Lane.KNOWN);
         }
         boolean rapide = budget.consume(visitor, Instant.now());
         if (!riotConnector.requestPreview(joueur.puuid(), !rapide)) {
@@ -84,7 +84,7 @@ public class SearchedPlayerService {
         if (!rapide) {
             log.info("Budget de recherche dépassé : aperçu en voie lente pour {}", joueur.displayName());
         }
-        return new PlayerCollectDto(rapide ? PlayerCollectDto.Lane.FAST : PlayerCollectDto.Lane.SLOW);
+        return new PlayerCollect(rapide ? PlayerCollect.Lane.FAST : PlayerCollect.Lane.SLOW);
     }
 
     public PlayerRef resolve(String slug) {
@@ -116,14 +116,14 @@ public class SearchedPlayerService {
                 .findFirst();
     }
 
-    private List<SearchedPlayerDto.MasteryDto> maitrises(String puuid) {
+    private List<SearchedPlayer.Mastery> maitrises(String puuid) {
         Map<Integer, RiotChampionGateway.Champion> catalogue = championGateway.catalogue()
                 .map(RiotChampionGateway.Catalogue::parId)
                 .orElseGet(Map::of);
         return championGateway.masteries(puuid, MAITRISES).orElseGet(List::of).stream()
                 .map(m -> {
                     RiotChampionGateway.Champion champion = catalogue.get(m.championId());
-                    return new SearchedPlayerDto.MasteryDto(m.championId(),
+                    return new SearchedPlayer.Mastery(m.championId(),
                             champion == null ? null : champion.name(),
                             champion == null ? null : champion.iconUrl(),
                             m.level(), m.points());

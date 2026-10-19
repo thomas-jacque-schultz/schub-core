@@ -3,11 +3,11 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.PlayerStatsDto;
-import schultz.thomas.schub.core.team.api.dto.RankedStandingDto;
-import schultz.thomas.schub.core.team.api.dto.StatLineDto;
-import schultz.thomas.schub.core.team.api.dto.TeamPlayersStatsDto;
+import schultz.thomas.schub.core.team.business.model.PlayerStats;
+import schultz.thomas.schub.core.team.business.model.RankedStanding;
+import schultz.thomas.schub.core.team.business.model.StatLine;
 import schultz.thomas.schub.core.team.business.model.StatsState;
+import schultz.thomas.schub.core.team.business.model.TeamPlayersStats;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
@@ -34,7 +34,7 @@ public class TeamPlayerStatsService {
 
     private static final int PARTIES_D_EQUIPE_MAX = 1000;
 
-    public TeamPlayersStatsDto of(User actor, String teamId, Integer days, Integer champions) {
+    public TeamPlayersStats of(User actor, String teamId, Integer days, Integer champions) {
         Team team = teamService.requireVisible(actor, teamId);
         List<TeamMember> joueurs = joueursDe(team);
         int championsMax = PlayerStatsService.bornerChampions(champions);
@@ -48,26 +48,26 @@ public class TeamPlayerStatsService {
         Map<String, PlayerStatsService.Figures> figures =
                 playerStatsService.of(puuids, since, championsMax);
         Map<String, MemberDirectory.MemberIdentity> identites = resoutLesComptes(joueurs);
-        Map<String, List<RankedStandingDto>> rangs = Parallele.parCle(figures.entrySet().stream()
+        Map<String, List<RankedStanding>> rangs = Parallele.parCle(figures.entrySet().stream()
                 .filter(entree -> entree.getValue().state() == StatsState.STATISTIQUES_CONNUES)
                 .map(Map.Entry::getKey)
                 .toList(), playerStatsService::rankings);
 
         Optional<Premade> premade = premade(puuids, since);
 
-        List<PlayerStatsDto> colonnes = new ArrayList<>();
+        List<PlayerStats> colonnes = new ArrayList<>();
         for (TeamMember membre : joueurs) {
             colonnes.add(colonne(membre, figures, identites, rangs,
                     premade.flatMap(p -> p.ligneDe(membre.getRiotPuuid())).orElse(null)));
         }
-        return new TeamPlayersStatsDto(team.getId(), team.getName(), days, championsMax, colonnes,
+        return new TeamPlayersStats(team.getId(), team.getName(), days, championsMax, colonnes,
                 placeDuLecteur(team, actor), Instant.now(), premade.map(Premade::parties).orElse(null),
                 TeamGamesStatsService.MINIMUM_MEMBRES);
     }
 
-    private record Premade(long parties, Map<String, StatLineDto> lignes) {
+    private record Premade(long parties, Map<String, StatLine> lignes) {
 
-        Optional<StatLineDto> ligneDe(String puuid) {
+        Optional<StatLine> ligneDe(String puuid) {
             return puuid == null ? Optional.empty() : Optional.ofNullable(lignes.get(puuid));
         }
     }
@@ -88,7 +88,7 @@ public class TeamPlayerStatsService {
         return statsGateway.aggregate(puuids, RiotStatsGateway.Grouping.OVERALL, RiotStatsGateway.Scope.RIFT,
                         since, ids)
                 .map(buckets -> {
-                    Map<String, StatLineDto> lignes = new LinkedHashMap<>();
+                    Map<String, StatLine> lignes = new LinkedHashMap<>();
                     buckets.stream().filter(bucket -> bucket.games() > 0)
                             .forEach(bucket -> lignes.put(bucket.puuid(), StatLines.of(bucket, null, null, null)));
                     return new Premade(ids.size(), lignes);
@@ -113,11 +113,11 @@ public class TeamPlayerStatsService {
         return role == null ? GameRole.values().length : role.ordinal();
     }
 
-    private PlayerStatsDto colonne(TeamMember membre,
+    private PlayerStats colonne(TeamMember membre,
                                    Map<String, PlayerStatsService.Figures> figures,
                                    Map<String, MemberDirectory.MemberIdentity> identites,
-                                   Map<String, List<RankedStandingDto>> rangs,
-                                   StatLineDto premade) {
+                                   Map<String, List<RankedStanding>> rangs,
+                                   StatLine premade) {
         String puuid = membre.getRiotPuuid();
         PlayerStatsService.Figures chiffres =
                 puuid == null || puuid.isBlank() ? null : figures.get(puuid);
@@ -125,7 +125,7 @@ public class TeamPlayerStatsService {
                 membre.getUserId() == null ? null : identites.get(membre.getUserId());
         StatsState state = chiffres == null ? StatsState.COMPTE_RIOT_ABSENT : chiffres.state();
 
-        return new PlayerStatsDto(
+        return new PlayerStats(
                 membre.getMemberId(),
                 nomAffiche(membre, identite),
                 identite == null ? null : identite.avatarUrl(),

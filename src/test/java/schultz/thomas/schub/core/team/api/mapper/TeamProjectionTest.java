@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.team.business.service;
+package schultz.thomas.schub.core.team.api.mapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +13,8 @@ import schultz.thomas.schub.core.data.repository.RoleRepository;
 import schultz.thomas.schub.core.data.repository.UserRepository;
 import schultz.thomas.schub.core.team.api.dto.TeamDto;
 import schultz.thomas.schub.core.team.api.dto.TeamMemberDto;
+import schultz.thomas.schub.core.team.business.service.MemberDirectory;
+import schultz.thomas.schub.core.team.business.service.TeamScopedAuthority;
 import schultz.thomas.schub.core.team.data.model.MemberStatus;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -32,11 +34,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class TeamProjectionServiceTest {
+class TeamProjectionTest {
 
     private TeamRepository teamRepository;
     private MemberDirectory memberDirectory;
-    private TeamProjectionService projection;
+    private TeamProjection projection;
 
     private User capitaine;
     private User membre;
@@ -59,7 +61,7 @@ class TeamProjectionServiceTest {
 
         PermissionEvaluator evaluator = new PermissionEvaluator(userRepository, roleRepository,
                 List.of(new TeamScopedAuthority(teamRepository)));
-        projection = new TeamProjectionService(evaluator, memberDirectory);
+        projection = new TeamProjection(evaluator, memberDirectory);
 
         capitaine = compte("capitaine", "role-visiteur");
         membre = compte("membre", "role-visiteur");

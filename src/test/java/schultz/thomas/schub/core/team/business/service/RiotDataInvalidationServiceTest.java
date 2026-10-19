@@ -2,11 +2,10 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import schultz.thomas.schub.core.augur.data.repository.FindingRecordRepository;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
-import schultz.thomas.schub.core.team.api.dto.RiotDataInvalidationDto;
+import schultz.thomas.schub.core.team.business.model.RiotDataInvalidation;
 import schultz.thomas.schub.core.team.data.repository.TeamRepository;
 
 import java.util.LinkedHashSet;
@@ -53,14 +52,14 @@ class RiotDataInvalidationServiceTest {
         when(riotData.purge()).thenReturn(Map.of("riot_match", 74_000L, "riot_known_account", 478_000L));
         when(findings.count()).thenReturn(1_200L);
 
-        RiotDataInvalidationDto rapport = service.invalidate(owner(), RiotDataInvalidationService.CONFIRMATION);
+        RiotDataInvalidation rapport = service.invalidate(owner(), RiotDataInvalidationService.CONFIRMATION);
 
         var ordre = inOrder(repair, riotData, findings);
         ordre.verify(repair).puuidsSuivis();
         ordre.verify(riotData).purge();
         ordre.verify(findings).deleteAll();
         ordre.verify(repair).resoutTout(suivis);
-        assertThat(rapport).isEqualTo(new RiotDataInvalidationDto(552_000L, 1_200L, 2));
+        assertThat(rapport).isEqualTo(new RiotDataInvalidation(552_000L, 1_200L, 2));
     }
 
     private static User owner() {

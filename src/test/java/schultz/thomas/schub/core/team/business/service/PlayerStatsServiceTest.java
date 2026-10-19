@@ -3,9 +3,8 @@ package schultz.thomas.schub.core.team.business.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
-import schultz.thomas.schub.core.team.api.dto.StatLineDto;
+import schultz.thomas.schub.core.team.business.model.StatLine;
 import schultz.thomas.schub.core.team.business.model.StatsState;
 
 import java.time.Instant;
@@ -101,7 +100,7 @@ class PlayerStatsServiceTest {
     @Test
     @DisplayName("Pool vide : aucun ratio, et surtout pas des zéros")
     void aucuneDivisionParZero() {
-        StatLineDto total = figures().overall();
+        StatLine total = figures().overall();
 
         assertThat(total.games()).isZero();
         assertThat(total.winRate()).isNull();
@@ -125,7 +124,7 @@ class PlayerStatsServiceTest {
         when(statsGateway.aggregate(any(), eq(RiotStatsGateway.Grouping.CHAMPION), any(), any()))
                 .thenReturn(Optional.of(List.of(bucket("126", 20, 11, 60, 40, 80))));
 
-        StatLineDto jayce = figures().champions().getFirst();
+        StatLine jayce = figures().champions().getFirst();
 
         assertThat(jayce.winRate()).isEqualTo(0.55);
         assertThat(jayce.label()).isEqualTo("Jayce");

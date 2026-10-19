@@ -1,6 +1,7 @@
 package schultz.thomas.schub.core.api.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 import schultz.thomas.schub.core.api.dto.RiotAccountChangeDto;
 import schultz.thomas.schub.core.api.dto.RiotAccountDto;
 import schultz.thomas.schub.core.api.dto.RiotAccountSuggestionDto;
@@ -14,7 +15,7 @@ import schultz.thomas.schub.core.data.model.Role;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface AccountDtoMapper {
 
     RiotAccountDto toDto(RiotAccount account);

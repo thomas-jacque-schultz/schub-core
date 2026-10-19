@@ -13,6 +13,9 @@ import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.UserService;
 import schultz.thomas.schub.core.data.model.Permission;
 import schultz.thomas.schub.core.data.model.User;
+import schultz.thomas.schub.core.team.api.dto.RecentSessionDto;
+import schultz.thomas.schub.core.team.api.dto.SessionSummaryTestDto;
+import schultz.thomas.schub.core.team.api.mapper.SessionSummaryDtoMapper;
 import schultz.thomas.schub.core.team.business.service.SessionSummaryService;
 
 import java.time.LocalDate;
@@ -27,21 +30,23 @@ public class SessionSummaryTestController {
     private final SessionSummaryService sessionSummaries;
     private final UserService userService;
     private final PermissionEvaluator permissionEvaluator;
+    private final SessionSummaryDtoMapper dtos;
 
     @GetMapping
-    public List<SessionSummaryService.RecentSession> recent(
+    public List<RecentSessionDto> recent(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestParam(defaultValue = "30") int days) {
         User actor = autorise(actorId);
-        return sessionSummaries.recentFor(actor, Math.clamp(days, 1, 90));
+        return dtos.toRecentDtos(sessionSummaries.recentFor(actor, Math.clamp(days, 1, 90)));
     }
 
     @PostMapping
-    public ResponseEntity<SessionSummaryService.TestResult> send(
+    public ResponseEntity<SessionSummaryTestDto> send(
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
             @RequestParam LocalDate day,
             @RequestParam(defaultValue = "true") boolean send) {
         return sessionSummaries.sendTest(autorise(actorId), day, send)
+                .map(dtos::toDto)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }

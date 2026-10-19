@@ -22,6 +22,7 @@ import schultz.thomas.schub.core.team.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.team.api.dto.PlayerCollectDto;
 import schultz.thomas.schub.core.team.api.dto.SearchedPlayerDto;
 import schultz.thomas.schub.core.team.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.team.api.mapper.LolDtoMapper;
 import schultz.thomas.schub.core.team.business.service.CompanionsService;
 import schultz.thomas.schub.core.team.business.service.SearchedPlayerService;
 import schultz.thomas.schub.core.team.business.service.StatsWindows;
@@ -43,6 +44,7 @@ public class PlayerController {
     private final AugurDtoMapper findingDtos;
     private final UserService userService;
     private final PermissionEvaluator permissionEvaluator;
+    private final LolDtoMapper dtos;
 
     @GetMapping
     public SearchedPlayerDto page(@PathVariable String riotId,
@@ -51,13 +53,13 @@ public class PlayerController {
                                   @RequestParam(required = false) Integer champions,
                                   @RequestParam(defaultValue = "false") boolean light,
                                   @RequestParam(defaultValue = "true") boolean masteries) {
-        return players.page(riotId, windows.days(days, patches), champions, light, masteries);
+        return dtos.toDto(players.page(riotId, windows.days(days, patches), champions, light, masteries));
     }
 
     // Public, comme la page : des coéquipiers que Riot rend publics, masquables sur demande par le contact.
     @GetMapping("/companions")
     public CompanionsDto companions(@PathVariable String riotId) {
-        return companions.of(riotId);
+        return dtos.toDto(companions.of(riotId));
     }
 
     @GetMapping("/games")
@@ -65,7 +67,7 @@ public class PlayerController {
                             @RequestParam(required = false) Integer days,
                             @RequestParam(required = false) Integer patches,
                             @RequestParam(required = false) Integer limit) {
-        return players.games(riotId, windows.days(days, patches), limit);
+        return dtos.toDto(players.games(riotId, windows.days(days, patches), limit));
     }
 
     @GetMapping("/games/{matchId}")
@@ -73,7 +75,7 @@ public class PlayerController {
                                   @PathVariable String matchId,
                                   @RequestParam(required = false) Integer days,
                                   @RequestParam(required = false) Integer patches) {
-        return players.game(riotId, matchId, windows.days(days, patches));
+        return dtos.toDto(players.game(riotId, matchId, windows.days(days, patches)));
     }
 
     // Page vue sans compte : seulement les constats neutres (le style), jamais les faiblesses d'un tiers.
@@ -108,6 +110,6 @@ public class PlayerController {
     @PostMapping("/collect")
     public PlayerCollectDto collect(@PathVariable String riotId,
                                     @RequestHeader(value = VISITOR_ID, required = false) String visitor) {
-        return players.collect(riotId, visitor);
+        return dtos.toDto(players.collect(riotId, visitor));
     }
 }

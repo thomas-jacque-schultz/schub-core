@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.team.business.service;
+package schultz.thomas.schub.core.team.api.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,6 +10,8 @@ import schultz.thomas.schub.core.team.api.dto.CompositionSlotDto;
 import schultz.thomas.schub.core.team.api.dto.TeamDto;
 import schultz.thomas.schub.core.team.api.dto.TeamMemberDto;
 import schultz.thomas.schub.core.team.api.dto.TeamSummaryDto;
+import schultz.thomas.schub.core.team.business.service.MemberDirectory;
+import schultz.thomas.schub.core.team.business.service.TeamService;
 import schultz.thomas.schub.core.team.data.model.Composition;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -22,7 +24,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-public class TeamProjectionService {
+public class TeamProjection {
 
     private final PermissionEvaluator permissionEvaluator;
     private final MemberDirectory memberDirectory;

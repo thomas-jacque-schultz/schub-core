@@ -2,7 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import schultz.thomas.schub.core.team.api.dto.TierCombosDto;
+import schultz.thomas.schub.core.team.business.model.TierCombos;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,10 +33,10 @@ class TierCombosServiceTest {
                 22, new RiotChampionGateway.Champion(22, "Ashe", "Ashe", "ashe.png"),
                 412, new RiotChampionGateway.Champion(412, "Thresh", "Thresh", "thresh.png")))));
 
-        TierCombosDto dto = service.of("SILVER_GOLD", "ADC_SUP");
+        TierCombos dto = service.of("SILVER_GOLD", "ADC_SUP");
 
         assertThat(dto.positions()).containsExactly("BOTTOM", "UTILITY");
-        assertThat(dto.combos().get(0).champions()).extracting(TierCombosDto.Champion::name)
+        assertThat(dto.combos().get(0).champions()).extracting(TierCombos.Champion::name)
                 .containsExactly("Ashe", "Thresh");
         assertThat(dto.minGames()).isEqualTo(TierCombosService.PARTIES_MINIMUM);
         assertThat(dto.combos().get(1).champions().get(0).name()).isNull();

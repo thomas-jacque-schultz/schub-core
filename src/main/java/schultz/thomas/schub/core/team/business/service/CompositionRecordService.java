@@ -3,7 +3,7 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.CompositionRecordDto;
+import schultz.thomas.schub.core.team.business.model.CompositionRecord;
 import schultz.thomas.schub.core.team.data.model.Composition;
 import schultz.thomas.schub.core.team.data.model.CompositionSlot;
 import schultz.thomas.schub.core.team.data.model.Team;
@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
 import java.util.Set;
 
 // Réponse du 05/10 : une partie compte dès que chaque emplacement a son champion, ou un de ses remplaçants, dans
@@ -29,7 +28,7 @@ public class CompositionRecordService {
     private final RiotChampionGateway championGateway;
     private final CompositionRepository compositions;
 
-    public List<CompositionRecordDto> of(User actor, String teamId, Integer days) {
+    public List<CompositionRecord> of(User actor, String teamId, Integer days) {
         Team team = teamService.requireVisible(actor, teamId);
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
@@ -46,22 +45,22 @@ public class CompositionRecordService {
                 .filter(p -> p.win() != null && !p.splitSides() && !p.players().isEmpty())
                 .toList();
 
-        List<CompositionRecordDto> bilans = new ArrayList<>();
+        List<CompositionRecord> bilans = new ArrayList<>();
         for (Composition composition : liste) {
             List<Set<Integer>> emplacements = emplacements(composition, parCle);
             if (emplacements.isEmpty()) {
-                bilans.add(new CompositionRecordDto(composition.getId(), 0, 0, true, List.of()));
+                bilans.add(new CompositionRecord(composition.getId(), 0, 0, true, List.of()));
                 continue;
             }
-            List<CompositionRecordDto.Game> jouees = new ArrayList<>();
+            List<CompositionRecord.Game> jouees = new ArrayList<>();
             for (RiotStatsGateway.SharedMatch partie : parties) {
                 if (correspond(partie, emplacements)) {
-                    jouees.add(new CompositionRecordDto.Game(partie.matchId(), partie.startedAt(),
+                    jouees.add(new CompositionRecord.Game(partie.matchId(), partie.startedAt(),
                             Boolean.TRUE.equals(partie.win()), partie.durationSeconds()));
                 }
             }
-            long victoires = jouees.stream().filter(CompositionRecordDto.Game::win).count();
-            bilans.add(new CompositionRecordDto(composition.getId(), jouees.size(), victoires,
+            long victoires = jouees.stream().filter(CompositionRecord.Game::win).count();
+            bilans.add(new CompositionRecord(composition.getId(), jouees.size(), victoires,
                     jouees.size() < DraftAdviceService.TRIO_SEUIL, jouees));
         }
         return bilans;

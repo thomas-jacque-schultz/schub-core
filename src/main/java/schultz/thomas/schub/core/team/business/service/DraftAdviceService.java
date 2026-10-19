@@ -3,8 +3,8 @@ package schultz.thomas.schub.core.team.business.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.core.data.model.User;
-import schultz.thomas.schub.core.team.api.dto.DraftAdviceDto;
 import schultz.thomas.schub.core.team.business.model.ComboKind;
+import schultz.thomas.schub.core.team.business.model.DraftAdvice;
 import schultz.thomas.schub.core.team.data.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamChampionPool;
@@ -68,7 +68,7 @@ public class DraftAdviceService {
         }
     }
 
-    public DraftAdviceDto of(User actor, String teamId, Integer days) {
+    public DraftAdvice of(User actor, String teamId, Integer days) {
         Team team = teamService.requireVisible(actor, teamId);
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
@@ -76,7 +76,7 @@ public class DraftAdviceService {
         Map<Integer, RiotChampionGateway.Champion> catalogue = championGateway.catalogue()
                 .map(RiotChampionGateway.Catalogue::parId).orElseGet(Map::of);
         if (parPuuid.size() < 2) {
-            return new DraftAdviceDto(0, DUO_SEUIL, TRIO_SEUIL, List.of(), List.of(), List.of(), List.of(),
+            return new DraftAdvice(0, DUO_SEUIL, TRIO_SEUIL, List.of(), List.of(), List.of(), List.of(),
                     List.of(), List.of(), List.of());
         }
         List<RiotStatsGateway.SharedMatch> parties = statsGateway.sharedMatches(List.copyOf(parPuuid.keySet()), 2,
@@ -119,42 +119,42 @@ public class DraftAdviceService {
         }
 
         // Les appels au repère général prennent chacun quelques secondes : ils partent ensemble.
-        CompletableFuture<List<DraftAdviceDto.Combo>> essais =
+        CompletableFuture<List<DraftAdvice.Combo>> essais =
                 Parallele.lance(() -> aEssayer(team, joueurs, parPuuid, noms, catalogue, duos));
-        CompletableFuture<List<DraftAdviceDto.LaneThreat>> menaces =
+        CompletableFuture<List<DraftAdvice.LaneThreat>> menaces =
                 Parallele.lance(() -> menacesDeCouloir(parties, parPuuid, noms, catalogue));
         Rendu rendu = new Rendu(noms, catalogue, sansPartenaire);
-        List<DraftAdviceDto.Combo> duosRendus = duos.entrySet().stream()
+        List<DraftAdvice.Combo> duosRendus = duos.entrySet().stream()
                 .map(e -> rendu.combo(kindOf(e.getKey()), e.getKey(), e.getValue(), DUO_SEUIL))
-                .sorted(Comparator.comparingDouble(DraftAdviceDto.Combo::lowerBound).reversed())
+                .sorted(Comparator.comparingDouble(DraftAdvice.Combo::lowerBound).reversed())
                 .toList();
-        List<DraftAdviceDto.Combo> triosRendus = trios.entrySet().stream()
+        List<DraftAdvice.Combo> triosRendus = trios.entrySet().stream()
                 .map(e -> rendu.combo(TRIO.name(), e.getKey(), e.getValue(), TRIO_SEUIL))
-                .sorted(Comparator.comparingDouble(DraftAdviceDto.Combo::lowerBound).reversed())
+                .sorted(Comparator.comparingDouble(DraftAdvice.Combo::lowerBound).reversed())
                 .toList();
-        List<DraftAdviceDto.Combo> composRendues = compos.entrySet().stream()
+        List<DraftAdvice.Combo> composRendues = compos.entrySet().stream()
                 .filter(e -> e.getValue().parties >= PIRES_MINIMUM)
                 .map(e -> rendu.combo("COMPOSITION", e.getKey(), e.getValue(), TRIO_SEUIL))
-                .sorted(Comparator.comparingDouble(DraftAdviceDto.Combo::lowerBound).reversed())
+                .sorted(Comparator.comparingDouble(DraftAdvice.Combo::lowerBound).reversed())
                 .limit(RETENUS)
                 .toList();
-        List<DraftAdviceDto.Combo> pires = new ArrayList<>();
+        List<DraftAdvice.Combo> pires = new ArrayList<>();
         pires.addAll(duosRendus);
         pires.addAll(triosRendus);
-        List<DraftAdviceDto.Combo> aEviter = pires.stream()
+        List<DraftAdvice.Combo> aEviter = pires.stream()
                 .filter(c -> c.games() >= PIRES_MINIMUM)
-                .sorted(Comparator.comparingDouble((DraftAdviceDto.Combo c) -> borneHaute(c.wins(), c.games())))
+                .sorted(Comparator.comparingDouble((DraftAdvice.Combo c) -> borneHaute(c.wins(), c.games())))
                 .limit(RETENUS)
                 .toList();
 
-        List<DraftAdviceDto.Combo> affiches = new ArrayList<>();
+        List<DraftAdvice.Combo> affiches = new ArrayList<>();
         DUOS.forEach(type -> duosRendus.stream().filter(c -> c.kind().equals(type.name())).limit(RETENUS)
                 .forEach(affiches::add));
         triosRendus.stream().limit(RETENUS).forEach(affiches::add);
         affiches.addAll(aEviter);
         Map<String, GeneralRecord> reperes = reperes(affiches);
 
-        return new DraftAdviceDto(parties.size(), DUO_SEUIL, TRIO_SEUIL,
+        return new DraftAdvice(parties.size(), DUO_SEUIL, TRIO_SEUIL,
                 duosRendus.stream().map(c -> avecRepere(c, reperes)).toList(),
                 triosRendus.stream().map(c -> avecRepere(c, reperes)).toList(),
                 composRendues,
@@ -181,16 +181,16 @@ public class DraftAdviceService {
     private record Rendu(Map<String, String> noms, Map<Integer, RiotChampionGateway.Champion> catalogue,
                          Map<Choix, Map<String, Compte>> sansPartenaire) {
 
-        DraftAdviceDto.Combo combo(String kind, List<Choix> choix, Compte compte, int seuil) {
-            return new DraftAdviceDto.Combo(kind, choix.stream().map(this::pick).toList(), compte.parties,
+        DraftAdvice.Combo combo(String kind, List<Choix> choix, Compte compte, int seuil) {
+            return new DraftAdvice.Combo(kind, choix.stream().map(this::pick).toList(), compte.parties,
                     compte.victoires, (double) compte.victoires / compte.parties,
                     borneBasse(compte.victoires, compte.parties), compte.parties < seuil, null, null,
                     attendu(choix));
         }
 
-        DraftAdviceDto.Pick pick(Choix choix) {
+        DraftAdvice.Pick pick(Choix choix) {
             RiotChampionGateway.Champion champion = catalogue.get(choix.championId());
-            return new DraftAdviceDto.Pick(choix.memberId(), noms.get(choix.memberId()),
+            return new DraftAdvice.Pick(choix.memberId(), noms.get(choix.memberId()),
                     GameRole.dePosition(choix.position()).orElseThrow().name(), choix.championId(),
                     champion == null ? null : champion.key(), champion == null ? null : champion.name(),
                     champion == null ? null : champion.iconUrl());
@@ -228,12 +228,12 @@ public class DraftAdviceService {
         return kind + champions;
     }
 
-    private Map<String, GeneralRecord> reperes(List<DraftAdviceDto.Combo> affiches) {
+    private Map<String, GeneralRecord> reperes(List<DraftAdvice.Combo> affiches) {
         Map<String, GeneralRecord> reperes = new HashMap<>();
-        Map<String, List<DraftAdviceDto.Combo>> parType = affiches.stream()
-                .collect(Collectors.groupingBy(DraftAdviceDto.Combo::kind, LinkedHashMap::new, Collectors.toList()));
+        Map<String, List<DraftAdvice.Combo>> parType = affiches.stream()
+                .collect(Collectors.groupingBy(DraftAdvice.Combo::kind, LinkedHashMap::new, Collectors.toList()));
         Parallele.parCle(parType.keySet(), kind -> {
-            List<DraftAdviceDto.Combo> liste = parType.get(kind);
+            List<DraftAdvice.Combo> liste = parType.get(kind);
             List<String> postes = liste.get(0).picks().stream()
                     .map(pick -> GameRole.valueOf(pick.role()).position()).toList();
             List<RiotComboGateway.Slot> slots = new ArrayList<>();
@@ -248,18 +248,18 @@ public class DraftAdviceService {
         return reperes;
     }
 
-    private static DraftAdviceDto.Combo avecRepere(DraftAdviceDto.Combo c, Map<String, GeneralRecord> reperes) {
-        GeneralRecord repere = reperes.get(cle(c.kind(), c.picks().stream().map(DraftAdviceDto.Pick::championId)
+    private static DraftAdvice.Combo avecRepere(DraftAdvice.Combo c, Map<String, GeneralRecord> reperes) {
+        GeneralRecord repere = reperes.get(cle(c.kind(), c.picks().stream().map(DraftAdvice.Pick::championId)
                 .toList()));
         if (repere == null || repere.games() == 0) {
             return c;
         }
-        return new DraftAdviceDto.Combo(c.kind(), c.picks(), c.games(), c.wins(), c.winRate(), c.lowerBound(),
+        return new DraftAdvice.Combo(c.kind(), c.picks(), c.games(), c.wins(), c.winRate(), c.lowerBound(),
                 c.lowConfidence(), repere.games(), (double) repere.wins() / repere.games(), c.expected());
     }
 
     // #108 : forts en général, dans le pool ou l'historique de chaque joueur, et presque jamais joués ensemble.
-    private List<DraftAdviceDto.Combo> aEssayer(Team team, List<TeamMember> joueurs, Map<String, TeamMember> parPuuid,
+    private List<DraftAdvice.Combo> aEssayer(Team team, List<TeamMember> joueurs, Map<String, TeamMember> parPuuid,
                                                 Map<String, String> noms,
                                                 Map<Integer, RiotChampionGateway.Champion> catalogue,
                                                 Map<List<Choix>, Compte> dejaJoues) {
@@ -317,7 +317,7 @@ public class DraftAdviceService {
                     }
                     return combos.combos(slots, REPERE_SOLIDE).orElseGet(List::of);
                 });
-        List<DraftAdviceDto.Combo> propositions = new ArrayList<>();
+        List<DraftAdvice.Combo> propositions = new ArrayList<>();
         for (ComboKind type : candidatsParType.keySet()) {
             List<Map<Integer, String>> candidats = candidatsParType.get(type);
             generaux.get(type).stream()
@@ -335,7 +335,7 @@ public class DraftAdviceService {
                             choix.add(new Choix(candidats.get(i).get(id), type.positions().get(i), id));
                         }
                         long joues = ensemble.getOrDefault(cle(type.name(), general.championIds()), 0L);
-                        propositions.add(new DraftAdviceDto.Combo(type.name(),
+                        propositions.add(new DraftAdvice.Combo(type.name(),
                                 choix.stream().map(rendu::pick).toList(), joues, 0, 0,
                                 borneBasse(general.wins(), general.games()), true, general.games(),
                                 (double) general.wins() / general.games(), null));
@@ -345,7 +345,7 @@ public class DraftAdviceService {
     }
 
     // #106 : impact = présence × perte de taux de victoire, la perte prise à sa borne basse.
-    private static List<DraftAdviceDto.Ban> bans(List<RiotStatsGateway.SharedMatch> parties,
+    private static List<DraftAdvice.Ban> bans(List<RiotStatsGateway.SharedMatch> parties,
                                                  Map<Integer, RiotChampionGateway.Champion> catalogue) {
         if (parties.isEmpty()) {
             return List.of();
@@ -366,20 +366,20 @@ public class DraftAdviceService {
                     double taux = (double) c.victoires / c.parties;
                     double perte = Math.max(0, moyenne - borneHaute(c.victoires, c.parties));
                     RiotChampionGateway.Champion champion = catalogue.get(e.getKey());
-                    return new DraftAdviceDto.Ban(e.getKey(), champion == null ? null : champion.key(),
+                    return new DraftAdvice.Ban(e.getKey(), champion == null ? null : champion.key(),
                             champion == null ? null : champion.name(), champion == null ? null : champion.iconUrl(),
                             c.parties, c.victoires, presence, taux, presence * perte, c.parties < DUO_SEUIL);
                 })
                 .filter(ban -> ban.winRateAgainst() < moyenne)
                 // À impact nul (échantillon trop court pour la borne), le taux brut départage.
-                .sorted(Comparator.comparingDouble(DraftAdviceDto.Ban::impact)
+                .sorted(Comparator.comparingDouble(DraftAdvice.Ban::impact)
                         .thenComparingDouble(ban -> ban.presence() * (moyenne - ban.winRateAgainst()))
                         .reversed())
                 .limit(BANS)
                 .toList();
     }
 
-    private List<DraftAdviceDto.LaneThreat> menacesDeCouloir(List<RiotStatsGateway.SharedMatch> parties,
+    private List<DraftAdvice.LaneThreat> menacesDeCouloir(List<RiotStatsGateway.SharedMatch> parties,
                                                              Map<String, TeamMember> parPuuid,
                                                              Map<String, String> noms,
                                                              Map<Integer, RiotChampionGateway.Champion> catalogue) {
@@ -416,13 +416,13 @@ public class DraftAdviceService {
                     String[] parts = e.getKey().split("\\|");
                     int championId = Integer.parseInt(parts[2]);
                     RiotChampionGateway.Champion champion = catalogue.get(championId);
-                    return new DraftAdviceDto.LaneThreat(parts[0], noms.get(parts[0]),
+                    return new DraftAdvice.LaneThreat(parts[0], noms.get(parts[0]),
                             GameRole.dePosition(parts[1]).orElseThrow().name(),
                             championId, champion == null ? null : champion.key(),
                             champion == null ? null : champion.name(), champion == null ? null : champion.iconUrl(),
                             (long) e.getValue()[0], e.getValue()[1] / e.getValue()[0]);
                 })
-                .sorted(Comparator.comparingDouble(DraftAdviceDto.LaneThreat::goldDiffAt15))
+                .sorted(Comparator.comparingDouble(DraftAdvice.LaneThreat::goldDiffAt15))
                 .limit(BANS)
                 .toList();
     }

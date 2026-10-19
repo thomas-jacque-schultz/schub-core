@@ -2,7 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import schultz.thomas.schub.core.team.api.dto.StatLineDto;
+import schultz.thomas.schub.core.team.business.model.StatLine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -15,7 +15,7 @@ class StatLinesTest {
         RiotStatsGateway.Bucket bucket = new RiotStatsGateway.Bucket("p", "", null, 2, 1,
                 6, 5, 9, 0, 0, 0, 0, 0, 25, 20, 0, 3600, null, null, null);
 
-        StatLineDto ligne = StatLines.of(bucket, "", null, null);
+        StatLine ligne = StatLines.of(bucket, "", null, null);
 
         assertThat(ligne.killParticipation()).isCloseTo(0.6, within(1e-9));
         assertThat(ligne.deathShare()).isCloseTo(0.25, within(1e-9));
@@ -24,7 +24,7 @@ class StatLinesTest {
     @Test
     @DisplayName("Sans total d'équipe, pas de part : un tiret, pas un zéro")
     void sansTotal() {
-        StatLineDto ligne = StatLines.of(StatLines.vide("p"), "", null, null);
+        StatLine ligne = StatLines.of(StatLines.vide("p"), "", null, null);
 
         assertThat(ligne.killParticipation()).isNull();
         assertThat(ligne.deathShare()).isNull();
@@ -37,7 +37,7 @@ class StatLinesTest {
                 0, 0, 0, 18000, null, null, new RiotStatsGateway.Performance(0, 30, 12, 1800, 0, 15, 0, 150000, 8, 16, 4,
                         2000, 40, 0, 2));
 
-        StatLineDto ligne = StatLines.of(bucket, "", null, null);
+        StatLine ligne = StatLines.of(bucket, "", null, null);
 
         assertThat(ligne.laningGames()).isEqualTo(4);
         assertThat(ligne.goldDiffAt15()).isCloseTo(500, within(1e-9));
@@ -52,7 +52,7 @@ class StatLinesTest {
     @Test
     @DisplayName("sans timeline, pas d'écart : un tiret, pas un zéro")
     void sansTimeline() {
-        StatLineDto ligne = StatLines.of(StatLines.vide("p"), "", null, null);
+        StatLine ligne = StatLines.of(StatLines.vide("p"), "", null, null);
 
         assertThat(ligne.goldDiffAt15()).isNull();
         assertThat(ligne.platesDiff()).isNull();
