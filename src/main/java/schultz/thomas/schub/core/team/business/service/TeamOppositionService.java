@@ -9,6 +9,7 @@ import schultz.thomas.schub.core.team.api.dto.TeamEarlyGameDto;
 import schultz.thomas.schub.core.team.api.dto.TeamLevelDto;
 import schultz.thomas.schub.core.team.api.dto.TeamOppositionDto;
 import schultz.thomas.schub.core.team.api.dto.TeamRecordDto;
+import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.business.model.StatsState;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
@@ -71,7 +72,7 @@ public class TeamOppositionService {
         Map<String, List<RiotStatsGateway.SharedMatch>> parPalier = new LinkedHashMap<>();
         Map<String, List<RiotStatsGateway.SharedMatch>> parEcart = new LinkedHashMap<>();
         Map<String, Poste> parPoste = new LinkedHashMap<>();
-        TeamGamesStatsService.POSTES.forEach(poste -> parPoste.put(poste, new Poste()));
+        GameRole.POSITIONS.forEach(poste -> parPoste.put(poste, new Poste()));
         List<Double> retards = new ArrayList<>();
         int avecRangs = 0;
 
@@ -95,14 +96,10 @@ public class TeamOppositionService {
                 parEcart.computeIfAbsent(ecart(nous - eux), cle -> new ArrayList<>()).add(partie);
             }
             for (RiotStatsGateway.InsightPlayer joueur : insight.participants()) {
-                if (!membres.contains(joueur.puuid()) || !parPoste.containsKey(joueur.position())) {
-                    continue;
+                if (membres.contains(joueur.puuid())) {
+                    VueDePartie.visAVis(joueur, insight.participants())
+                            .ifPresent(adverse -> parPoste.get(joueur.position()).ajoute(joueur, adverse, partie));
                 }
-                insight.participants().stream()
-                        .filter(adverse -> adverse.side() != joueur.side()
-                                && Objects.equals(adverse.position(), joueur.position()))
-                        .findFirst()
-                        .ifPresent(adverse -> parPoste.get(joueur.position()).ajoute(joueur, adverse, partie));
             }
         }
 
@@ -127,8 +124,7 @@ public class TeamOppositionService {
     }
 
     static Double moyenne(RiotStatsGateway.Insight insight, boolean notreCamp, int notreCote) {
-        return insight.participants().stream()
-                .filter(joueur -> (joueur.side() == notreCote) == notreCamp)
+        return VueDePartie.camp(insight.participants(), notreCote, notreCamp).stream()
                 .map(joueur -> Rangs.reference(joueur.solo(), joueur.flex()))
                 .filter(Objects::nonNull)
                 .mapToDouble(Double::doubleValue)
@@ -193,11 +189,11 @@ public class TeamOppositionService {
                 ecarts.add(nous - eux);
                 (nous < eux ? plusForts : plusFaibles).add(partie);
             }
-            if (joueur.at15() != null && adverse.at15() != null) {
+            Integer or = VueDePartie.ecartA15(joueur, adverse, RiotStatsGateway.At15::gold);
+            if (or != null) {
                 couloirs++;
-                int or = joueur.at15().gold() - adverse.at15().gold();
                 orEcart += or;
-                csEcart += joueur.at15().cs() - adverse.at15().cs();
+                csEcart += VueDePartie.ecartA15(joueur, adverse, RiotStatsGateway.At15::cs);
                 if (or > 0) {
                     couloirsGagnes++;
                 }
