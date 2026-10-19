@@ -2,7 +2,7 @@ package schultz.thomas.schub.core.team.business.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import schultz.thomas.schub.core.business.service.ConnectorPremadeLabGateway.Embed;
+import schultz.thomas.schub.core.business.service.PremadeLabGateway.Embed;
 
 import java.time.Instant;
 import java.util.Collections;

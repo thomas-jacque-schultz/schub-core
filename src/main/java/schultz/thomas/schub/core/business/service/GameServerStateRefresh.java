@@ -1,13 +1,13 @@
 package schultz.thomas.schub.core.business.service;
 
-import schultz.thomas.schub.core.data.model.GameServer;
-import schultz.thomas.schub.core.data.model.GameServerCommandFailure;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import schultz.thomas.schub.core.data.model.GameServer;
+import schultz.thomas.schub.core.data.model.GameServerCommandFailure;
 
 import java.util.Objects;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor

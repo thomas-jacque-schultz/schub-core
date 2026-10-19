@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.business.service;
+package schultz.thomas.schub.core.api.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.business.service.RiotConnectorService;
+import schultz.thomas.schub.core.business.service.RiotConnectorUnavailableException;
 
 import java.time.Duration;
 import java.time.Instant;

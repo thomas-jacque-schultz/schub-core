@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.team.business.service;
+package schultz.thomas.schub.core.team.api.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.team.business.service.RiotDataGateway;
 
 import java.util.Map;
 import java.util.Optional;

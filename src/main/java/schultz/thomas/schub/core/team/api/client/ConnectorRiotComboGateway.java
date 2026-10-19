@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.team.business.service;
+package schultz.thomas.schub.core.team.api.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -6,8 +6,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import schultz.thomas.schub.core.team.business.service.RiotComboGateway;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +15,7 @@ import java.util.Optional;
 // Délai long : le repère général parcourt les participations de tous les joueurs collectés.
 @Slf4j
 @Service
-public class ConnectorRiotComboGateway {
+public class ConnectorRiotComboGateway implements RiotComboGateway {
 
     private final RestClient restClient;
 
@@ -23,6 +23,7 @@ public class ConnectorRiotComboGateway {
         this.restClient = restClient;
     }
 
+    @Override
     public Optional<List<GeneralCombo>> combos(List<Slot> slots, int minGames) {
         try {
             return Optional.ofNullable(restClient.post().uri("/stats/champion-combos")
@@ -36,6 +37,7 @@ public class ConnectorRiotComboGateway {
     }
 
     // Lecture de la table du jour : vide si le connecteur ne l'a pas encore calculée, ou ne répond pas.
+    @Override
     public Optional<TierCombos> tierCombos(String tier, String kind, int minGames, int limit) {
         try {
             return Optional.ofNullable(restClient.get()
@@ -47,18 +49,5 @@ public class ConnectorRiotComboGateway {
             log.warn("Combos du palier {} ({}) indisponibles : {}", tier, kind, indisponible.getMessage());
             return Optional.empty();
         }
-    }
-
-    public record TierCombos(String tier, String kind, Instant computedAt, long games, List<Ranked> combos) {
-    }
-
-    public record Ranked(List<Integer> championIds, long games, long wins, double lowerBound) {
-    }
-
-    // position : celle de Riot (TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY).
-    public record Slot(String position, List<Integer> championIds) {
-    }
-
-    public record GeneralCombo(List<Integer> championIds, long games, long wins) {
     }
 }

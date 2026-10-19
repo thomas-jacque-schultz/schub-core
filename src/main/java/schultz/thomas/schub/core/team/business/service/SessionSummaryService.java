@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import schultz.thomas.schub.core.business.service.ConnectorPremadeLabGateway.Embed;
-import schultz.thomas.schub.core.business.service.ConnectorPremadeLabGateway;
+import schultz.thomas.schub.core.business.service.PremadeLabGateway.Embed;
+import schultz.thomas.schub.core.business.service.PremadeLabGateway;
 import schultz.thomas.schub.core.data.model.SessionSummaryPreferences;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
@@ -62,7 +62,7 @@ public class SessionSummaryService {
     private final RiotStatsGateway statsGateway;
     private final RiotChampionGateway championGateway;
     private final TeamGamesStatsService gamesStats;
-    private final ConnectorPremadeLabGateway premadelab;
+    private final PremadeLabGateway premadelab;
 
     @Value("${premadelab.url:https://premadelab.eu}")
     private String premadelabUrl;
@@ -91,7 +91,7 @@ public class SessionSummaryService {
             if (encadres.isEmpty()) {
                 continue;
             }
-            ConnectorPremadeLabGateway.Status statut =
+            PremadeLabGateway.Status statut =
                     premadelab.sendDirectMessage(user.get().getDiscordId(), encadres).status();
             switch (statut) {
                 case SENT -> {
@@ -117,7 +117,7 @@ public class SessionSummaryService {
                                 boolean planned) {
     }
 
-    public record TestResult(List<Embed> embeds, ConnectorPremadeLabGateway.Status status, String detail) {
+    public record TestResult(List<Embed> embeds, PremadeLabGateway.Status status, String detail) {
     }
 
     public List<RecentSession> recentFor(User user, int jours) {
@@ -139,10 +139,10 @@ public class SessionSummaryService {
                 return new TestResult(encadres, null, null);
             }
             if (user.getDiscordId() == null) {
-                return new TestResult(encadres, ConnectorPremadeLabGateway.Status.DISABLED,
+                return new TestResult(encadres, PremadeLabGateway.Status.DISABLED,
                         "Aucun compte Discord lié");
             }
-            ConnectorPremadeLabGateway.Result envoi = premadelab.sendDirectMessage(user.getDiscordId(), encadres);
+            PremadeLabGateway.Result envoi = premadelab.sendDirectMessage(user.getDiscordId(), encadres);
             return new TestResult(encadres, envoi.status(), envoi.detail());
         });
     }
@@ -253,7 +253,7 @@ public class SessionSummaryService {
                                                                       String monPuuid) {
         Map<Integer, RiotChampionGateway.Champion> catalogue = championGateway.catalogue()
                 .map(RiotChampionGateway.Catalogue::parId).orElseGet(Map::of);
-        List<ConnectorPremadeLabGateway.ChampionIcon> demandes = parties.stream()
+        List<PremadeLabGateway.ChampionIcon> demandes = parties.stream()
                 .flatMap(p -> {
                     RiotStatsGateway.SharedMatchPlayer moi = moi(p, monPuuid);
                     RiotStatsGateway.SharedMatchPlayer adverse = adverse(p, moi);
@@ -263,7 +263,7 @@ public class SessionSummaryService {
                 .map(j -> catalogue.get(j.championId()))
                 .filter(c -> c != null && c.key() != null && c.iconUrl() != null)
                 .distinct()
-                .map(c -> new ConnectorPremadeLabGateway.ChampionIcon(c.key(), c.iconUrl()))
+                .map(c -> new PremadeLabGateway.ChampionIcon(c.key(), c.iconUrl()))
                 .toList();
         Map<String, String> emojis = premadelab.championEmojis(demandes);
         return joueur -> {

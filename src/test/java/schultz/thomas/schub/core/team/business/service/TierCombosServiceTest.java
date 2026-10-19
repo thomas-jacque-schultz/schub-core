@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 
 class TierCombosServiceTest {
 
-    private final ConnectorRiotComboGateway combos = mock(ConnectorRiotComboGateway.class);
+    private final RiotComboGateway combos = mock(RiotComboGateway.class);
     private final RiotChampionGateway champions = mock(RiotChampionGateway.class);
     private final TierCombosService service = new TierCombosService(combos, champions);
 
@@ -25,10 +25,10 @@ class TierCombosServiceTest {
     @DisplayName("chaque ligne nomme ses champions, et un champion absent du catalogue reste sans nom")
     void lignesNommees() {
         when(combos.tierCombos("SILVER_GOLD", "ADC_SUP", TierCombosService.PARTIES_MINIMUM, TierCombosService.LIGNES))
-                .thenReturn(Optional.of(new ConnectorRiotComboGateway.TierCombos("SILVER_GOLD", "ADC_SUP",
+                .thenReturn(Optional.of(new RiotComboGateway.TierCombos("SILVER_GOLD", "ADC_SUP",
                         Instant.now(), 1200, List.of(
-                        new ConnectorRiotComboGateway.Ranked(List.of(22, 412), 40, 26, 0.5),
-                        new ConnectorRiotComboGateway.Ranked(List.of(51, 89), 3, 3, 0.43)))));
+                        new RiotComboGateway.Ranked(List.of(22, 412), 40, 26, 0.5),
+                        new RiotComboGateway.Ranked(List.of(51, 89), 3, 3, 0.43)))));
         when(champions.catalogue()).thenReturn(Optional.of(new RiotChampionGateway.Catalogue("16.20", Map.of(
                 22, new RiotChampionGateway.Champion(22, "Ashe", "Ashe", "ashe.png"),
                 412, new RiotChampionGateway.Champion(412, "Thresh", "Thresh", "thresh.png")))));

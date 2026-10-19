@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.team.business.service;
+package schultz.thomas.schub.core.team.api.client;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;

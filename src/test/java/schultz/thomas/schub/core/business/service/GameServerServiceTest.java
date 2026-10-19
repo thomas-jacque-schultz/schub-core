@@ -9,7 +9,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.UpdateDefinition;
-
 import schultz.thomas.schub.core.business.mapper.GameServerMapper;
 import schultz.thomas.schub.core.data.model.GameServer;
 import schultz.thomas.schub.core.data.model.GameServerStatus;

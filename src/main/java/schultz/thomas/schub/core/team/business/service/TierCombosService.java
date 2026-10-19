@@ -24,14 +24,14 @@ public class TierCombosService {
     static final int PARTIES_MINIMUM = 20;
     static final int LIGNES = 30;
 
-    private final ConnectorRiotComboGateway combos;
+    private final RiotComboGateway combos;
     private final RiotChampionGateway championGateway;
 
     public TierCombosDto of(String tier, String kind) {
         if (!PALIERS.contains(tier) || !TYPES.contains(kind)) {
             throw new NoSuchElementException("Aucune page de combos pour " + tier + " / " + kind);
         }
-        ConnectorRiotComboGateway.TierCombos lus = combos.tierCombos(tier, kind, PARTIES_MINIMUM, LIGNES)
+        RiotComboGateway.TierCombos lus = combos.tierCombos(tier, kind, PARTIES_MINIMUM, LIGNES)
                 .orElseThrow(RiotConnectorUnavailableException::new);
         Map<Integer, RiotChampionGateway.Champion> catalogue = championGateway.catalogue()
                 .map(RiotChampionGateway.Catalogue::parId).orElseGet(Map::of);

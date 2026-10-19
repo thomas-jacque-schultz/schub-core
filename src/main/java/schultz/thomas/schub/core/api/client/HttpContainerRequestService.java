@@ -1,4 +1,4 @@
-package schultz.thomas.schub.core.business.service;
+package schultz.thomas.schub.core.api.client;
 
 import schultz.thomas.schub.core.api.dto.GameServerCommandFailureDto;
 import schultz.thomas.schub.core.api.dto.PortainerStack;
@@ -13,6 +13,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import schultz.thomas.schub.core.business.service.ContainerRequestService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

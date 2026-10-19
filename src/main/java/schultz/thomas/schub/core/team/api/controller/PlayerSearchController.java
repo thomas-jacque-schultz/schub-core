@@ -4,17 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientException;
 import schultz.thomas.schub.core.api.controller.CoreHeaders;
 import schultz.thomas.schub.core.business.service.ActivityService;
-import schultz.thomas.schub.core.business.service.RiotConnectorService;
 import schultz.thomas.schub.core.business.service.RiotConnectorService.HistoryWindow;
+import schultz.thomas.schub.core.business.service.RiotConnectorService;
+import schultz.thomas.schub.core.team.api.client.ConnectorRiotSeoGateway;
 import schultz.thomas.schub.core.team.api.dto.PlayerSuggestionDto;
-import schultz.thomas.schub.core.team.business.service.ConnectorRiotSeoGateway;
-import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 
