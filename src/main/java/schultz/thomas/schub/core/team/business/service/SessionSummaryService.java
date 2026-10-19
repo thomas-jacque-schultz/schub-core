@@ -10,6 +10,8 @@ import schultz.thomas.schub.core.business.service.ConnectorPremadeLabGateway.Emb
 import schultz.thomas.schub.core.data.model.SessionSummaryPreferences;
 import schultz.thomas.schub.core.data.model.User;
 import schultz.thomas.schub.core.data.repository.UserRepository;
+import schultz.thomas.schub.core.team.business.model.GameModes;
+import schultz.thomas.schub.core.team.business.model.GameRole;
 import schultz.thomas.schub.core.team.data.model.Team;
 import schultz.thomas.schub.core.team.data.model.TeamMember;
 import schultz.thomas.schub.core.team.data.model.TeamSession;
@@ -24,14 +26,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
@@ -55,15 +55,6 @@ public class SessionSummaryService {
     static final int ENCADRES_MAX = 10;
     static final int CARACTERES_MAX = 6000;
     static final int PARTIES_MAX = 24;
-    static final Map<String, String> POSTES = Map.of("TOP", "Top", "JUNGLE", "Jungle", "MIDDLE", "Mid",
-            "BOTTOM", "ADC", "UTILITY", "Support");
-    // Les modes hors Faille : pas de poste, donc pas de vis-à-vis.
-    static final Map<String, String> MODES = Map.ofEntries(Map.entry("ARAM", "ARAM"),
-            Map.entry("ARAM_MAYHEM", "ARAM Mayhem"), Map.entry("ARAM_CLASH", "Clash ARAM"),
-            Map.entry("ARENA", "Arène"), Map.entry("URF", "URF"), Map.entry("ARURF", "ARURF"),
-            Map.entry("ONE_FOR_ALL", "Un pour tous"), Map.entry("NEXUS_BLITZ", "Nexus Blitz"),
-            Map.entry("ULTIMATE_SPELLBOOK", "Grimoire ultime"), Map.entry("BRAWL", "Brawl"),
-            Map.entry("SWARM", "Swarm"), Map.entry("COOP_VS_AI", "Contre l'IA"));
 
     private final TeamSessionRepository sessions;
     private final TeamRepository teams;
@@ -288,8 +279,18 @@ public class SessionSummaryService {
 
     private static RiotStatsGateway.SharedMatchPlayer adverse(RiotStatsGateway.SharedMatch partie,
                                                               RiotStatsGateway.SharedMatchPlayer moi) {
-        return moi == null || !POSTES.containsKey(moi.position()) ? null : partie.others().stream()
-                .filter(j -> j.side() != moi.side() && moi.position().equals(j.position()))
+        return VueDePartie.visAVis(moi, partie.others()).orElse(null);
+    }
+
+    private static String poste(RiotStatsGateway.SharedMatchPlayer joueur) {
+        return GameRole.dePosition(joueur.position()).map(GameRole::libelle).orElse(null);
+    }
+
+    private static RiotStatsGateway.InsightPlayer a15(RiotStatsGateway.Insight insight,
+                                                      RiotStatsGateway.SharedMatchPlayer joueur) {
+        return insight == null || insight.participants() == null || joueur == null ? null
+                : insight.participants().stream()
+                .filter(j -> j.at15() != null && j.puuid().equals(joueur.puuid()))
                 .findFirst().orElse(null);
     }
 
@@ -297,10 +298,11 @@ public class SessionSummaryService {
                                       RiotStatsGateway.Insight insight,
                                       Function<RiotStatsGateway.SharedMatchPlayer, String> champion) {
         RiotStatsGateway.SharedMatchPlayer moi = moi(partie, monPuuid);
-        String poste = moi == null ? null : POSTES.get(moi.position());
+        String poste = moi == null ? null : poste(moi);
         RiotStatsGateway.SharedMatchPlayer adverse = adverse(partie, moi);
         String resultat = partie.win() == null ? "➖" : partie.win() ? "✅ Victoire" : "❌ Défaite";
-        String contexte = moi == null ? "sans toi" : poste != null ? poste : MODES.get(partie.queue());
+        String contexte = moi == null ? "sans toi"
+                : poste != null ? poste : GameModes.libelleHorsFaille(partie.queue()).orElse(null);
         String nom = resultat + (contexte == null ? "" : " · " + contexte) + " · "
                 + partie.durationSeconds() / 60 + " min";
 
@@ -309,42 +311,19 @@ public class SessionSummaryService {
             lignes.add(champion.apply(moi) + (adverse == null ? "" : " contre " + champion.apply(adverse))
                     + " · " + moi.kills() + "/" + moi.deaths() + "/" + moi.assists());
         }
-        Map<String, RiotStatsGateway.At15> a15 = new HashMap<>();
-        if (insight != null && insight.participants() != null) {
-            insight.participants().stream().filter(j -> j.at15() != null).forEach(j -> a15.put(j.puuid(), j.at15()));
+        RiotStatsGateway.InsightPlayer nous = a15(insight, moi);
+        RiotStatsGateway.InsightPlayer eux = a15(insight, adverse);
+        Integer or = VueDePartie.ecartA15(nous, eux, RiotStatsGateway.At15::gold);
+        if (or != null) {
+            lignes.add("À 15 min : " + signe(or) + " or et "
+                    + signe(VueDePartie.ecartA15(nous, eux, RiotStatsGateway.At15::cs)) + " CS sur lui, "
+                    + nous.at15().kills() + "/" + nous.at15().deaths() + "/" + nous.at15().assists());
         }
-        if (adverse != null && a15.containsKey(moi.puuid()) && a15.containsKey(adverse.puuid())) {
-            RiotStatsGateway.At15 nous = a15.get(moi.puuid());
-            RiotStatsGateway.At15 eux = a15.get(adverse.puuid());
-            lignes.add("À 15 min : " + signe(nous.gold() - eux.gold()) + " or et " + signe(nous.cs() - eux.cs())
-                    + " CS sur lui, " + nous.kills() + "/" + nous.deaths() + "/" + nous.assists());
-        }
-        Integer ecart = ecartFinal(partie);
+        Integer ecart = VueDePartie.de(partie).ecartDOrFinal();
         if (ecart != null) {
             lignes.add("Résultat équipe : " + signe(ecart) + " or en fin de partie");
         }
         return new Embed.Field(nom, lignes.isEmpty() ? "—" : String.join("\n", lignes), false);
-    }
-
-    // L'or gagné par chaque camp, sur les dix joueurs : sans timeline, il est toujours connu.
-    // Seulement à cinq contre cinq : les modes à neuf contre neuf ne se comparent pas ainsi.
-    static Integer ecartFinal(RiotStatsGateway.SharedMatch partie) {
-        if (partie.players().isEmpty() || partie.others() == null) {
-            return null;
-        }
-        int camp = partie.players().get(0).side();
-        Map<String, RiotStatsGateway.SharedMatchPlayer> parPuuid = new LinkedHashMap<>();
-        Stream.concat(partie.players().stream(), partie.others().stream())
-                .forEach(j -> parPuuid.putIfAbsent(j.puuid(), j));
-        long nous = parPuuid.values().stream().filter(j -> j.side() == camp).count();
-        if (nous != 5 || parPuuid.size() != 10) {
-            return null;
-        }
-        int ecart = 0;
-        for (RiotStatsGateway.SharedMatchPlayer joueur : parPuuid.values()) {
-            ecart += joueur.side() == camp ? joueur.goldEarned() : -joueur.goldEarned();
-        }
-        return ecart;
     }
 
     static String sansTag(String riotId) {
@@ -376,7 +355,8 @@ public class SessionSummaryService {
         for (RiotStatsGateway.SharedMatch partie : parties) {
             RiotStatsGateway.SharedMatchPlayer moi = moi(partie, monPuuid);
             if (moi != null) {
-                String poste = POSTES.getOrDefault(moi.position(), MODES.getOrDefault(partie.queue(), "autre mode"));
+                String poste = Optional.ofNullable(poste(moi))
+                        .or(() -> GameModes.libelleHorsFaille(partie.queue())).orElse("autre mode");
                 compte.merge(poste, 1, Integer::sum);
             }
         }
@@ -492,7 +472,8 @@ public class SessionSummaryService {
 
         long avancesPerdues = parties.stream()
                 .filter(p -> Boolean.FALSE.equals(p.win()))
-                .map(p -> avance(insights.get(p.matchId()), p))
+                .map(p -> VueDePartie.ecartDesCampsA15(insights.get(p.matchId()), VueDePartie.de(p).cote(),
+                        RiotStatsGateway.At15::gold))
                 .filter(avance -> avance != null && avance >= AVANCE_A_15)
                 .count();
         if (avancesPerdues > 0) {
@@ -510,29 +491,5 @@ public class SessionSummaryService {
                             + Math.round(100.0 * session.wins() / session.games()) + " % ce soir"));
         }
         return lignes;
-    }
-
-    // L'écart d'or des deux camps à 15 min ; null sans timeline.
-    private static Integer avance(RiotStatsGateway.Insight insight, RiotStatsGateway.SharedMatch partie) {
-        if (insight == null || insight.participants() == null || partie.players().isEmpty()) {
-            return null;
-        }
-        int camp = partie.players().get(0).side();
-        int nous = 0;
-        int eux = 0;
-        boolean releve = false;
-        Set<String> vus = new HashSet<>();
-        for (RiotStatsGateway.InsightPlayer joueur : insight.participants()) {
-            if (joueur.at15() == null || !vus.add(joueur.puuid())) {
-                continue;
-            }
-            releve = true;
-            if (joueur.side() == camp) {
-                nous += joueur.at15().gold();
-            } else {
-                eux += joueur.at15().gold();
-            }
-        }
-        return releve ? nous - eux : null;
     }
 }
