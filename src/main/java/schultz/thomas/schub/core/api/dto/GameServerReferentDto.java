@@ -1,8 +1,10 @@
 package schultz.thomas.schub.core.api.dto;
 
+import jakarta.annotation.Nullable;
+
 public record GameServerReferentDto(
         String id,
-        String displayName,
-        String discordId
+        @Nullable String displayName,
+        @Nullable String discordId
 ) {
 }

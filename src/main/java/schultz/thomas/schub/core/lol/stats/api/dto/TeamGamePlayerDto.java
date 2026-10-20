@@ -1,15 +1,15 @@
 package schultz.thomas.schub.core.lol.stats.api.dto;
 
-
+import jakarta.annotation.Nullable;
 
 public record TeamGamePlayerDto(
-        String memberId,
-        String displayName,
-        String riotId,
+        @Nullable String memberId,
+        @Nullable String displayName,
+        @Nullable String riotId,
         int championId,
-        String championName,
-        String iconUrl,
-        String position,
+        @Nullable String championName,
+        @Nullable String iconUrl,
+        @Nullable String position,
         int side,
         boolean win,
         int kills,
@@ -21,8 +21,8 @@ public record TeamGamePlayerDto(
         int minionsKilled,
         int visionScore,
         boolean afk,
-        RankedStandingDto soloRank,
-        RankedStandingDto flexRank,
-        At15Dto at15
+        @Nullable RankedStandingDto soloRank,
+        @Nullable RankedStandingDto flexRank,
+        @Nullable At15Dto at15
 ) {
 }

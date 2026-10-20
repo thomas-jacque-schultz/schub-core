@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.api.dto;
 
 import schultz.thomas.schub.core.business.service.RiotConnectorService.Crawler;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 
 public record CrawlerDto(
@@ -15,7 +16,7 @@ public record CrawlerDto(
         long databaseBytes,
         long storageAlertBytes,
         boolean storageAlert,
-        Instant lastRoundAt,
+        @Nullable Instant lastRoundAt,
         int lastRoundAccounts) {
 
     public static CrawlerDto from(Crawler c) {

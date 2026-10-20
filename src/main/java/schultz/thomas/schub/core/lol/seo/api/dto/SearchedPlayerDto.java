@@ -3,6 +3,7 @@ package schultz.thomas.schub.core.lol.seo.api.dto;
 import schultz.thomas.schub.core.lol.stats.api.dto.MyStatsDto;
 import schultz.thomas.schub.core.lol.stats.api.dto.RankedStandingDto;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 
 // La page publique d'un joueur recherché : son profil tout de suite, ses statistiques dès que ses parties arrivent.
@@ -19,6 +20,7 @@ public record SearchedPlayerDto(
         MyStatsDto stats
 ) {
 
-    public record MasteryDto(int championId, String championName, String iconUrl, int level, int points) {
+    public record MasteryDto(int championId, @Nullable String championName, @Nullable String iconUrl, int level,
+                             int points) {
     }
 }

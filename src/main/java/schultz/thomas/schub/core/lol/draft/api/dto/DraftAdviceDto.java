@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.lol.draft.api.dto;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 
 // Conseils de draft (Schub#104) : tirés des parties où les joueurs du combo jouent ensemble.
@@ -27,24 +28,25 @@ public record DraftAdviceDto(
             double lowerBound,
             boolean lowConfidence,
             // Le même combo de champions, tous joueurs confondus ; absent si l'échantillon n'en a pas.
-            Long referenceGames,
-            Double referenceWinRate,
+            @Nullable Long referenceGames,
+            @Nullable Double referenceWinRate,
             // Ce que chaque joueur fait sur son champion sans l'autre, en moyenne (comme Schub#24).
-            Double expected
+            @Nullable Double expected
     ) {
     }
 
-    public record Pick(String memberId, String memberName, String role, int championId, String championKey,
-                       String championName, String iconUrl) {
+    public record Pick(@Nullable String memberId, @Nullable String memberName, String role, int championId,
+                       @Nullable String championKey, @Nullable String championName, @Nullable String iconUrl) {
     }
 
-    public record Ban(int championId, String championKey, String championName, String iconUrl, long gamesAgainst,
-                      long winsAgainst, double presence, double winRateAgainst, double impact,
-                      boolean lowConfidence) {
+    public record Ban(int championId, @Nullable String championKey, @Nullable String championName,
+                      @Nullable String iconUrl, long gamesAgainst, long winsAgainst, double presence,
+                      double winRateAgainst, double impact, boolean lowConfidence) {
     }
 
     // Écart d'or à 15 min d'un de nos joueurs face à ce champion, à son poste.
-    public record LaneThreat(String memberId, String memberName, String role, int championId, String championKey,
-                             String championName, String iconUrl, long games, double goldDiffAt15) {
+    public record LaneThreat(String memberId, @Nullable String memberName, String role, int championId,
+                             @Nullable String championKey, @Nullable String championName, @Nullable String iconUrl,
+                             long games, double goldDiffAt15) {
     }
 }

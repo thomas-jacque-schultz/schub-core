@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.api.dto;
 
 import schultz.thomas.schub.core.data.model.Permission;
 
+import jakarta.annotation.Nullable;
 import java.util.Set;
 
 public record MeDto(
@@ -12,14 +13,14 @@ public record MeDto(
         RoleSummaryDto role,
         RiotAccountDto riot,
         AccountLinksDto links,
-        SessionSummariesDto sessionSummaries,
+        @Nullable SessionSummariesDto sessionSummaries,
         boolean dmUnreachable
 ) {
 
     public record SessionSummariesDto(boolean planned, boolean free) {
     }
 
-    public record DiscordIdentityDto(String id, String username, String avatarUrl) {
+    public record DiscordIdentityDto(String id, String username, @Nullable String avatarUrl) {
     }
 
     public record RoleSummaryDto(String name, Set<Permission> permissions) {

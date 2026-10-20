@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.api.dto;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 
@@ -9,7 +10,7 @@ public record RiotAccountSuggestionDto(
         String tagLine,
         long matchCount,
         List<PositionPlayedDto> positions,
-        Instant lastPlayedAt,
+        @Nullable Instant lastPlayedAt,
         Instant observedAt,
         String source,
         boolean alreadyLinked,
