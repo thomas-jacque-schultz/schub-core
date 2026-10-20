@@ -7729,18 +7729,20 @@
         }
       },
       "StaticPortRuleRequest" : {
-        "required" : [ "enabled", "lanIp", "lanPort", "name", "proto", "wanPortEnd", "wanPortStart" ],
+        "required" : [ "enabled", "name", "proto", "wanPortStart" ],
         "type" : "object",
         "properties" : {
           "enabled" : {
             "type" : "boolean"
           },
           "lanIp" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "lanPort" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "name" : {
             "type" : "string"
@@ -7750,7 +7752,8 @@
           },
           "wanPortEnd" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "wanPortStart" : {
             "type" : "integer",
@@ -8555,8 +8558,7 @@
           },
           "endedAt" : {
             "type" : "string",
-            "format" : "date-time",
-            "nullable" : true
+            "format" : "date-time"
           },
           "games" : {
             "type" : "integer",
@@ -8589,8 +8591,7 @@
           },
           "startedAt" : {
             "type" : "string",
-            "format" : "date-time",
-            "nullable" : true
+            "format" : "date-time"
           },
           "teamId" : {
             "type" : "string"
