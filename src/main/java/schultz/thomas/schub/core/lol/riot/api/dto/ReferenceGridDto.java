@@ -14,8 +14,14 @@ public record ReferenceGridDto(
         String position,
         Instant computedAt,
         List<Double> percentiles,
-        Map<String, Metric> metrics
+        Map<String, Metric> metrics,
+        // Kills, morts et KDA d'une partie au poste, tous paliers confondus (Schub#129) : parties par case de largeur step.
+        @Nullable Map<String, Distribution> distributions
 ) {
+
+    @Schema(name = "ReferenceGridDistribution")
+    public record Distribution(double step, long count, List<Long> counts) {
+    }
 
     // rankMeans : moyenne par partie de chaque palier, du plus bas au plus haut ; absente si la métrique ne suit pas le rang.
     @Schema(name = "ReferenceGridMetric")
