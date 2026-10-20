@@ -1,12 +1,14 @@
 package schultz.thomas.schub.core.api.dto;
 
+import jakarta.annotation.Nullable;
+
 public record StaticPortRuleRequest(
         String name,
         String proto,
         Integer wanPortStart,
-        Integer wanPortEnd,
-        Integer lanPort,
-        String lanIp,
+        @Nullable Integer wanPortEnd,
+        @Nullable Integer lanPort,
+        @Nullable String lanIp,
         boolean enabled
 ) {
 }
