@@ -48,7 +48,7 @@ public class TeamService {
     private final RiotIdResolver riotIdResolver;
 
     public static ResourceRef ref(String teamId) {
-        return teamId == null ? null : new ResourceRef(ResourceType.TEAM, teamId);
+        return new ResourceRef(ResourceType.TEAM, teamId);
     }
 
     public Team require(String teamId) {
