@@ -113,8 +113,9 @@ class TeamProjectionTest {
                 .map(RecordComponent::getName)
                 .collect(java.util.stream.Collectors.toSet());
 
-        assertThat(champs).doesNotContain("userId", "discordId", "createdBy");
+        assertThat(champs).isNotEmpty().doesNotContain("userId", "discordId", "createdBy");
         assertThat(Arrays.stream(TeamDto.class.getRecordComponents()).map(RecordComponent::getName).toList())
+                .isNotEmpty()
                 .doesNotContain("createdBy", "admins", "editors");
     }
 
