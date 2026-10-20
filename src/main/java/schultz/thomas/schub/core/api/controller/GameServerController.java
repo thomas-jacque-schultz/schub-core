@@ -1,5 +1,9 @@
 package schultz.thomas.schub.core.api.controller;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import schultz.thomas.schub.core.api.dto.GameServerDto;
+import schultz.thomas.schub.core.api.dto.GameServerMemberDto;
 import schultz.thomas.schub.core.api.dto.PublicServerStatusDto;
 import schultz.thomas.schub.core.api.mapper.GameServerMapper;
 import schultz.thomas.schub.core.api.mapper.GameServerProjection;
@@ -42,7 +47,10 @@ public class GameServerController {
     private final GameServerMapper mapper;
     private final GameServerControlPolicy controlPolicy;
 
+    // Projection infra avec SERVER_INFRA_VIEW, projection membre sinon.
     @GetMapping
+    @ApiResponse(responseCode = "200", content = @Content(array = @ArraySchema(
+            schema = @Schema(oneOf = {GameServerDto.class, GameServerMemberDto.class}))))
     public List<?> all(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         Optional<User> actor = readActor(actorId);
         actor.ifPresent(user -> permissionEvaluator.require(user, Permission.SERVER_VIEW, null));
@@ -60,6 +68,8 @@ public class GameServerController {
     }
 
     @GetMapping("/{id}")
+    @ApiResponse(responseCode = "200", content = @Content(
+            schema = @Schema(oneOf = {GameServerDto.class, GameServerMemberDto.class})))
     public ResponseEntity<?> byId(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                   @PathVariable String id) {
         Optional<User> actor = readActor(actorId);

@@ -291,7 +291,12 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "type" : "object"
+                    "type" : "string",
+                    "oneOf" : [ {
+                      "$ref" : "#/components/schemas/GameServerDto"
+                    }, {
+                      "$ref" : "#/components/schemas/GameServerMemberDto"
+                    } ]
                   }
                 }
               }
@@ -409,7 +414,11 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "type" : "object"
+                  "oneOf" : [ {
+                    "$ref" : "#/components/schemas/GameServerDto"
+                  }, {
+                    "$ref" : "#/components/schemas/GameServerMemberDto"
+                  } ]
                 }
               }
             },
@@ -5362,6 +5371,94 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "referents" : {
+            "type" : "array",
+            "nullable" : true,
+            "items" : {
+              "$ref" : "#/components/schemas/GameServerReferentDto"
+            }
+          },
+          "slug" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "status" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "statusHistory" : {
+            "type" : "array",
+            "nullable" : true,
+            "items" : {
+              "$ref" : "#/components/schemas/GameServerStatusHistoryEntryDto"
+            }
+          },
+          "urlConnection" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "version" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "viewerCanControl" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "GameServerMemberDto" : {
+        "required" : [ "description", "game", "gameIconUrl", "gameLabel", "id", "installation", "lastCommandFailure", "lastStatusChangeAt", "lastStatusCheckAt", "name", "playersMax", "referents", "slug", "status", "statusHistory", "urlConnection", "version", "viewerCanControl" ],
+        "type" : "object",
+        "properties" : {
+          "description" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "game" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "gameIconUrl" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "gameLabel" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "id" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "installation" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "lastCommandFailure" : {
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/GameServerCommandFailureDto"
+            } ]
+          },
+          "lastStatusChangeAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "nullable" : true
+          },
+          "lastStatusCheckAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "nullable" : true
+          },
+          "name" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "playersMax" : {
+            "type" : "integer",
+            "format" : "int32",
+            "nullable" : true
           },
           "referents" : {
             "type" : "array",
