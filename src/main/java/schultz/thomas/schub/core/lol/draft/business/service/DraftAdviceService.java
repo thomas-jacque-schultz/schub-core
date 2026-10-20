@@ -354,8 +354,8 @@ public class DraftAdviceService {
     }
 
     // #106 : impact = présence × perte de taux de victoire, la perte prise à sa borne basse.
-    private static List<DraftAdvice.Ban> bans(List<RiotStatsGateway.SharedMatch> parties,
-                                                 Map<Integer, RiotChampionGateway.Champion> catalogue) {
+    static List<DraftAdvice.Ban> bans(List<RiotStatsGateway.SharedMatch> parties,
+                                          Map<Integer, RiotChampionGateway.Champion> catalogue) {
         if (parties.isEmpty()) {
             return List.of();
         }
@@ -380,10 +380,11 @@ public class DraftAdviceService {
                             c.parties, c.victoires, presence, taux, presence * perte, c.parties < DUO_SEUIL);
                 })
                 .filter(ban -> ban.winRateAgainst() < moyenne)
-                // À impact nul (échantillon trop court pour la borne), le taux brut départage.
-                .sorted(Comparator.comparingDouble(DraftAdvice.Ban::impact)
-                        .thenComparingDouble(ban -> ban.presence() * (moyenne - ban.winRateAgainst()))
-                        .reversed())
+                // Les échantillons courts passent après les mesurés (#128) ; à impact nul, le taux brut départage.
+                .sorted(Comparator.comparing(DraftAdvice.Ban::lowConfidence)
+                        .thenComparing(Comparator.comparingDouble(DraftAdvice.Ban::impact)
+                                .thenComparingDouble(ban -> ban.presence() * (moyenne - ban.winRateAgainst()))
+                                .reversed()))
                 .limit(BANS)
                 .toList();
     }
