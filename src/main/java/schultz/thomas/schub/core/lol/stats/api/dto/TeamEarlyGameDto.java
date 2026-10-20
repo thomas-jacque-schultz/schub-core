@@ -1,5 +1,7 @@
 package schultz.thomas.schub.core.lol.stats.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import jakarta.annotation.Nullable;
 import java.util.List;
 
@@ -18,6 +20,7 @@ public record TeamEarlyGameDto(int games, List<MemberEarlyDto> members, List<Str
     }
 
     // Côté fort = côté où notre jungler a passé le plus de temps ; les ganks adverses le fuient-ils ?
-    public record StrongSideDto(String side, int games, int wins, int enemyGanks, int enemyGanksOnWeakSide) {
+    public record StrongSideDto(@Schema(allowableValues = {"TOP", "BOT", "BALANCED"}) String side, int games, int wins,
+                                int enemyGanks, int enemyGanksOnWeakSide) {
     }
 }
