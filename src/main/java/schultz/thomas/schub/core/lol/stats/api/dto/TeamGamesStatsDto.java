@@ -2,13 +2,14 @@ package schultz.thomas.schub.core.lol.stats.api.dto;
 
 import schultz.thomas.schub.core.lol.stats.business.model.StatsState;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 
 public record TeamGamesStatsDto(
         String teamId,
         String teamName,
-        Integer days,
+        @Nullable Integer days,
         int minimumPlayers,
         int rosterSize,
         StatsState state,
@@ -21,9 +22,9 @@ public record TeamGamesStatsDto(
         long totalGames,
         long undecidedGames,
         boolean truncated,
-        Instant firstPlayedAt,
-        Instant lastPlayedAt,
-        String viewerMemberId,
+        @Nullable Instant firstPlayedAt,
+        @Nullable Instant lastPlayedAt,
+        @Nullable String viewerMemberId,
         Instant generatedAt
 ) {
 }

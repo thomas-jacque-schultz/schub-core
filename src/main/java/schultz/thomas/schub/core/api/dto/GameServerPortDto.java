@@ -1,9 +1,11 @@
 package schultz.thomas.schub.core.api.dto;
 
+import jakarta.annotation.Nullable;
+
 public record GameServerPortDto(
         String proto,
         Integer wanPort,
-        Integer lanPort,
-        String lanIp
+        @Nullable Integer lanPort,
+        @Nullable String lanIp
 ) {
 }

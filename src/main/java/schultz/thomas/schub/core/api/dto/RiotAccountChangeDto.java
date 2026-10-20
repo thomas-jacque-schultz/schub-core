@@ -1,14 +1,15 @@
 package schultz.thomas.schub.core.api.dto;
 
+import jakarta.annotation.Nullable;
 import java.time.Duration;
 
 public record RiotAccountChangeDto(
-        String previousRiotId,
+        @Nullable String previousRiotId,
         String riotId,
         boolean statsReset,
         boolean ingestRestarted,
         int estimatedMatches,
-        Duration estimatedDuration,
+        @Nullable Duration estimatedDuration,
         boolean rosterSlotsToClaim
 ) {
 }

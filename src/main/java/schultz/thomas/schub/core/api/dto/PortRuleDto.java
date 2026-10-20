@@ -2,9 +2,11 @@ package schultz.thomas.schub.core.api.dto;
 
 import schultz.thomas.schub.core.business.model.Protocol;
 
+import jakarta.annotation.Nullable;
+
 public record PortRuleDto(
-        String providerId,
-        String owner,
+        @Nullable String providerId,
+        @Nullable String owner,
         Protocol protocol,
         int wanPortStart,
         int wanPortEnd,

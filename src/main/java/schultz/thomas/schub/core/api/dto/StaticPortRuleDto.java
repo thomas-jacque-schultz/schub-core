@@ -1,13 +1,15 @@
 package schultz.thomas.schub.core.api.dto;
 
+import jakarta.annotation.Nullable;
+
 public record StaticPortRuleDto(
-        String id,
+        @Nullable String id,
         String name,
         String proto,
         Integer wanPortStart,
-        Integer wanPortEnd,
-        Integer lanPort,
-        String lanIp,
+        @Nullable Integer wanPortEnd,
+        @Nullable Integer lanPort,
+        @Nullable String lanIp,
         boolean enabled
 ) {
 }

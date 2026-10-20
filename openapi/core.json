@@ -4036,7 +4036,7 @@
         }
       },
       "AddMemberRequest" : {
-        "required" : [ "coach", "riotGameName", "riotPuuid", "riotTagLine", "roles", "status" ],
+        "required" : [ "coach", "riotGameName", "riotTagLine", "roles", "status" ],
         "type" : "object",
         "properties" : {
           "coach" : {
@@ -4046,7 +4046,8 @@
             "type" : "string"
           },
           "riotPuuid" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotTagLine" : {
             "type" : "string"
@@ -4116,7 +4117,8 @@
             "format" : "int32"
           },
           "division" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "tier" : {
             "type" : "string"
@@ -4154,17 +4156,20 @@
             "format" : "int32"
           },
           "championKey" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "championName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "gamesAgainst" : {
             "type" : "integer",
             "format" : "int64"
           },
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "impact" : {
             "type" : "number",
@@ -4257,7 +4262,8 @@
             "format" : "date-time"
           },
           "group" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "metrics" : {
             "type" : "object",
@@ -4351,7 +4357,8 @@
             "format" : "int32"
           },
           "patch" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "startingSelection" : {
             "type" : "boolean"
@@ -4370,7 +4377,8 @@
             "type" : "boolean"
           },
           "viewerMemberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -4386,10 +4394,12 @@
             "type" : "string"
           },
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "name" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "players" : {
             "type" : "array",
@@ -4408,42 +4418,51 @@
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
-            "format" : "int64"
+            "format" : "int64",
+            "nullable" : true
           },
           "lastPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "linked" : {
             "type" : "boolean"
           },
           "masteryLevel" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "masteryPoints" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "memberId" : {
             "type" : "string"
           },
           "observedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "riotGameName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotTagLine" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "state" : {
             "type" : "string",
@@ -4455,7 +4474,8 @@
           },
           "winRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           }
         }
       },
@@ -4465,7 +4485,8 @@
         "properties" : {
           "expected" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -4489,11 +4510,13 @@
           },
           "referenceGames" : {
             "type" : "integer",
-            "format" : "int64"
+            "format" : "int64",
+            "nullable" : true
           },
           "referenceWinRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "winRate" : {
             "type" : "number",
@@ -4592,10 +4615,12 @@
             "type" : "string"
           },
           "notes" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "patch" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "slots" : {
             "type" : "array",
@@ -4642,7 +4667,7 @@
         }
       },
       "CompositionRequest" : {
-        "required" : [ "bans", "name", "notes", "patch", "slots" ],
+        "required" : [ "bans", "name", "slots" ],
         "type" : "object",
         "properties" : {
           "bans" : {
@@ -4655,10 +4680,12 @@
             "type" : "string"
           },
           "notes" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "patch" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "slots" : {
             "type" : "array",
@@ -4679,13 +4706,16 @@
             }
           },
           "championId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "memberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "playerDisplayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "role" : {
             "type" : "string",
@@ -4694,7 +4724,7 @@
         }
       },
       "CompositionSlotRequest" : {
-        "required" : [ "alternatives", "championId", "memberId", "role" ],
+        "required" : [ "alternatives", "championId", "role" ],
         "type" : "object",
         "properties" : {
           "alternatives" : {
@@ -4707,7 +4737,8 @@
             "type" : "string"
           },
           "memberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "role" : {
             "type" : "string",
@@ -4826,7 +4857,8 @@
           },
           "lastRoundAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "running" : {
             "type" : "boolean"
@@ -4878,7 +4910,8 @@
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "id" : {
             "type" : "string"
@@ -4963,11 +4996,13 @@
         "properties" : {
           "delta" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "expected" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -4980,14 +5015,17 @@
             "type" : "string"
           },
           "nameA" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "nameB" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "winRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "wins" : {
             "type" : "integer",
@@ -5006,13 +5044,19 @@
             }
           },
           "ourJungler" : {
-            "$ref" : "#/components/schemas/JunglePresenceDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/JunglePresenceDto"
+            } ]
           },
           "ourObjectives" : {
             "$ref" : "#/components/schemas/ObjectivesDto"
           },
           "theirJungler" : {
-            "$ref" : "#/components/schemas/JunglePresenceDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/JunglePresenceDto"
+            } ]
           },
           "theirObjectives" : {
             "$ref" : "#/components/schemas/ObjectivesDto"
@@ -5190,7 +5234,10 @@
         "type" : "object",
         "properties" : {
           "average" : {
-            "$ref" : "#/components/schemas/StatLineDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/StatLineDto"
+            } ]
           },
           "championId" : {
             "type" : "integer",
@@ -5203,10 +5250,12 @@
               "description" : "ClÃ© de mÃ©trique â valeur sur la partie, calculÃ©e comme la grille GAME.",
               "format" : "double"
             },
-            "description" : "ClÃ© de mÃ©trique â valeur sur la partie, calculÃ©e comme la grille GAME."
+            "description" : "ClÃ© de mÃ©trique â valeur sur la partie, calculÃ©e comme la grille GAME.",
+            "nullable" : true
           },
           "position" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "side" : {
             "type" : "integer",
@@ -5215,7 +5264,8 @@
           },
           "tier" : {
             "type" : "string",
-            "description" : "Palier tenu Ã  la date de la partie."
+            "description" : "Palier tenu Ã  la date de la partie.",
+            "nullable" : true
           },
           "tierEstimated" : {
             "type" : "boolean"
@@ -5232,10 +5282,12 @@
           },
           "at" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "message" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -5245,79 +5297,101 @@
         "properties" : {
           "deploymentId" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "description" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "game" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "gameIconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "gameLabel" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "id" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "installation" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "lastCommandFailure" : {
-            "$ref" : "#/components/schemas/GameServerCommandFailureDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/GameServerCommandFailureDto"
+            } ]
           },
           "lastStatusChangeAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "lastStatusCheckAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "name" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "playersMax" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "ports" : {
             "type" : "array",
+            "nullable" : true,
             "items" : {
               "$ref" : "#/components/schemas/GameServerPortDto"
             }
           },
           "referentIds" : {
             "type" : "array",
+            "nullable" : true,
             "items" : {
               "type" : "string"
             }
           },
           "referents" : {
             "type" : "array",
+            "nullable" : true,
             "items" : {
               "$ref" : "#/components/schemas/GameServerReferentDto"
             }
           },
           "slug" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "status" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "statusHistory" : {
             "type" : "array",
+            "nullable" : true,
             "items" : {
               "$ref" : "#/components/schemas/GameServerStatusHistoryEntryDto"
             }
           },
           "urlConnection" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "version" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "viewerCanControl" : {
             "type" : "boolean"
@@ -5329,11 +5403,13 @@
         "type" : "object",
         "properties" : {
           "lanIp" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "lanPort" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "proto" : {
             "type" : "string"
@@ -5349,10 +5425,12 @@
         "type" : "object",
         "properties" : {
           "discordId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "id" : {
             "type" : "string"
@@ -5368,7 +5446,8 @@
             "format" : "date-time"
           },
           "status" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -5499,11 +5578,13 @@
           "estimatedDrain" : {
             "type" : "string",
             "format" : "duration",
+            "nullable" : true,
             "example" : "PT2H36M20S"
           },
           "estimatedReadyAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "failed" : {
             "type" : "integer",
@@ -5520,6 +5601,7 @@
           "throttledFor" : {
             "type" : "string",
             "format" : "duration",
+            "nullable" : true,
             "example" : "PT2H36M20S"
           }
         }
@@ -5540,7 +5622,8 @@
           },
           "updatedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           }
         }
       },
@@ -5577,7 +5660,8 @@
             "format" : "int32"
           },
           "memberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "midMinutes" : {
             "type" : "integer",
@@ -5601,10 +5685,12 @@
             "format" : "int32"
           },
           "championKey" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "championName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -5615,13 +5701,15 @@
             "format" : "double"
           },
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "memberId" : {
             "type" : "string"
           },
           "memberName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "role" : {
             "type" : "string"
@@ -5677,10 +5765,12 @@
             "format" : "int32"
           },
           "championName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "level" : {
             "type" : "integer",
@@ -5697,17 +5787,24 @@
         "type" : "object",
         "properties" : {
           "ally" : {
-            "$ref" : "#/components/schemas/TeamGamePlayerDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TeamGamePlayerDto"
+            } ]
           },
           "enemy" : {
-            "$ref" : "#/components/schemas/TeamGamePlayerDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TeamGamePlayerDto"
+            } ]
           },
           "position" : {
             "type" : "string"
           },
           "rankGap" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           }
         }
       },
@@ -5737,7 +5834,10 @@
             "$ref" : "#/components/schemas/RoleSummaryDto"
           },
           "sessionSummaries" : {
-            "$ref" : "#/components/schemas/SessionSummariesDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SessionSummariesDto"
+            } ]
           },
           "userId" : {
             "type" : "string"
@@ -5776,7 +5876,8 @@
             "format" : "int32"
           },
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "ganksCountered" : {
             "type" : "integer",
@@ -5847,7 +5948,8 @@
             "type" : "string"
           },
           "tier" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -5857,7 +5959,8 @@
         "properties" : {
           "days" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "games" : {
             "type" : "array",
@@ -5881,7 +5984,8 @@
             "type" : "boolean"
           },
           "viewerMemberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -5896,21 +6000,29 @@
             }
           },
           "coverage" : {
-            "$ref" : "#/components/schemas/StatsCoverageDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/StatsCoverageDto"
+            } ]
           },
           "days" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "generatedAt" : {
             "type" : "string",
             "format" : "date-time"
           },
           "ingest" : {
-            "$ref" : "#/components/schemas/RiotIngestProgressDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RiotIngestProgressDto"
+            } ]
           },
           "months" : {
             "type" : "array",
@@ -5919,7 +6031,10 @@
             }
           },
           "overall" : {
-            "$ref" : "#/components/schemas/StatLineDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/StatLineDto"
+            } ]
           },
           "patches" : {
             "type" : "array",
@@ -5946,13 +6061,18 @@
             }
           },
           "references" : {
-            "$ref" : "#/components/schemas/RadarReferencesDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RadarReferencesDto"
+            } ]
           },
           "riotGameName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotTagLine" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "state" : {
             "type" : "string",
@@ -5984,21 +6104,25 @@
         "properties" : {
           "activatedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "author" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "category" : {
             "type" : "string",
             "enum" : [ "BEHAVIOUR", "PERFORMANCE", "KNOWLEDGE", "BUILD" ]
           },
           "comment" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "createdAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "exceptions" : {
             "type" : "array",
@@ -6156,19 +6280,24 @@
             "format" : "int32"
           },
           "championKey" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "championName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "memberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "memberName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "role" : {
             "type" : "string"
@@ -6190,7 +6319,8 @@
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "champions" : {
             "type" : "array",
@@ -6199,10 +6329,14 @@
             }
           },
           "coverage" : {
-            "$ref" : "#/components/schemas/StatsCoverageDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/StatsCoverageDto"
+            } ]
           },
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "linked" : {
             "type" : "boolean"
@@ -6217,7 +6351,10 @@
             }
           },
           "overall" : {
-            "$ref" : "#/components/schemas/StatLineDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/StatLineDto"
+            } ]
           },
           "positions" : {
             "type" : "array",
@@ -6226,7 +6363,10 @@
             }
           },
           "premade" : {
-            "$ref" : "#/components/schemas/StatLineDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/StatLineDto"
+            } ]
           },
           "queues" : {
             "type" : "array",
@@ -6241,13 +6381,18 @@
             }
           },
           "references" : {
-            "$ref" : "#/components/schemas/RadarReferencesDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RadarReferencesDto"
+            } ]
           },
           "riotGameName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotTagLine" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "roles" : {
             "type" : "array",
@@ -6275,7 +6420,8 @@
           },
           "lastPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "matchCount" : {
             "type" : "integer",
@@ -6362,14 +6508,16 @@
             "type" : "boolean"
           },
           "owner" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "protocol" : {
             "type" : "string",
             "enum" : [ "TCP", "UDP" ]
           },
           "providerId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "wanPortEnd" : {
             "type" : "integer",
@@ -6387,7 +6535,8 @@
         "properties" : {
           "endpointId" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "id" : {
             "type" : "integer",
@@ -6414,15 +6563,18 @@
         "properties" : {
           "averageCsDiff15" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "averageGap" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "averageGoldDiff15" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -6434,7 +6586,8 @@
           },
           "laneWinRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "position" : {
             "type" : "string"
@@ -6479,7 +6632,8 @@
         "type" : "object",
         "properties" : {
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -6503,13 +6657,16 @@
         "type" : "object",
         "properties" : {
           "game" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "name" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "status" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -6559,6 +6716,7 @@
           },
           "members" : {
             "type" : "array",
+            "nullable" : true,
             "items" : {
               "$ref" : "#/components/schemas/Member"
             }
@@ -6585,13 +6743,17 @@
         "type" : "object",
         "properties" : {
           "met" : {
-            "$ref" : "#/components/schemas/MetricReferenceDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/MetricReferenceDto"
+            } ]
           },
           "position" : {
             "type" : "string"
           },
           "tier" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -6600,7 +6762,8 @@
         "type" : "object",
         "properties" : {
           "division" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "hotStreak" : {
             "type" : "boolean"
@@ -6618,16 +6781,20 @@
           },
           "observedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "queue" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotQueueType" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "tier" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "wins" : {
             "type" : "integer",
@@ -6716,7 +6883,8 @@
             "additionalProperties" : {
               "type" : "number",
               "format" : "double"
-            }
+            },
+            "nullable" : true
           },
           "tiers" : {
             "type" : "object",
@@ -6732,15 +6900,18 @@
         "properties" : {
           "conversion" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "damageShareInLosses" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "damageShareInWins" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -6756,26 +6927,31 @@
           },
           "goldShareInLosses" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "goldShareInWins" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "goldShareThreshold" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "position" : {
             "type" : "string"
           },
           "winRateAbove" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "winRateBelow" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           }
         }
       },
@@ -6786,6 +6962,7 @@
           "estimatedDuration" : {
             "type" : "string",
             "format" : "duration",
+            "nullable" : true,
             "example" : "PT2H36M20S"
           },
           "estimatedMatches" : {
@@ -6796,7 +6973,8 @@
             "type" : "boolean"
           },
           "previousRiotId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotId" : {
             "type" : "string"
@@ -6817,24 +6995,31 @@
             "$ref" : "#/components/schemas/RiotAccountChangeDto"
           },
           "gameName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "ingest" : {
-            "$ref" : "#/components/schemas/RiotIngestDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RiotIngestDto"
+            } ]
           },
           "linkedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "riotId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "state" : {
             "type" : "string",
             "enum" : [ "ABSENT", "RESOLU", "EN_ATTENTE_DE_RESOLUTION" ]
           },
           "tagLine" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -6862,7 +7047,8 @@
           },
           "lastPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "matchCount" : {
             "type" : "integer",
@@ -6953,11 +7139,15 @@
         "type" : "object",
         "properties" : {
           "backfill" : {
-            "$ref" : "#/components/schemas/Backfill"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/Backfill"
+            } ]
           },
           "estimatedReadyAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "pending" : {
             "type" : "integer",
@@ -6975,7 +7165,8 @@
         "properties" : {
           "estimatedReadyAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "pending" : {
             "type" : "integer",
@@ -7127,15 +7318,17 @@
         }
       },
       "SessionSummaryEmbedDto" : {
-        "required" : [ "color", "description", "fields", "footer", "title", "url" ],
+        "required" : [ "fields", "title" ],
         "type" : "object",
         "properties" : {
           "color" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "description" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "fields" : {
             "type" : "array",
@@ -7144,13 +7337,17 @@
             }
           },
           "footer" : {
-            "$ref" : "#/components/schemas/FooterDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/FooterDto"
+            } ]
           },
           "title" : {
             "type" : "string"
           },
           "url" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -7159,16 +7356,19 @@
         "type" : "object",
         "properties" : {
           "detail" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "embeds" : {
             "type" : "array",
+            "nullable" : true,
             "items" : {
               "$ref" : "#/components/schemas/SessionSummaryEmbedDto"
             }
           },
           "status" : {
             "type" : "string",
+            "nullable" : true,
             "enum" : [ "SENT", "UNREACHABLE", "DISABLED", "FAILED" ]
           }
         }
@@ -7178,10 +7378,16 @@
         "type" : "object",
         "properties" : {
           "flex" : {
-            "$ref" : "#/components/schemas/AverageRankDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/AverageRankDto"
+            } ]
           },
           "solo" : {
-            "$ref" : "#/components/schemas/AverageRankDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/AverageRankDto"
+            } ]
           }
         }
       },
@@ -7191,7 +7397,8 @@
         "properties" : {
           "kdaDelta" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "referenceGames" : {
             "type" : "integer",
@@ -7199,7 +7406,8 @@
           },
           "winRateDelta" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           }
         }
       },
@@ -7213,51 +7421,63 @@
           },
           "assistsPerGame" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "controlWardsPlaced" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "csDiffAt15" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "csPerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "damagePerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "damageShare" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "damageTakenPerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "deathShare" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "deathsPer10" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "deathsPerGame" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "epicMonsterDamagePerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "firstPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -7265,36 +7485,44 @@
           },
           "goldDiffAt15" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "goldPerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "kda" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "key" : {
             "type" : "string"
           },
           "killParticipation" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "killsDiffAt15" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "killsPerGame" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "label" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "laningGames" : {
             "type" : "integer",
@@ -7303,11 +7531,13 @@
           },
           "lastPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "platesDiff" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "secondsPlayed" : {
             "type" : "integer",
@@ -7315,30 +7545,39 @@
           },
           "timeDeadShare" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "turretDamagePerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "turretTakedowns" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "versusRest" : {
-            "$ref" : "#/components/schemas/StatComparisonDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/StatComparisonDto"
+            } ]
           },
           "visionPerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "wardsKilledPerMinute" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "winRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "wins" : {
             "type" : "integer",
@@ -7346,7 +7585,8 @@
           },
           "xpDiffAt15" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           }
         },
         "description" : "Sur les parties d'Ã©quipe de la pÃ©riode seulement. Absente : aucune partie d'Ã©quipe."
@@ -7359,14 +7599,17 @@
             "type" : "boolean"
           },
           "id" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "lanIp" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "lanPort" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "name" : {
             "type" : "string"
@@ -7376,7 +7619,8 @@
           },
           "wanPortEnd" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "wanPortStart" : {
             "type" : "integer",
@@ -7420,7 +7664,8 @@
         "properties" : {
           "firstPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -7432,11 +7677,13 @@
           },
           "lastPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "lastSyncAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "pendingMatches" : {
             "type" : "integer",
@@ -7453,7 +7700,8 @@
         "properties" : {
           "nextAllowedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "playersQueued" : {
             "type" : "integer",
@@ -7518,6 +7766,7 @@
           },
           "trainingSlots" : {
             "type" : "array",
+            "nullable" : true,
             "items" : {
               "$ref" : "#/components/schemas/TrainingSlotDto"
             }
@@ -7536,7 +7785,8 @@
             "type" : "boolean"
           },
           "viewerMemberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -7568,10 +7818,14 @@
         "properties" : {
           "days" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "early" : {
-            "$ref" : "#/components/schemas/EarlyGameDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/EarlyGameDto"
+            } ]
           },
           "game" : {
             "$ref" : "#/components/schemas/TeamGameDto"
@@ -7590,16 +7844,19 @@
           },
           "ranksObservedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "teamId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "timelineAvailable" : {
             "type" : "boolean"
           },
           "viewerMemberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -7614,7 +7871,10 @@
             }
           },
           "allyRanks" : {
-            "$ref" : "#/components/schemas/SideRanksDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SideRanksDto"
+            } ]
           },
           "durationSeconds" : {
             "type" : "integer",
@@ -7627,13 +7887,17 @@
             }
           },
           "enemyRanks" : {
-            "$ref" : "#/components/schemas/SideRanksDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/SideRanksDto"
+            } ]
           },
           "matchId" : {
             "type" : "string"
           },
           "patch" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "players" : {
             "type" : "array",
@@ -7646,7 +7910,8 @@
             "format" : "int32"
           },
           "queue" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "queueId" : {
             "type" : "integer",
@@ -7654,17 +7919,20 @@
           },
           "ranksObservedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "splitSides" : {
             "type" : "boolean"
           },
           "startedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "win" : {
-            "type" : "boolean"
+            "type" : "boolean",
+            "nullable" : true
           }
         }
       },
@@ -7680,14 +7948,18 @@
             "format" : "int32"
           },
           "at15" : {
-            "$ref" : "#/components/schemas/At15Dto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/At15Dto"
+            } ]
           },
           "championId" : {
             "type" : "integer",
             "format" : "int32"
           },
           "championName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "damageTaken" : {
             "type" : "integer",
@@ -7702,41 +7974,52 @@
             "format" : "int32"
           },
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "flexRank" : {
-            "$ref" : "#/components/schemas/RankedStandingDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RankedStandingDto"
+            } ]
           },
           "goldEarned" : {
             "type" : "integer",
             "format" : "int32"
           },
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "kills" : {
             "type" : "integer",
             "format" : "int32"
           },
           "memberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "minionsKilled" : {
             "type" : "integer",
             "format" : "int32"
           },
           "position" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "side" : {
             "type" : "integer",
             "format" : "int32"
           },
           "soloRank" : {
-            "$ref" : "#/components/schemas/RankedStandingDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/RankedStandingDto"
+            } ]
           },
           "visionScore" : {
             "type" : "integer",
@@ -7771,11 +8054,13 @@
           },
           "days" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "firstPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "games" : {
             "type" : "array",
@@ -7789,7 +8074,8 @@
           },
           "lastPlayedAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "minimumPlayers" : {
             "type" : "integer",
@@ -7830,7 +8116,8 @@
             "format" : "int64"
           },
           "viewerMemberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -7855,7 +8142,8 @@
             }
           },
           "tier" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -7873,28 +8161,34 @@
           },
           "inTier" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "key" : {
             "type" : "string"
           },
           "level" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "mean" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "meanAtEnd" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "meanChange" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "polarity" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -7903,7 +8197,8 @@
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "captain" : {
             "type" : "boolean"
@@ -7924,10 +8219,12 @@
             "type" : "string"
           },
           "riotGameName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotTagLine" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "roles" : {
             "type" : "array",
@@ -7947,7 +8244,8 @@
         "type" : "object",
         "properties" : {
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -7958,7 +8256,8 @@
           },
           "presenceRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "state" : {
             "type" : "string",
@@ -7970,7 +8269,8 @@
           },
           "winRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "wins" : {
             "type" : "integer",
@@ -8014,14 +8314,19 @@
             "format" : "int32"
           },
           "ceilingTier" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "days" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "early" : {
-            "$ref" : "#/components/schemas/TeamEarlyGameDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TeamEarlyGameDto"
+            } ]
           },
           "games" : {
             "type" : "integer",
@@ -8036,11 +8341,15 @@
             "format" : "date-time"
           },
           "level" : {
-            "$ref" : "#/components/schemas/TeamLevelDto"
+            "nullable" : true,
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/TeamLevelDto"
+            } ]
           },
           "medianLagDays" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "state" : {
             "type" : "string",
@@ -8061,7 +8370,8 @@
           },
           "days" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int32",
+            "nullable" : true
           },
           "generatedAt" : {
             "type" : "string",
@@ -8076,7 +8386,8 @@
           "premadeGames" : {
             "type" : "integer",
             "description" : "Parties d'Ã©quipe de la pÃ©riode (au moins premadeMinimum membres). Absente : inconnue.",
-            "format" : "int64"
+            "format" : "int64",
+            "nullable" : true
           },
           "premadeMinimum" : {
             "type" : "integer",
@@ -8089,7 +8400,8 @@
             "type" : "string"
           },
           "viewerMemberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -8099,7 +8411,8 @@
         "properties" : {
           "averageDurationSeconds" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "games" : {
             "type" : "integer",
@@ -8109,7 +8422,8 @@
             "type" : "string"
           },
           "label" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "losses" : {
             "type" : "integer",
@@ -8117,7 +8431,8 @@
           },
           "winRate" : {
             "type" : "number",
-            "format" : "double"
+            "format" : "double",
+            "nullable" : true
           },
           "wins" : {
             "type" : "integer",
@@ -8217,7 +8532,8 @@
             "type" : "boolean"
           },
           "viewerMemberId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -8269,17 +8585,20 @@
         "type" : "object",
         "properties" : {
           "iconUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "id" : {
             "type" : "integer",
             "format" : "int32"
           },
           "key" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "name" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },
@@ -8369,42 +8688,52 @@
         "type" : "object",
         "properties" : {
           "avatarUrl" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "createdAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "discordId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "discordUsername" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "displayName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "id" : {
             "type" : "string"
           },
           "lastLoginAt" : {
             "type" : "string",
-            "format" : "date-time"
+            "format" : "date-time",
+            "nullable" : true
           },
           "links" : {
             "$ref" : "#/components/schemas/AccountLinksDto"
           },
           "riotGameName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "riotTagLine" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "roleId" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           },
           "roleName" : {
-            "type" : "string"
+            "type" : "string",
+            "nullable" : true
           }
         }
       },

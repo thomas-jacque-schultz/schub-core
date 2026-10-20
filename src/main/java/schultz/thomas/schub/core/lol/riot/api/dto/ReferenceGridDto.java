@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.lol.riot.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,7 @@ public record ReferenceGridDto(
 
     // rankMeans : moyenne par partie de chaque palier, du plus bas au plus haut ; absente si la métrique ne suit pas le rang.
     @Schema(name = "ReferenceGridMetric")
-    public record Metric(String polarity, Map<String, Tier> tiers, Map<String, Double> rankMeans,
+    public record Metric(String polarity, Map<String, Tier> tiers, @Nullable Map<String, Double> rankMeans,
                          List<String> missingTiers) {
     }
 

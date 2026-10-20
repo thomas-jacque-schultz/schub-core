@@ -1,29 +1,30 @@
 package schultz.thomas.schub.core.api.dto;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 
 public record GameServerDto(
-        String id,
-        String slug,
-        Integer deploymentId,
-        String name,
-        String urlConnection,
-        String game,
-        String gameLabel,
-        String gameIconUrl,
-        Integer playersMax,
-        String installation,
-        String version,
-        String description,
-        List<GameServerPortDto> ports,
-        String status,
-        Instant lastStatusCheckAt,
-        Instant lastStatusChangeAt,
-        List<GameServerStatusHistoryEntryDto> statusHistory,
-        GameServerCommandFailureDto lastCommandFailure,
-        List<String> referentIds,
-        List<GameServerReferentDto> referents,
+        @Nullable String id,
+        @Nullable String slug,
+        @Nullable Integer deploymentId,
+        @Nullable String name,
+        @Nullable String urlConnection,
+        @Nullable String game,
+        @Nullable String gameLabel,
+        @Nullable String gameIconUrl,
+        @Nullable Integer playersMax,
+        @Nullable String installation,
+        @Nullable String version,
+        @Nullable String description,
+        @Nullable List<GameServerPortDto> ports,
+        @Nullable String status,
+        @Nullable Instant lastStatusCheckAt,
+        @Nullable Instant lastStatusChangeAt,
+        @Nullable List<GameServerStatusHistoryEntryDto> statusHistory,
+        @Nullable GameServerCommandFailureDto lastCommandFailure,
+        @Nullable List<String> referentIds,
+        @Nullable List<GameServerReferentDto> referents,
         boolean viewerCanControl
 ) {
 

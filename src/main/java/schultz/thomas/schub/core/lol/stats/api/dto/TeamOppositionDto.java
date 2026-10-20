@@ -2,23 +2,24 @@ package schultz.thomas.schub.core.lol.stats.api.dto;
 
 import schultz.thomas.schub.core.lol.stats.business.model.StatsState;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 
 public record TeamOppositionDto(
         String teamId,
-        Integer days,
+        @Nullable Integer days,
         StatsState state,
         int games,
         int gamesWithRanks,
-        Double medianLagDays,
+        @Nullable Double medianLagDays,
         List<TeamRecordDto> byEnemyTier,
         List<TeamRecordDto> byGap,
         List<PositionOppositionDto> byPosition,
-        String ceilingTier,
+        @Nullable String ceilingTier,
         int ceilingMinimumGames,
-        TeamEarlyGameDto early,
-        TeamLevelDto level,
+        @Nullable TeamEarlyGameDto early,
+        @Nullable TeamLevelDto level,
         Instant generatedAt
 ) {
 }

@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.lol.team.api.dto;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 import java.util.List;
 
@@ -10,11 +11,11 @@ public record TeamDto(
         List<TeamMemberDto> members,
         Instant createdAt,
         Instant updatedAt,
-        String viewerMemberId,
+        @Nullable String viewerMemberId,
         boolean viewerCanManage,
         boolean viewerCanEditRoster,
         boolean viewerCanEditCompositions,
         boolean publicPage,
-        List<TrainingSlotDto> trainingSlots
+        @Nullable List<TrainingSlotDto> trainingSlots
 ) {
 }

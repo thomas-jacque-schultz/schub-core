@@ -1,5 +1,6 @@
 package schultz.thomas.schub.core.lol.stats.api.dto;
 
+import jakarta.annotation.Nullable;
 import java.time.Instant;
 
 public record StatsCoverageDto(
@@ -7,8 +8,8 @@ public record StatsCoverageDto(
         long knownMatches,
         long pendingMatches,
         boolean tracked,
-        Instant firstPlayedAt,
-        Instant lastPlayedAt,
-        Instant lastSyncAt
+        @Nullable Instant firstPlayedAt,
+        @Nullable Instant lastPlayedAt,
+        @Nullable Instant lastSyncAt
 ) {
 }

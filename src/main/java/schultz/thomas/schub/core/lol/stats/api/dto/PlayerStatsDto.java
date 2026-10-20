@@ -5,27 +5,28 @@ import schultz.thomas.schub.core.lol.stats.business.model.StatsState;
 import schultz.thomas.schub.core.lol.team.data.model.GameRole;
 import schultz.thomas.schub.core.lol.team.data.model.MemberStatus;
 
+import jakarta.annotation.Nullable;
 import java.util.List;
 
 public record PlayerStatsDto(
         String memberId,
-        String displayName,
-        String avatarUrl,
-        String riotGameName,
-        String riotTagLine,
+        @Nullable String displayName,
+        @Nullable String avatarUrl,
+        @Nullable String riotGameName,
+        @Nullable String riotTagLine,
         MemberStatus status,
         List<GameRole> roles,
         boolean linked,
         StatsState state,
-        StatsCoverageDto coverage,
-        StatLineDto overall,
+        @Nullable StatsCoverageDto coverage,
+        @Nullable StatLineDto overall,
         List<StatLineDto> champions,
         List<StatLineDto> positions,
         List<StatLineDto> queues,
         List<StatLineDto> months,
         List<RankedStandingDto> rankings,
-        RadarReferencesDto references,
+        @Nullable RadarReferencesDto references,
         @Schema(description = "Sur les parties d'équipe de la période seulement. Absente : aucune partie d'équipe.")
-        StatLineDto premade
+        @Nullable StatLineDto premade
 ) {
 }

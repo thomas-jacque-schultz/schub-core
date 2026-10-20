@@ -2,6 +2,7 @@ package schultz.thomas.schub.core.api.dto;
 
 import schultz.thomas.schub.core.business.service.RiotConnectorService.IngestLoad;
 
+import jakarta.annotation.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -11,9 +12,9 @@ public record IngestLoadDto(
         long running,
         long failed,
         double callsPerMinute,
-        Duration estimatedDrain,
-        Instant estimatedReadyAt,
-        Duration throttledFor) {
+        @Nullable Duration estimatedDrain,
+        @Nullable Instant estimatedReadyAt,
+        @Nullable Duration throttledFor) {
 
     public static IngestLoadDto from(IngestLoad load) {
         return new IngestLoadDto(true, load.pending(), load.running(), load.failed(),
