@@ -13,7 +13,7 @@ public record GamePlayerMetricsDto(
         @Schema(description = "Palier tenu à la date de la partie.") @Nullable String tier,
         boolean tierEstimated,
         @Schema(description = "Clé de métrique → valeur sur la partie, calculée comme la grille GAME.")
-        @Nullable Map<String, Double> game,
+        Map<String, Double> game,
         @Schema(description = "Moyenne du joueur à ce poste sur la période, parties collectées ; absente hors Faille.")
         @Nullable StatLineDto average
 ) {

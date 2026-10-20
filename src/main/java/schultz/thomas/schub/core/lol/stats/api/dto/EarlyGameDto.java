@@ -1,5 +1,7 @@
 package schultz.thomas.schub.core.lol.stats.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import jakarta.annotation.Nullable;
 import java.util.List;
 
@@ -8,13 +10,14 @@ public record EarlyGameDto(List<GankDto> ganks, @Nullable JunglePresenceDto ourJ
                            @Nullable JunglePresenceDto theirJungler, ObjectivesDto ourObjectives,
                            ObjectivesDto theirObjectives) {
 
-    public record GankDto(int second, String lane, boolean ours, String outcome, boolean decisive,
-                          boolean objectiveFollowUp, List<String> targetMemberIds,
+    public record GankDto(int second, @Schema(allowableValues = {"TOP", "MID", "BOT"}) String lane, boolean ours,
+                          @Schema(allowableValues = {"KILL", "TRADE", "SURVIVED", "COUNTER"}) String outcome,
+                          boolean decisive, boolean objectiveFollowUp, List<String> targetMemberIds,
                           List<String> fallenMemberIds, int alliesLost, int enemiesLost) {
     }
 
     public record JunglePresenceDto(@Nullable String memberId, int topMinutes, int midMinutes, int botMinutes,
-                                    String strongSide) {
+                                    @Schema(allowableValues = {"TOP", "BOT", "BALANCED"}) String strongSide) {
     }
 
     public record ObjectivesDto(int dragons, int grubs, int heralds) {

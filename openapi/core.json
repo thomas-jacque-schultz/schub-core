@@ -5250,8 +5250,7 @@
               "description" : "ClÃ© de mÃ©trique â valeur sur la partie, calculÃ©e comme la grille GAME.",
               "format" : "double"
             },
-            "description" : "ClÃ© de mÃ©trique â valeur sur la partie, calculÃ©e comme la grille GAME.",
-            "nullable" : true
+            "description" : "ClÃ© de mÃ©trique â valeur sur la partie, calculÃ©e comme la grille GAME."
           },
           "position" : {
             "type" : "string",
@@ -5278,7 +5277,8 @@
         "type" : "object",
         "properties" : {
           "action" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "start", "stop" ]
           },
           "at" : {
             "type" : "string",
@@ -5473,7 +5473,8 @@
             }
           },
           "lane" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "TOP", "MID", "BOT" ]
           },
           "objectiveFollowUp" : {
             "type" : "boolean"
@@ -5482,7 +5483,8 @@
             "type" : "boolean"
           },
           "outcome" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "KILL", "TRADE", "SURVIVED", "COUNTER" ]
           },
           "second" : {
             "type" : "integer",
@@ -5668,7 +5670,8 @@
             "format" : "int32"
           },
           "strongSide" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "TOP", "BOT", "BALANCED" ]
           },
           "topMinutes" : {
             "type" : "integer",
@@ -6716,7 +6719,6 @@
           },
           "members" : {
             "type" : "array",
-            "nullable" : true,
             "items" : {
               "$ref" : "#/components/schemas/Member"
             }
@@ -7289,6 +7291,7 @@
         }
       },
       "SeoCreatorsDto" : {
+        "required" : [ "creators", "unknown" ],
         "type" : "object",
         "properties" : {
           "creators" : {
@@ -7729,7 +7732,8 @@
             "format" : "int32"
           },
           "side" : {
-            "type" : "string"
+            "type" : "string",
+            "enum" : [ "TOP", "BOT", "BALANCED" ]
           },
           "wins" : {
             "type" : "integer",

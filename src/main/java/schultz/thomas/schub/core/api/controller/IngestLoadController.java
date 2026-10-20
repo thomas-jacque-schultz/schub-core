@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import schultz.thomas.schub.core.api.client.riot.SeoCreatorsDto;
 import schultz.thomas.schub.core.api.dto.AccountsByRankDto;
 import schultz.thomas.schub.core.api.dto.CrawlerDto;
 import schultz.thomas.schub.core.api.dto.CrawlerToggleRequest;
 import schultz.thomas.schub.core.api.dto.HistoryWindowDto;
 import schultz.thomas.schub.core.api.dto.IngestLoadDto;
 import schultz.thomas.schub.core.api.dto.IngestSummaryDto;
+import schultz.thomas.schub.core.api.dto.SeoCreatorsDto;
 import schultz.thomas.schub.core.api.mapper.IngestDtoMapper;
 import schultz.thomas.schub.core.business.service.PermissionEvaluator;
 import schultz.thomas.schub.core.business.service.RiotConnectorService;
@@ -98,7 +98,7 @@ public class IngestLoadController {
             @RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
-        return ResponseEntity.ok(seoGateway.creators());
+        return ResponseEntity.ok(createurs(seoGateway.creators()));
     }
 
     @PutMapping("/seo-creators")
@@ -107,6 +107,11 @@ public class IngestLoadController {
             @RequestBody List<String> riotIds) {
         permissionEvaluator.require(userService.requireActor(actorId), Permission.INGEST_MANAGE, null);
 
-        return ResponseEntity.ok(seoGateway.replaceCreators(riotIds));
+        return ResponseEntity.ok(createurs(seoGateway.replaceCreators(riotIds)));
+    }
+
+    private static SeoCreatorsDto createurs(schultz.thomas.schub.core.api.client.riot.SeoCreatorsDto lus) {
+        return new SeoCreatorsDto(lus == null || lus.getCreators() == null ? List.of() : lus.getCreators(),
+                lus == null || lus.getUnknown() == null ? List.of() : lus.getUnknown());
     }
 }
