@@ -34,7 +34,7 @@ class TeamLevelsTest {
                                 moyennes, List.of()),
                         "xpDiffAt15", new ReferenceGrid.Metric("HIGHER",
                                 Map.of("GOLD", new ReferenceGrid.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
-                                null, List.of())));
+                                null, List.of())), null);
 
         TeamLevel niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
                 Map.of("a", insight("a", 5200), "b", insight("b", 4800)), grille);
