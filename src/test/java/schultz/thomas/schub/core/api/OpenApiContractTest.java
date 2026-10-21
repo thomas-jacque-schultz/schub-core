@@ -70,6 +70,8 @@ import schultz.thomas.schub.core.lol.team.api.mapper.TeamProjection;
 import schultz.thomas.schub.core.lol.team.business.service.ChampionPoolService;
 import schultz.thomas.schub.core.lol.team.business.service.CompositionService;
 import schultz.thomas.schub.core.lol.team.business.service.TeamService;
+import schultz.thomas.schub.core.quiz.api.mapper.QuizDtoMapperImpl;
+import schultz.thomas.schub.core.quiz.business.service.QuizQuestionService;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,7 +85,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 @AutoConfigureMockMvc(addFilters = false)
 @ImportAutoConfiguration({SpringDocConfiguration.class, SpringDocConfigProperties.class,
         SpringDocWebMvcConfiguration.class})
-@Import({OpenApiConfiguration.class, ContractNullability.class, AccountDtoMapperImpl.class, AugurDtoMapperImpl.class, DraftDtoMapperImpl.class, GameServerMapperImpl.class, IngestDtoMapperImpl.class, PortForwardingDtoMapperImpl.class, RiotDtoMapperImpl.class, SeoDtoMapperImpl.class, SessionSummaryDtoMapperImpl.class, StaticPortRuleMapperImpl.class, StatsDtoMapperImpl.class, TeamDtoMapperImpl.class})
+@Import({OpenApiConfiguration.class, ContractNullability.class, AccountDtoMapperImpl.class, AugurDtoMapperImpl.class, DraftDtoMapperImpl.class, GameServerMapperImpl.class, IngestDtoMapperImpl.class, PortForwardingDtoMapperImpl.class, QuizDtoMapperImpl.class, RiotDtoMapperImpl.class, SeoDtoMapperImpl.class, SessionSummaryDtoMapperImpl.class, StaticPortRuleMapperImpl.class, StatsDtoMapperImpl.class, TeamDtoMapperImpl.class})
 class OpenApiContractTest {
 
     static final Path CONTRAT = Path.of("openapi/core.json");
@@ -153,6 +155,9 @@ class OpenApiContractTest {
 
     @MockBean
     private PublicTeamService publicTeamService;
+
+    @MockBean
+    private QuizQuestionService quizQuestionService;
 
     @MockBean
     private RedirectionRequestService redirectionRequestService;
