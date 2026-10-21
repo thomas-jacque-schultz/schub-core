@@ -43,6 +43,9 @@ public enum Permission {
     // Éditer les règles du moteur de constats : des connaissances de coaching, réservées à l'OWNER au départ.
     AUGUR_PATTERN_EDIT,
 
+    // Modifier la banque de questions du quiz (Schub#137) : réservée à l'OWNER.
+    QUIZ_QUESTION_EDIT,
+
     // Jamais attribuable : réservée au rôle système OWNER.
     ROLE_MANAGE
 }

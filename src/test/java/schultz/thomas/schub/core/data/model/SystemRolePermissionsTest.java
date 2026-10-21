@@ -85,7 +85,9 @@ class SystemRolePermissionsTest {
                 Permission.TEAM_CREATE, Permission.TEAM_VIEW, Permission.TEAM_MANAGE, Permission.ROSTER_EDIT,
                 Permission.COMPOSITION_EDIT,
                 // OWNER seul : les règles du moteur sont des connaissances de coaching (Schub#37).
-                Permission.AUGUR_PATTERN_EDIT);
+                Permission.AUGUR_PATTERN_EDIT,
+                // OWNER seul : la banque de questions du quiz (Schub#137, réponse du 21/10).
+                Permission.QUIZ_QUESTION_EDIT);
 
         assertThat(EnumSet.allOf(Permission.class))
                 .as("une permission neuve : décide à quels rôles système elle va, puis ajoute-la ici")
