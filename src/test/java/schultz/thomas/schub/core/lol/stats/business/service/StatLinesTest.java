@@ -32,11 +32,11 @@ class StatLinesTest {
     }
 
     @Test
-    @DisplayName("les écarts à 15 min se divisent par les parties à timeline, pas par toutes les parties")
+    @DisplayName("les écarts et les K+A à 15 min se divisent par les parties à timeline, les solo kills par celles qui les ont")
     void ecartsSurLesPartiesATimeline() {
         RiotStatsGateway.Bucket bucket = new RiotStatsGateway.Bucket("p", "", null, 10, 5, 0, 20, 0, 0, 0, 30000, 0, 0,
                 0, 0, 0, 18000, null, null, new RiotStatsGateway.Performance(0, 30, 12, 1800, 0, 15, 0, 150000, 8, 16, 4,
-                        2000, 40, 0, 2));
+                        2000, 40, 0, 2, 5, 20, 8, 4));
 
         StatLine ligne = StatLines.of(bucket, "", null, null);
 
@@ -48,6 +48,8 @@ class StatLinesTest {
         assertThat(ligne.damageShare()).isCloseTo(0.2, within(1e-9));
         assertThat(ligne.deathsPer10()).isCloseTo(20 * 10.0 / 300, within(1e-9));
         assertThat(ligne.timeDeadShare()).isCloseTo(0.1, within(1e-9));
+        assertThat(ligne.killsAssistsAt15()).isCloseTo(4, within(1e-9));
+        assertThat(ligne.soloKills()).isCloseTo(0.5, within(1e-9));
     }
 
     @Test
@@ -57,5 +59,7 @@ class StatLinesTest {
 
         assertThat(ligne.goldDiffAt15()).isNull();
         assertThat(ligne.platesDiff()).isNull();
+        assertThat(ligne.killsAssistsAt15()).isNull();
+        assertThat(ligne.soloKills()).isNull();
     }
 }

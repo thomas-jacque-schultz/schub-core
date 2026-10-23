@@ -37,6 +37,10 @@ public record StatLine(
         Double csDiffAt15,
         Double xpDiffAt15,
         Double killsDiffAt15,
+        @Schema(description = "Kills et assists à 15 min, par partie à timeline (Schub#146).")
+        Double killsAssistsAt15,
+        @Schema(description = "Solo kills par partie, sur celles où Riot les sert (Schub#146).")
+        Double soloKills,
         long afkGames,
         long secondsPlayed,
         Instant firstPlayedAt,
