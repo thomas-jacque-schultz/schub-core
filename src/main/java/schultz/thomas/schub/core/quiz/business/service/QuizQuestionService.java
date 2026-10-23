@@ -21,6 +21,7 @@ public class QuizQuestionService {
     private static final Pattern ID = Pattern.compile("[a-z0-9]+(-[a-z0-9]+)*");
     private static final int CHOIX = 4;
     private static final int TEXTE_MAX = 600;
+    private static final int ICONES_MAX = 6;
 
     private final QuizQuestionRepository questions;
     private final PermissionEvaluator permissionEvaluator;
@@ -43,6 +44,8 @@ public class QuizQuestionService {
         question.setTheme(draft.theme());
         question.setDate(draft.date().trim());
         question.setSource(draft.source().trim());
+        question.setImage(vide(draft.image()) ? null : draft.image().trim());
+        question.setImagesChoix(draft.imagesChoix());
         question.setFr(propre(draft.fr()));
         question.setEn(propre(draft.en()));
         if (draft.active() != null) {
@@ -53,6 +56,11 @@ public class QuizQuestionService {
         return questions.save(question);
     }
 
+    public void delete(User actor, String id) {
+        permissionEvaluator.require(actor, Permission.QUIZ_QUESTION_EDIT, null);
+        questions.deleteById(id);
+    }
+
     static void valide(String id, QuizQuestionDraft draft) {
         if (id == null || !ID.matcher(id).matches() || id.length() > 80) {
             throw new IllegalArgumentException("Identifiant invalide : minuscules, chiffres et tirets.");
@@ -60,8 +68,17 @@ public class QuizQuestionService {
         if (draft == null || draft.theme() == null || vide(draft.date())) {
             throw new IllegalArgumentException("Thème et date obligatoires.");
         }
-        if (draft.source() == null || !draft.source().trim().startsWith("https://")) {
+        if (!https(draft.source())) {
             throw new IllegalArgumentException("La source est un lien https.");
+        }
+        if (!vide(draft.image()) && !https(draft.image())) {
+            throw new IllegalArgumentException("L'image est un lien https.");
+        }
+        List<List<String>> rangees = draft.imagesChoix();
+        if (rangees != null && (rangees.size() != CHOIX || rangees.stream().anyMatch(rangee -> rangee == null
+                || rangee.isEmpty() || rangee.size() > ICONES_MAX
+                || rangee.stream().anyMatch(icone -> !https(icone))))) {
+            throw new IllegalArgumentException("Une rangée de une à six icônes https par réponse, ou aucune.");
         }
         valide(draft.fr());
         valide(draft.en());
@@ -82,6 +99,10 @@ public class QuizQuestionService {
     private static QuizQuestion.Wording propre(QuizQuestion.Wording wording) {
         return new QuizQuestion.Wording(wording.enonce().trim(), wording.choix().stream().map(String::trim).toList(),
                 wording.explication().trim());
+    }
+
+    private static boolean https(String lien) {
+        return lien != null && lien.trim().startsWith("https://");
     }
 
     private static boolean vide(String texte) {

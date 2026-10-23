@@ -58,7 +58,26 @@ class QuizQuestionServiceTest {
     }
 
     @Test
-    @DisplayName("Sans la permission, ni lecture complète ni écriture")
+    @DisplayName("Une image et une rangée d'icônes par réponse, en https, ou rien")
+    void images() {
+        QuizQuestion.Wording texte = new QuizQuestion.Wording("Avec quoi ?", List.of("A", "B", "C", "D"), "Ainsi.");
+        List<String> rangee = List.of("https://ddragon.leagueoflegends.com/cdn/16.21.1/img/item/1038.png");
+        QuizQuestion q = service.save(owner, "objet-recette-3031", new QuizQuestionDraft(QuizQuestion.Theme.OBJETS,
+                "2026-10-23", "https://example.org", " https://example.org/3031.png ",
+                List.of(rangee, rangee, rangee, rangee), texte, texte, null));
+
+        assertThat(q.getImage()).isEqualTo("https://example.org/3031.png");
+        assertThat(q.getImagesChoix()).hasSize(4);
+        assertThatThrownBy(() -> service.save(owner, "x", new QuizQuestionDraft(QuizQuestion.Theme.OBJETS, "2026",
+                "https://example.org", "http://example.org/a.png", null, texte, texte, null)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.save(owner, "x", new QuizQuestionDraft(QuizQuestion.Theme.OBJETS, "2026",
+                "https://example.org", null, List.of(rangee), texte, texte, null)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Sans la permission, ni lecture complète, ni écriture, ni suppression")
     void refuse() {
         doThrow(new AccessDeniedException("non")).when(permissions)
                 .require(any(), eq(Permission.QUIZ_QUESTION_EDIT), any());
@@ -66,10 +85,12 @@ class QuizQuestionServiceTest {
         assertThatThrownBy(() -> service.all(owner)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> service.save(owner, "x", brouillon(List.of("A", "B", "C", "D"), null)))
                 .isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> service.delete(owner, "x")).isInstanceOf(AccessDeniedException.class);
     }
 
     private static QuizQuestionDraft brouillon(List<String> choix, Boolean active) {
         QuizQuestion.Wording texte = new QuizQuestion.Wording("Qui ?", choix, "Parce que.");
-        return new QuizQuestionDraft(QuizQuestion.Theme.PROS, "2011", "https://example.org", texte, texte, active);
+        return new QuizQuestionDraft(QuizQuestion.Theme.PROS, "2011", "https://example.org", null, null, texte, texte,
+                active);
     }
 }
