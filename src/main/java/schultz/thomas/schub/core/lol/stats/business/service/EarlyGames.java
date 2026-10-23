@@ -22,7 +22,8 @@ final class EarlyGames {
     private EarlyGames() {
     }
 
-    static EarlyGameView vue(RiotStatsGateway.EarlyGame early, int notreCote, Map<String, TeamMember> parPuuid) {
+    static EarlyGameView vue(RiotStatsGateway.EarlyGame early, int notreCote, Map<String, TeamMember> parPuuid,
+                             List<RiotStatsGateway.SharedMatchPlayer> joueurs) {
         if (early == null) {
             return null;
         }
@@ -40,7 +41,11 @@ final class EarlyGames {
                 presence(jungler(early, notreCote, true), parPuuid),
                 presence(jungler(early, notreCote, false), parPuuid),
                 objectifs(early, notreCote, true),
-                objectifs(early, notreCote, false));
+                objectifs(early, notreCote, false),
+                Proximites.support(early.proximity(), joueurs, notreCote, true),
+                Proximites.support(early.proximity(), joueurs, notreCote, false),
+                Proximites.jungler(early.proximity(), joueurs, notreCote, true),
+                Proximites.jungler(early.proximity(), joueurs, notreCote, false));
     }
 
     static TeamEarlyGame bilan(List<RiotStatsGateway.SharedMatch> parties,

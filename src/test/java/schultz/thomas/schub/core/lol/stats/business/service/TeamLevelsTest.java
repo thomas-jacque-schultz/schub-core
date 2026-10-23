@@ -106,7 +106,7 @@ class TeamLevelsTest {
                     orFin == null ? null : new RiotStatsGateway.AtEnd(cote == 100 ? orFin : 11_000, 15_000, 3)));
         }
         RiotStatsGateway.EarlyGame early = new RiotStatsGateway.EarlyGame(List.of(), List.of(),
-                List.of(new RiotStatsGateway.Objectives(100, 1, 3, 0)));
+                List.of(new RiotStatsGateway.Objectives(100, 1, 3, 0)), null);
         return new RiotStatsGateway.Insight(id, true, Instant.EPOCH, early, joueurs, orFin == null ? null
                 : List.of(new RiotStatsGateway.EndObjectives(100, 3, 1), new RiotStatsGateway.EndObjectives(200, 2, 0)));
     }

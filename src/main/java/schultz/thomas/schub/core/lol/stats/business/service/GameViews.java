@@ -48,7 +48,8 @@ public class GameViews {
                 insight != null && insight.timelineAvailable(),
                 insight == null ? null : insight.ranksObservedAt(),
                 insight == null || partie.splitSides() ? null
-                        : EarlyGames.vue(insight.early(), VueDePartie.de(partie).cote(), parPuuid),
+                        : EarlyGames.vue(insight.early(), VueDePartie.de(partie).cote(), parPuuid,
+                        partie.players()),
                 viewerMemberId,
                 days,
                 indicateurs(partie, PlayerStatsService.depuis(days)));

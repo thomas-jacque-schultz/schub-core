@@ -39,7 +39,37 @@ class EarlyGamesTest {
                                 List.of("jgl"), false, false)),
                 List.of(new RiotStatsGateway.JunglePresence("jgl", 100, 2, 1, 10),
                         new RiotStatsGateway.JunglePresence("jgl-r", 200, 9, 1, 3)),
-                List.of(new RiotStatsGateway.Objectives(100, 1, 0, 0), new RiotStatsGateway.Objectives(200, 0, 3, 1)));
+                List.of(new RiotStatsGateway.Objectives(100, 1, 0, 0), new RiotStatsGateway.Objectives(200, 0, 3, 1)),
+                List.of(new RiotStatsGateway.Proximity("sup", "bot", 12, 9, 10, 5, 1_500, 3),
+                        new RiotStatsGateway.Proximity("jgl", "sup", 12, 3, 10, 4, 3_000, 1),
+                        new RiotStatsGateway.Proximity("top", "jgl", 12, 2, 10, 1, 6_000, 0)));
+    }
+
+    private static RiotStatsGateway.SharedMatchPlayer joueur(String puuid, String poste, int cote) {
+        return new RiotStatsGateway.SharedMatchPlayer(puuid, 1, "A", poste, true, cote, 0, 0, 0, 0, 0, 0, 0, 0, false,
+                null);
+    }
+
+    private static final List<RiotStatsGateway.SharedMatchPlayer> JOUEURS = List.of(joueur("top", "TOP", 100),
+            joueur("jgl", "JUNGLE", 100), joueur("bot", "BOTTOM", 100), joueur("sup", "UTILITY", 100),
+            joueur("bot-r", "BOTTOM", 200), joueur("sup-r", "UTILITY", 200));
+
+    @Test
+    @DisplayName("Proximité : le support avec son ADC avant 15 min et son jungler après, le poste le plus proche du jungler")
+    void proximite() {
+        EarlyGameView vue = EarlyGames.vue(early(), 100, PAR_PUUID, JOUEURS);
+
+        assertThat(vue.ourSupport()).isEqualTo(new EarlyGameView.SupportProximity(75, 12, 3, 40, 10));
+        assertThat(vue.ourJunglerClosest()).isEqualTo(new EarlyGameView.JunglerProximity("UTILITY", 32, 22));
+        assertThat(vue.theirSupport()).isNull();
+        assertThat(vue.theirJunglerClosest()).isNull();
+    }
+
+    @Test
+    @DisplayName("Sous 5 minutes comptées, une part ne se donne pas")
+    void partTropCourte() {
+        assertThat(Proximites.part(3, 4)).isNull();
+        assertThat(Proximites.part(3, 5)).isEqualTo(60);
     }
 
     private static RiotStatsGateway.SharedMatch partie(boolean win) {
@@ -57,7 +87,7 @@ class EarlyGamesTest {
     @Test
     @DisplayName("Vue d'une partie : chaque gank dit depuis notre camp, pertes comprises")
     void vue() {
-        EarlyGameView vue = EarlyGames.vue(early(), 100, PAR_PUUID);
+        EarlyGameView vue = EarlyGames.vue(early(), 100, PAR_PUUID, JOUEURS);
 
         assertThat(vue.ganks()).extracting(EarlyGameView.Gank::ours).containsExactly(false, false, true);
         EarlyGameView.Gank subi = vue.ganks().getFirst();

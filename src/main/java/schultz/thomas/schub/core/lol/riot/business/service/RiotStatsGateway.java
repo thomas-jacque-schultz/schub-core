@@ -103,7 +103,12 @@ public interface RiotStatsGateway {
     record At15(int gold, int xp, int cs, int damageToChampions, int kills, int deaths, int assists) {
     }
 
-    record EarlyGame(List<Gank> ganks, List<JunglePresence> junglers, List<Objectives> objectives) {
+    record EarlyGame(List<Gank> ganks, List<JunglePresence> junglers, List<Objectives> objectives,
+                     List<Proximity> proximity) {
+    }
+
+    record Proximity(String puuidA, String puuidB, int early, int earlyTogether, int late, int lateTogether,
+                     int meanDistance, int departures) {
     }
 
     record Gank(int second, String lane, int attackerSide, String junglerPuuid, List<String> targetPuuids,
