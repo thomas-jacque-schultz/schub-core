@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class QuizQuestionService {
 
-    private static final Pattern ID = Pattern.compile("[a-z0-9]+(-[a-z0-9]+)*");
+    private static final Pattern ID = Pattern.compile("[a-z0-9]++(?:-[a-z0-9]++)*+");
     private static final int CHOIX = 4;
     private static final int TEXTE_MAX = 600;
     private static final int ICONES_MAX = 6;

@@ -169,7 +169,7 @@ public class DraftAdviceService {
                 composRendues,
                 aEviter.stream().map(c -> avecRepere(c, reperes)).toList(),
                 Parallele.attend(essais),
-                bans(parties, catalogue),
+                bansConseilles(parties, catalogue),
                 Parallele.attend(menaces));
     }
 
@@ -354,8 +354,8 @@ public class DraftAdviceService {
     }
 
     // #106 : impact = présence × perte de taux de victoire, la perte prise à sa borne basse.
-    static List<DraftAdvice.Ban> bans(List<RiotStatsGateway.SharedMatch> parties,
-                                          Map<Integer, RiotChampionGateway.Champion> catalogue) {
+    static List<DraftAdvice.Ban> bansConseilles(List<RiotStatsGateway.SharedMatch> parties,
+                                                Map<Integer, RiotChampionGateway.Champion> catalogue) {
         if (parties.isEmpty()) {
             return List.of();
         }

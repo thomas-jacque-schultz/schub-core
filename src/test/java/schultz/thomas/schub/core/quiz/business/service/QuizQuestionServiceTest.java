@@ -49,11 +49,17 @@ class QuizQuestionServiceTest {
     @Test
     @DisplayName("Quatre réponses différentes, une source en https, un identifiant propre")
     void valide() {
-        assertThatThrownBy(() -> service.save(owner, "worlds-2011", brouillon(List.of("A", "A", "B", "C"), null)))
+        QuizQuestionDraft doublon = brouillon(List.of("A", "A", "B", "C"), null);
+        QuizQuestionDraft troisChoix = brouillon(List.of("A", "B", "C"), null);
+        QuizQuestionDraft valable = brouillon(List.of("A", "B", "C", "D"), null);
+
+        assertThatThrownBy(() -> service.save(owner, "worlds-2011", doublon))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> service.save(owner, "worlds-2011", brouillon(List.of("A", "B", "C"), null)))
+        assertThatThrownBy(() -> service.save(owner, "worlds-2011", troisChoix))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> service.save(owner, "Worlds 2011", brouillon(List.of("A", "B", "C", "D"), null)))
+        assertThatThrownBy(() -> service.save(owner, "Worlds 2011", valable))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.save(owner, "a".repeat(40_000) + "-", valable))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -68,12 +74,13 @@ class QuizQuestionServiceTest {
 
         assertThat(q.getImage()).isEqualTo("https://example.org/3031.png");
         assertThat(q.getImagesChoix()).hasSize(4);
-        assertThatThrownBy(() -> service.save(owner, "x", new QuizQuestionDraft(QuizQuestion.Theme.OBJETS, "2026",
-                "https://example.org", "http://example.org/a.png", null, texte, texte, null)))
-                .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> service.save(owner, "x", new QuizQuestionDraft(QuizQuestion.Theme.OBJETS, "2026",
-                "https://example.org", null, List.of(rangee), texte, texte, null)))
-                .isInstanceOf(IllegalArgumentException.class);
+        QuizQuestionDraft enHttp = new QuizQuestionDraft(QuizQuestion.Theme.OBJETS, "2026", "https://example.org",
+                "http://example.org/a.png", null, texte, texte, null);
+        QuizQuestionDraft uneRangee = new QuizQuestionDraft(QuizQuestion.Theme.OBJETS, "2026", "https://example.org",
+                null, List.of(rangee), texte, texte, null);
+
+        assertThatThrownBy(() -> service.save(owner, "x", enHttp)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.save(owner, "x", uneRangee)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -82,9 +89,10 @@ class QuizQuestionServiceTest {
         doThrow(new AccessDeniedException("non")).when(permissions)
                 .require(any(), eq(Permission.QUIZ_QUESTION_EDIT), any());
 
+        QuizQuestionDraft valable = brouillon(List.of("A", "B", "C", "D"), null);
+
         assertThatThrownBy(() -> service.all(owner)).isInstanceOf(AccessDeniedException.class);
-        assertThatThrownBy(() -> service.save(owner, "x", brouillon(List.of("A", "B", "C", "D"), null)))
-                .isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> service.save(owner, "x", valable)).isInstanceOf(AccessDeniedException.class);
         assertThatThrownBy(() -> service.delete(owner, "x")).isInstanceOf(AccessDeniedException.class);
     }
 

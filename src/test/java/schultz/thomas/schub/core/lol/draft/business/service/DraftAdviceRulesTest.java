@@ -61,7 +61,7 @@ class DraftAdviceRulesTest {
             parties.add(face(9, true));
         }
 
-        List<Integer> ordre = DraftAdviceService.bans(parties, Map.of()).stream()
+        List<Integer> ordre = DraftAdviceService.bansConseilles(parties, Map.of()).stream()
                 .map(DraftAdvice.Ban::championId).toList();
 
         assertThat(ordre).containsExactly(8, 7);
