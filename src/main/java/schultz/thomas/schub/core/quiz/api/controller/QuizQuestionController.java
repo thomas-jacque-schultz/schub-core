@@ -1,6 +1,8 @@
 package schultz.thomas.schub.core.quiz.api.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -41,5 +43,12 @@ public class QuizQuestionController {
     public QuizQuestionDto save(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
                                 @PathVariable String id, @RequestBody QuizQuestionRequest request) {
         return dtos.toDto(questions.save(userService.requireActor(actorId), id, dtos.toDraft(request)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+                                       @PathVariable String id) {
+        questions.delete(userService.requireActor(actorId), id);
+        return ResponseEntity.noContent().build();
     }
 }
