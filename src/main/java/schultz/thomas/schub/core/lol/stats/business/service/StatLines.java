@@ -49,6 +49,8 @@ public final class StatLines {
                 parPartie(perf.csDiffAt15(), perf.laningGames()),
                 parPartie(perf.xpDiffAt15(), perf.laningGames()),
                 parPartie(perf.killsDiffAt15(), perf.laningGames()),
+                parPartie(perf.killsAssistsAt15(), perf.earlyGames()),
+                parPartie(perf.soloKills(), perf.soloKillsGames()),
                 bucket.afkGames(),
                 bucket.secondsPlayed(),
                 bucket.firstPlayedAt(),

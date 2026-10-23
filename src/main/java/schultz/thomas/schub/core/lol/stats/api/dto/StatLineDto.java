@@ -38,6 +38,8 @@ public record StatLineDto(
         @Nullable Double csDiffAt15,
         @Nullable Double xpDiffAt15,
         @Nullable Double killsDiffAt15,
+        @Nullable Double killsAssistsAt15,
+        @Nullable Double soloKills,
         long afkGames,
         long secondsPlayed,
         @Nullable Instant firstPlayedAt,

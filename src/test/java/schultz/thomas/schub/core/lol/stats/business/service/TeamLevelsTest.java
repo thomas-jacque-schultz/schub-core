@@ -31,10 +31,10 @@ class TeamLevelsTest {
         ReferenceGrid grille = new ReferenceGrid(List.of("16.18"), "TEAM", "TEAM", Instant.EPOCH, P,
                 Map.of("goldDiffAt15", new ReferenceGrid.Metric("HIGHER",
                                 Map.of("GOLD", new ReferenceGrid.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
-                                moyennes, List.of()),
+                                moyennes, null, List.of()),
                         "xpDiffAt15", new ReferenceGrid.Metric("HIGHER",
                                 Map.of("GOLD", new ReferenceGrid.Tier(500, List.of(-2000.0, 0.0, 2000.0))),
-                                null, List.of())));
+                                null, null, List.of())), null);
 
         TeamLevel niveau = TeamLevels.of(List.of(partie("a"), partie("b")),
                 Map.of("a", insight("a", 5200), "b", insight("b", 4800)), grille);

@@ -154,13 +154,16 @@ public interface RiotStatsGateway {
         }
     }
 
-    // Sommes des métriques v3 du connecteur. Les écarts à 15 min ont leur propre dénominateur : laningGames.
+    // Sommes des métriques v4 du connecteur. Chaque famille à 15 min a son dénominateur (laningGames, earlyGames), les
+    // solo kills aussi (soloKillsGames) : une partie sans timeline ou sans challenges n'y compte pas.
     record Performance(long wardsPlaced, long wardsKilled, long controlWardsPlaced, long timeDeadSeconds,
                        long turretDamage, long turretTakedowns, long epicMonsterDamage, long teamDamageToChampions,
                        long platesGames, long platesDiff, long laningGames, long goldDiffAt15, long csDiffAt15,
-                       long xpDiffAt15, long killsDiffAt15) {
+                       long xpDiffAt15, long killsDiffAt15, long earlyGames, long killsAssistsAt15,
+                       long soloKillsGames, long soloKills) {
 
-        public static final Performance ZERO = new Performance(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        public static final Performance ZERO = new Performance(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0);
 
         public Performance plus(Performance autre, int signe) {
             return new Performance(wardsPlaced + signe * autre.wardsPlaced, wardsKilled + signe * autre.wardsKilled,
@@ -172,7 +175,9 @@ public interface RiotStatsGateway {
                     platesGames + signe * autre.platesGames, platesDiff + signe * autre.platesDiff,
                     laningGames + signe * autre.laningGames, goldDiffAt15 + signe * autre.goldDiffAt15,
                     csDiffAt15 + signe * autre.csDiffAt15, xpDiffAt15 + signe * autre.xpDiffAt15,
-                    killsDiffAt15 + signe * autre.killsDiffAt15);
+                    killsDiffAt15 + signe * autre.killsDiffAt15, earlyGames + signe * autre.earlyGames,
+                    killsAssistsAt15 + signe * autre.killsAssistsAt15,
+                    soloKillsGames + signe * autre.soloKillsGames, soloKills + signe * autre.soloKills);
         }
     }
 
