@@ -43,6 +43,7 @@ import schultz.thomas.schub.core.lol.draft.api.mapper.DraftDtoMapperImpl;
 import schultz.thomas.schub.core.lol.draft.business.service.CompositionRecordService;
 import schultz.thomas.schub.core.lol.draft.business.service.DraftAdviceService;
 import schultz.thomas.schub.core.lol.draft.business.service.TierCombosService;
+import schultz.thomas.schub.core.lol.queuekiller.business.service.QueueKillerPresenceService;
 import schultz.thomas.schub.core.lol.riot.api.mapper.RiotDtoMapperImpl;
 import schultz.thomas.schub.core.lol.riot.business.service.RiotDataInvalidationService;
 import schultz.thomas.schub.core.lol.riot.business.service.RiotStatsGateway;
@@ -155,6 +156,9 @@ class OpenApiContractTest {
 
     @MockBean
     private PublicTeamService publicTeamService;
+
+    @MockBean
+    private QueueKillerPresenceService queueKillerPresenceService;
 
     @MockBean
     private QuizQuestionService quizQuestionService;
