@@ -20,8 +20,9 @@ public record ReferenceGrid(
     }
 
     // rankMeans : moyenne par partie de chaque palier, du plus bas au plus haut ; absente si la métrique ne suit pas le rang.
+    // allTiersMean : la moyenne par partie tous paliers confondus (Schub#146).
     public record Metric(String polarity, Map<String, Tier> tiers, Map<String, Double> rankMeans,
-                         List<String> missingTiers) {
+                         Double allTiersMean, List<String> missingTiers) {
     }
 
     public record Tier(long count, List<Double> values) {

@@ -26,7 +26,7 @@ public record ReferenceGridDto(
     // rankMeans : moyenne par partie de chaque palier, du plus bas au plus haut ; absente si la métrique ne suit pas le rang.
     @Schema(name = "ReferenceGridMetric")
     public record Metric(String polarity, Map<String, Tier> tiers, @Nullable Map<String, Double> rankMeans,
-                         List<String> missingTiers) {
+                         @Nullable Double allTiersMean, List<String> missingTiers) {
     }
 
     public record Tier(long count, List<Double> values) {
