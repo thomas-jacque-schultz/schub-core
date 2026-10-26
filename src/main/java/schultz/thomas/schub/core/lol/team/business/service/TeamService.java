@@ -164,7 +164,9 @@ public class TeamService {
 
         String puuid = trimOrNull(demande.riotPuuid());
         if (puuid == null) {
-            var resolution = riotIdResolver.resolve(gameName, tagLine);
+            // Un compte vu en partie cette semaine se lie sans appel à Riot, et Riot saturé rend le dernier connu :
+            // une place sans puuid ne se relie qu'au relevé suivant (Schub#157).
+            var resolution = riotIdResolver.resolveRecent(gameName, tagLine);
             if (resolution.isNotFound()) {
                 throw new IllegalArgumentException(
                         "Aucun compte Riot ne porte « " + gameName + "#" + tagLine + " »");

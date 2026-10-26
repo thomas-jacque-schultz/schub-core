@@ -98,6 +98,7 @@ class TeamServiceTest {
             return team;
         });
         when(riotIdResolver.resolve(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
+        when(riotIdResolver.resolveRecent(anyString(), anyString())).thenReturn(RiotIdResolution.unavailable());
         when(memberDirectory.byRiotPuuid(anyString())).thenReturn(Optional.empty());
         when(memberDirectory.pendingByRiotId(anyString(), anyString())).thenReturn(Optional.empty());
     }
@@ -255,7 +256,7 @@ class TeamServiceTest {
     @DisplayName("un Riot ID déjà revendiqué par un compte donne un membre lié d'emblée")
     void ajouteUnMembreDejaInscrit() {
         donneLEquipe();
-        when(riotIdResolver.resolve("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
+        when(riotIdResolver.resolveRecent("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
         when(memberDirectory.byRiotPuuid("puuid-bibi")).thenReturn(Optional.of(
                 new MemberDirectory.MemberIdentity("bibi", "Bibi", null, "puuid-bibi", "Bibi", "EUW")));
 
@@ -272,7 +273,7 @@ class TeamServiceTest {
     @DisplayName("un compte au puuid effacé est relié par le Riot ID qu'il a déclaré, et reçoit le puuid (schub-core#47)")
     void ajouteUnMembreAuCompteEnAttente() {
         donneLEquipe();
-        when(riotIdResolver.resolve("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
+        when(riotIdResolver.resolveRecent("Bibi", "EUW")).thenReturn(RiotIdResolution.resolved("puuid-bibi"));
         when(memberDirectory.pendingByRiotId("Bibi", "EUW")).thenReturn(Optional.of(
                 new MemberDirectory.MemberIdentity("bibi", "Bibi", null, null, "Bibi", "EUW")));
 
@@ -292,7 +293,7 @@ class TeamServiceTest {
         teamService.addMember(capitaine, "equipe-1",
                 new TeamService.NewMember("Bibi", "EUW", "puuid-bibi", List.of(GameRole.ADC), null, false));
 
-        verify(riotIdResolver, never()).resolve(anyString(), anyString());
+        verify(riotIdResolver, never()).resolveRecent(anyString(), anyString());
     }
 
     @Test

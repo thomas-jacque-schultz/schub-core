@@ -64,6 +64,35 @@ class StalePuuidRepairTest {
     }
 
     @Test
+    @DisplayName("Une place résolue après coup est reliée au compte qui porte son puuid (Schub#157)")
+    void placeResolueReliee() {
+        Team team = equipe(membre("m1", "p1", "Sbrawa", "EUW"), membre("m2", "p2", "Autre", "EUW"));
+        when(teams.findWithUnlinkedResolvedMembers()).thenReturn(List.of(team));
+        when(users.findByRiotPuuidIn(any())).thenReturn(List.of(compte("u1", "p1")));
+
+        repair.relieLesPlacesLibres();
+
+        assertThat(team.getMembers()).extracting(TeamMember::getUserId).containsExactly("u1", null);
+        assertThat(team.getMembers().get(0).getLinkedAt()).isNotNull();
+        verify(teams).save(team);
+    }
+
+    @Test
+    @DisplayName("Un compte qui a déjà sa place dans l'équipe n'en prend pas une deuxième")
+    void compteDejaDansLEquipe() {
+        TeamMember dejaLie = membre("m1", "p1", "Sbrawa", "EUW");
+        dejaLie.setUserId("u1");
+        Team team = equipe(dejaLie, membre("m2", "p1", "Sbrawa", "EUW"));
+        when(teams.findWithUnlinkedResolvedMembers()).thenReturn(List.of(team));
+        when(users.findByRiotPuuidIn(any())).thenReturn(List.of(compte("u1", "p1")));
+
+        repair.relieLesPlacesLibres();
+
+        assertThat(team.getMembers().get(1).isLinked()).isFalse();
+        verify(teams, never()).save(any());
+    }
+
+    @Test
     @DisplayName("Un compte en attente de résolution est retenté au relevé, sans attendre sa connexion (schub-core#47)")
     void compteEnAttenteRetente() {
         User user = new User();
@@ -112,6 +141,13 @@ class StalePuuidRepairTest {
         team.setName("Miam");
         team.setMembers(new ArrayList<>(List.of(membres)));
         return team;
+    }
+
+    private static User compte(String id, String puuid) {
+        User user = new User();
+        user.setId(id);
+        user.setRiotPuuid(puuid);
+        return user;
     }
 
     private static TeamMember membre(String id, String puuid, String nom, String tag) {
