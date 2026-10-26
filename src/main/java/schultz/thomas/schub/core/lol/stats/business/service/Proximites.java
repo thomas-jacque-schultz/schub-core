@@ -119,7 +119,7 @@ final class Proximites {
         return trouves.size() == 1 ? Optional.of(trouves.getFirst()) : Optional.empty();
     }
 
-    private static Optional<RiotStatsGateway.Proximity> entre(RiotStatsGateway.Insight insight, String a, String b) {
+    static Optional<RiotStatsGateway.Proximity> entre(RiotStatsGateway.Insight insight, String a, String b) {
         if (insight.proximities() == null) {
             return Optional.empty();
         }

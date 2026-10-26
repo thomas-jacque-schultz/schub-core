@@ -87,7 +87,23 @@ public interface RiotStatsGateway {
     Optional<List<Insight>> insights(List<String> matchIds);
 
     record Insight(String matchId, boolean timelineAvailable, Instant ranksObservedAt, EarlyGame early,
-                   List<InsightPlayer> participants, List<EndObjectives> endObjectives, List<Proximity> proximities) {
+                   List<InsightPlayer> participants, List<EndObjectives> endObjectives, List<Proximity> proximities,
+                   List<Isolation> isolations, List<Contest> contests) {
+    }
+
+    // Un joueur sur les mêmes images : seul = aucun coéquipier en jeu à moins de 2 000 unités.
+    record Isolation(String puuid, int side, int earlyMinutes, int earlyAlone, int lateMinutes, int lateAlone) {
+    }
+
+    // Un objectif neutre (side = le camp qui l'a pris), ou un combat dans une jungle (kind = JUNGLE_FIGHT,
+    // side = le camp dont c'est la jungle), et les joueurs des deux camps qui étaient là.
+    record Contest(int second, String kind, int side, int sideKills, int sideDeaths, List<String> present) {
+
+        public static final String JUNGLE_FIGHT = "JUNGLE_FIGHT";
+
+        public boolean combat() {
+            return JUNGLE_FIGHT.equals(kind);
+        }
     }
 
     // Deux coéquipiers sur les images de la timeline où les deux sont en jeu ; ensemble = moins de 2 000 unités.

@@ -25,7 +25,7 @@ class ProximitesTest {
                 .mapToObj(i -> new RiotStatsGateway.InsightPlayer((i < 5 ? "b-" : "r-") + POSTES.get(i % 5),
                         i < 5 ? 100 : 200, POSTES.get(i % 5), 10 + i, null, null, null, null))
                 .toList();
-        return new RiotStatsGateway.Insight(id, true, null, null, joueurs, null, paires);
+        return new RiotStatsGateway.Insight(id, true, null, null, joueurs, null, paires, null, null);
     }
 
     private static RiotStatsGateway.Proximity paire(String a, String b, int avant, int ensembleAvant, int apres,
