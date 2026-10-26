@@ -51,7 +51,7 @@ class EarlyGamesTest {
     private static RiotStatsGateway.Insight insight() {
         return new RiotStatsGateway.Insight("g1", true, null, early(), List.of(
                 new RiotStatsGateway.InsightPlayer("top", 100, "TOP", 1, null, null, null, null),
-                new RiotStatsGateway.InsightPlayer("jgl", 100, "JUNGLE", 2, null, null, null, null)), null, null);
+                new RiotStatsGateway.InsightPlayer("jgl", 100, "JUNGLE", 2, null, null, null, null)), null, null, null, null);
     }
 
     @Test

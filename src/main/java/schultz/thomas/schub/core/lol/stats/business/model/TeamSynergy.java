@@ -10,8 +10,39 @@ public record TeamSynergy(
         List<Duo> duos,
         List<Resource> resources,
         int minimumClosenessGames,
-        List<Closeness> closeness
+        List<Closeness> closeness,
+        Roles roles
 ) {
+
+    // Schub#156 : par poste, quel que soit le joueur qui le tient, sur les parties d'équipe à timeline dont nos cinq
+    // postes sont connus. objectives : objectifs neutres de ces parties ; jungleFights : combats dans notre jungle
+    // où notre jungler était.
+    public record Roles(int games, int objectives, int jungleFights, List<RoleLine> roles, List<PairLine> pairs,
+                        ObjectiveTakes takes, JungleFights fights, List<Holder> holders) {
+    }
+
+    // Seul : part des images sans coéquipier à portée. Présence : part des objectifs, et des combats du jungler dans
+    // sa jungle, où le poste était là.
+    public record RoleLine(String position, Double earlyAlone, Double lateAlone,
+                           Double objectivePresence, Double jungleFightPresence) {
+    }
+
+    public record PairLine(String position, String matePosition, Double earlyShare, Double lateShare) {
+    }
+
+    // Objectifs pris selon le nombre des nôtres présents (trois ou plus, ou moins), et avec ou sans le support.
+    public record ObjectiveTakes(int crowded, int takenCrowded, int sparse, int takenSparse, int withSupport,
+                                 int takenWithSupport, int withoutSupport, int takenWithoutSupport) {
+    }
+
+    // Combats du jungler dans sa jungle : avec au moins un coéquipier, ou seul ; gagné = plus de kills que de morts.
+    public record JungleFights(int helped, int wonHelped, int alone, int wonAlone) {
+    }
+
+    // Un membre à un poste, sur ses parties à ce poste.
+    public record Holder(String position, String memberId, String displayName, int games, Double lateAlone,
+                         Double lateWithJungler, Double objectivePresence) {
+    }
 
     // Schub#154 : la part des images passées à moins de 2 000 unités de chaque coéquipier, sur leurs parties
     // d'équipe à timeline. Sous minimumClosenessGames parties, les parts sont absentes.

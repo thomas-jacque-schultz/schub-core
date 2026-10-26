@@ -108,6 +108,6 @@ class TeamLevelsTest {
         RiotStatsGateway.EarlyGame early = new RiotStatsGateway.EarlyGame(List.of(), List.of(),
                 List.of(new RiotStatsGateway.Objectives(100, 1, 3, 0)));
         return new RiotStatsGateway.Insight(id, true, Instant.EPOCH, early, joueurs, orFin == null ? null
-                : List.of(new RiotStatsGateway.EndObjectives(100, 3, 1), new RiotStatsGateway.EndObjectives(200, 2, 0)), null);
+                : List.of(new RiotStatsGateway.EndObjectives(100, 3, 1), new RiotStatsGateway.EndObjectives(200, 2, 0)), null, null, null);
     }
 }
