@@ -2323,6 +2323,13 @@
               "$ref" : "#/components/schemas/Participant"
             }
           },
+          "proximities" : {
+            "type" : "array",
+            "description" : "Les paires de coÃ©quipiers d'un mÃªme camp, dix par camp. Absent : pas de timeline.",
+            "items" : {
+              "$ref" : "#/components/schemas/Proximity"
+            }
+          },
           "ranksObservedAt" : {
             "type" : "string",
             "description" : "Absente : les rangs n'ont pas encore Ã©tÃ© relevÃ©s.",
@@ -2670,6 +2677,11 @@
       "PerformanceSumsDto" : {
         "type" : "object",
         "properties" : {
+          "adcEarlyShare" : {
+            "type" : "integer",
+            "description" : "Somme des parts, en pour cent.",
+            "format" : "int64"
+          },
           "controlWardsPlaced" : {
             "type" : "integer",
             "format" : "int64"
@@ -2689,6 +2701,11 @@
           },
           "goldDiffAt15" : {
             "type" : "integer",
+            "format" : "int64"
+          },
+          "junglerLateShare" : {
+            "type" : "integer",
+            "description" : "Somme des parts, en pour cent.",
             "format" : "int64"
           },
           "killsAssistsAt15" : {
@@ -2713,6 +2730,11 @@
             "description" : "Parties oÃ¹ l'Ã©cart de plaques est connu.",
             "format" : "int64"
           },
+          "roams" : {
+            "type" : "integer",
+            "description" : "DÃ©parts d'auprÃ¨s de l'ADC avant 15 min, sur supportEarlyGames.",
+            "format" : "int64"
+          },
           "soloKills" : {
             "type" : "integer",
             "format" : "int64"
@@ -2720,6 +2742,16 @@
           "soloKillsGames" : {
             "type" : "integer",
             "description" : "Parties oÃ¹ Riot a servi les solo kills (challenges, projection v4).",
+            "format" : "int64"
+          },
+          "supportEarlyGames" : {
+            "type" : "integer",
+            "description" : "Parties au support oÃ¹ la part d'images avec l'ADC avant 15 min est connue (Schub#153).",
+            "format" : "int64"
+          },
+          "supportLateGames" : {
+            "type" : "integer",
+            "description" : "Parties au support oÃ¹ la part d'images avec le jungler aprÃ¨s 15 min est connue.",
             "format" : "int64"
           },
           "teamDamageToChampions" : {
@@ -2944,6 +2976,50 @@
           }
         },
         "description" : "Un poste et le nombre de parties qu'on y a vu ce joueur."
+      },
+      "Proximity" : {
+        "type" : "object",
+        "properties" : {
+          "earlyDepartures" : {
+            "type" : "integer",
+            "description" : "Avant 15 minutes, passages d'ensemble Ã  sÃ©parÃ©s entre deux images comptÃ©es.",
+            "format" : "int32"
+          },
+          "earlyMinutes" : {
+            "type" : "integer",
+            "description" : "Images comptÃ©es avant 15 minutes.",
+            "format" : "int32"
+          },
+          "earlyTogether" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lateMinutes" : {
+            "type" : "integer",
+            "description" : "Images comptÃ©es Ã  partir de 15 minutes.",
+            "format" : "int32"
+          },
+          "lateTogether" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "matePuuid" : {
+            "type" : "string"
+          },
+          "meanDistance" : {
+            "type" : "integer",
+            "description" : "Distance moyenne sur toutes les images comptÃ©es. Absente : aucune.",
+            "format" : "int32"
+          },
+          "puuid" : {
+            "type" : "string"
+          },
+          "side" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "description" : "Deux coÃ©quipiers sur les images de la timeline, une par minute. Une image ne compte pas si l'un des deux\nest Ã  sa fontaine ou mort (temps de rÃ©apparition estimÃ© Ã  son niveau). Ensemble : moins de 2 000 unitÃ©s."
       },
       "PuuidListRequest" : {
         "required" : [ "puuids" ],

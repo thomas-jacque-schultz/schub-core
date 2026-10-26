@@ -45,7 +45,7 @@ public class TeamSynergyService {
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
         if (parPuuid.size() < TeamGamesStatsService.MINIMUM_MEMBRES) {
-            return new TeamSynergy(0, DUO_MINIMUM, List.of(), List.of());
+            return new TeamSynergy(0, DUO_MINIMUM, List.of(), List.of(), Proximites.PARTIES_MINIMUM, List.of());
         }
         List<RiotStatsGateway.SharedMatch> parties = statsGateway.sharedMatches(List.copyOf(parPuuid.keySet()),
                         TeamGamesStatsService.MINIMUM_MEMBRES, PlayerStatsService.depuis(days),
@@ -53,8 +53,10 @@ public class TeamSynergyService {
                 .map(RiotStatsGateway.SharedMatches::matches).orElseGet(List::of).stream()
                 .filter(p -> p.win() != null && !p.splitSides())
                 .toList();
-        return new TeamSynergy(parties.size(), DUO_MINIMUM,
-                duos(parties, parPuuid, gamesStats.noms(joueurs)), ressources(parties));
+        Map<String, String> noms = gamesStats.noms(joueurs);
+        return new TeamSynergy(parties.size(), DUO_MINIMUM, duos(parties, parPuuid, noms), ressources(parties),
+                Proximites.PARTIES_MINIMUM,
+                Proximites.equipe(parties, gamesStats.insightsDe(parties), parPuuid, noms));
     }
 
     static List<TeamSynergy.Duo> duos(List<RiotStatsGateway.SharedMatch> parties,

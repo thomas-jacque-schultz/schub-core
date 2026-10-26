@@ -87,7 +87,12 @@ public interface RiotStatsGateway {
     Optional<List<Insight>> insights(List<String> matchIds);
 
     record Insight(String matchId, boolean timelineAvailable, Instant ranksObservedAt, EarlyGame early,
-                   List<InsightPlayer> participants, List<EndObjectives> endObjectives) {
+                   List<InsightPlayer> participants, List<EndObjectives> endObjectives, List<Proximity> proximities) {
+    }
+
+    // Deux coéquipiers sur les images de la timeline où les deux sont en jeu ; ensemble = moins de 2 000 unités.
+    record Proximity(String puuid, String matePuuid, int side, int earlyMinutes, int earlyTogether, int lateMinutes,
+                     int lateTogether, Integer meanDistance, int earlyDepartures) {
     }
 
     record InsightPlayer(String puuid, int side, String position, int championId, Standing solo,
@@ -155,15 +160,16 @@ public interface RiotStatsGateway {
     }
 
     // Sommes des métriques v4 du connecteur. Chaque famille à 15 min a son dénominateur (laningGames, earlyGames), les
-    // solo kills aussi (soloKillsGames) : une partie sans timeline ou sans challenges n'y compte pas.
+    // solo kills aussi (soloKillsGames), et le support (supportEarlyGames, supportLateGames ; parts en pour cent).
     record Performance(long wardsPlaced, long wardsKilled, long controlWardsPlaced, long timeDeadSeconds,
                        long turretDamage, long turretTakedowns, long epicMonsterDamage, long teamDamageToChampions,
                        long platesGames, long platesDiff, long laningGames, long goldDiffAt15, long csDiffAt15,
                        long xpDiffAt15, long killsDiffAt15, long earlyGames, long killsAssistsAt15,
-                       long soloKillsGames, long soloKills) {
+                       long soloKillsGames, long soloKills, long supportEarlyGames, long adcEarlyShare, long roams,
+                       long supportLateGames, long junglerLateShare) {
 
         public static final Performance ZERO = new Performance(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0);
+                0, 0, 0, 0, 0, 0);
 
         public Performance plus(Performance autre, int signe) {
             return new Performance(wardsPlaced + signe * autre.wardsPlaced, wardsKilled + signe * autre.wardsKilled,
@@ -177,7 +183,11 @@ public interface RiotStatsGateway {
                     csDiffAt15 + signe * autre.csDiffAt15, xpDiffAt15 + signe * autre.xpDiffAt15,
                     killsDiffAt15 + signe * autre.killsDiffAt15, earlyGames + signe * autre.earlyGames,
                     killsAssistsAt15 + signe * autre.killsAssistsAt15,
-                    soloKillsGames + signe * autre.soloKillsGames, soloKills + signe * autre.soloKills);
+                    soloKillsGames + signe * autre.soloKillsGames, soloKills + signe * autre.soloKills,
+                    supportEarlyGames + signe * autre.supportEarlyGames,
+                    adcEarlyShare + signe * autre.adcEarlyShare, roams + signe * autre.roams,
+                    supportLateGames + signe * autre.supportLateGames,
+                    junglerLateShare + signe * autre.junglerLateShare);
         }
     }
 

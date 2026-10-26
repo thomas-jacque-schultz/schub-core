@@ -36,7 +36,7 @@ class StatLinesTest {
     void ecartsSurLesPartiesATimeline() {
         RiotStatsGateway.Bucket bucket = new RiotStatsGateway.Bucket("p", "", null, 10, 5, 0, 20, 0, 0, 0, 30000, 0, 0,
                 0, 0, 0, 18000, null, null, new RiotStatsGateway.Performance(0, 30, 12, 1800, 0, 15, 0, 150000, 8, 16, 4,
-                        2000, 40, 0, 2, 5, 20, 8, 4));
+                        2000, 40, 0, 2, 5, 20, 8, 4, 4, 280, 6, 3, 90));
 
         StatLine ligne = StatLines.of(bucket, "", null, null);
 
@@ -50,6 +50,10 @@ class StatLinesTest {
         assertThat(ligne.timeDeadShare()).isCloseTo(0.1, within(1e-9));
         assertThat(ligne.killsAssistsAt15()).isCloseTo(4, within(1e-9));
         assertThat(ligne.soloKills()).isCloseTo(0.5, within(1e-9));
+        assertThat(ligne.supportEarlyGames()).isEqualTo(4);
+        assertThat(ligne.adcEarlyShare()).isCloseTo(0.7, within(1e-9));
+        assertThat(ligne.roams()).isCloseTo(1.5, within(1e-9));
+        assertThat(ligne.junglerLateShare()).isCloseTo(0.3, within(1e-9));
     }
 
     @Test
