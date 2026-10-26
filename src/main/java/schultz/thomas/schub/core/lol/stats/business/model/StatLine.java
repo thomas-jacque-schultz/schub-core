@@ -41,6 +41,16 @@ public record StatLine(
         Double killsAssistsAt15,
         @Schema(description = "Solo kills par partie, sur celles où Riot les sert (Schub#146).")
         Double soloKills,
+        @Schema(description = "Au support, parties où la part d'images avec l'ADC avant 15 min est connue (Schub#153).")
+        long supportEarlyGames,
+        @Schema(description = "Part moyenne (0 à 1) des images avant 15 min passées avec l'ADC.")
+        Double adcEarlyShare,
+        @Schema(description = "Départs d'auprès de l'ADC avant 15 min, par partie.")
+        Double roams,
+        @Schema(description = "Au support, parties où la part d'images avec le jungler après 15 min est connue.")
+        long supportLateGames,
+        @Schema(description = "Part moyenne (0 à 1) des images après 15 min passées avec le jungler.")
+        Double junglerLateShare,
         long afkGames,
         long secondsPlayed,
         Instant firstPlayedAt,

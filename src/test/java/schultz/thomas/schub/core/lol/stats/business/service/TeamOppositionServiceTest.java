@@ -47,7 +47,7 @@ class TeamOppositionServiceTest {
             joueurs.add(new RiotStatsGateway.InsightPlayer("e" + i, 200, POSTES.get(i), 2,
                     tierAdverse == null ? null : solo(tierAdverse, "II"), null, a15Adverse, null));
         }
-        return new RiotStatsGateway.Insight(id, true, QUAND.plusSeconds(3 * 86_400), null, joueurs, null);
+        return new RiotStatsGateway.Insight(id, true, QUAND.plusSeconds(3 * 86_400), null, joueurs, null, null);
     }
 
     @Test

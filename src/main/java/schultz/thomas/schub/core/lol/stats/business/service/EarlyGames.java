@@ -22,10 +22,20 @@ final class EarlyGames {
     private EarlyGames() {
     }
 
+    static EarlyGameView vue(RiotStatsGateway.Insight insight, int notreCote, Map<String, TeamMember> parPuuid) {
+        return vue(insight.early(), insight, notreCote, parPuuid);
+    }
+
     static EarlyGameView vue(RiotStatsGateway.EarlyGame early, int notreCote, Map<String, TeamMember> parPuuid) {
+        return vue(early, null, notreCote, parPuuid);
+    }
+
+    private static EarlyGameView vue(RiotStatsGateway.EarlyGame early, RiotStatsGateway.Insight insight,
+                                     int notreCote, Map<String, TeamMember> parPuuid) {
         if (early == null) {
             return null;
         }
+        int leurCote = notreCote == 100 ? 200 : 100;
         List<EarlyGameView.Gank> ganks = early.ganks().stream()
                 .map(gank -> {
                     boolean nous = gank.attackerSide() == notreCote;
@@ -40,7 +50,11 @@ final class EarlyGames {
                 presence(jungler(early, notreCote, true), parPuuid),
                 presence(jungler(early, notreCote, false), parPuuid),
                 objectifs(early, notreCote, true),
-                objectifs(early, notreCote, false));
+                objectifs(early, notreCote, false),
+                insight == null ? null : Proximites.support(insight, notreCote, parPuuid),
+                insight == null ? null : Proximites.support(insight, leurCote, parPuuid),
+                insight == null ? null : Proximites.jungler(insight, notreCote, parPuuid),
+                insight == null ? null : Proximites.jungler(insight, leurCote, parPuuid));
     }
 
     static TeamEarlyGame bilan(List<RiotStatsGateway.SharedMatch> parties,

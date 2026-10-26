@@ -51,6 +51,11 @@ public final class StatLines {
                 parPartie(perf.killsDiffAt15(), perf.laningGames()),
                 parPartie(perf.killsAssistsAt15(), perf.earlyGames()),
                 parPartie(perf.soloKills(), perf.soloKillsGames()),
+                perf.supportEarlyGames(),
+                pourCent(parPartie(perf.adcEarlyShare(), perf.supportEarlyGames())),
+                parPartie(perf.roams(), perf.supportEarlyGames()),
+                perf.supportLateGames(),
+                pourCent(parPartie(perf.junglerLateShare(), perf.supportLateGames())),
                 bucket.afkGames(),
                 bucket.secondsPlayed(),
                 bucket.firstPlayedAt(),
@@ -148,6 +153,11 @@ public final class StatLines {
 
     static Double parPartie(long total, long games) {
         return games == 0 ? null : (double) total / games;
+    }
+
+    // Le connecteur somme des pour cent ; le front lit des parts de 0 à 1.
+    private static Double pourCent(Double valeur) {
+        return valeur == null ? null : valeur / 100;
     }
 
     static Double ecart(Double valeur, Double reference) {
