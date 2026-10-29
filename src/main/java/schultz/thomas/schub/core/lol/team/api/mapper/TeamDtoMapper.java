@@ -3,8 +3,11 @@ package schultz.thomas.schub.core.lol.team.api.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import schultz.thomas.schub.core.lol.team.api.dto.ChampionPoolDto;
+import schultz.thomas.schub.core.lol.team.api.dto.MacroPlanDto;
+import schultz.thomas.schub.core.lol.team.api.dto.MacroPlanSummaryDto;
 import schultz.thomas.schub.core.lol.team.api.dto.TrainingSlotDto;
 import schultz.thomas.schub.core.lol.team.business.model.ChampionPool;
+import schultz.thomas.schub.core.lol.team.data.model.MacroPlan;
 import schultz.thomas.schub.core.lol.team.data.model.TrainingSlot;
 
 import java.util.List;
@@ -17,4 +20,8 @@ public interface TeamDtoMapper {
     List<TrainingSlotDto> toSlotDtos(List<TrainingSlot> slots);
 
     List<TrainingSlot> fromSlotDtos(List<TrainingSlotDto> slots);
+
+    MacroPlanDto toDto(MacroPlan plan);
+
+    List<MacroPlanSummaryDto> toMacroPlanSummaries(List<MacroPlan> plans);
 }

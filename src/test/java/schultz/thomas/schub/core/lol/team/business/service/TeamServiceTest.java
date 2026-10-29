@@ -22,6 +22,7 @@ import schultz.thomas.schub.core.lol.team.data.model.Team;
 import schultz.thomas.schub.core.lol.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.lol.team.data.model.TeamMember;
 import schultz.thomas.schub.core.lol.team.data.repository.CompositionRepository;
+import schultz.thomas.schub.core.lol.team.data.repository.MacroPlanRepository;
 import schultz.thomas.schub.core.lol.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.lol.team.data.repository.TeamRepository;
 
@@ -46,6 +47,7 @@ class TeamServiceTest {
     private MemberDirectory memberDirectory;
     private RiotIdResolver riotIdResolver;
     private TeamChampionPoolRepository championPoolRepository;
+    private MacroPlanRepository macroPlanRepository;
     private TeamService teamService;
 
     private User capitaine;
@@ -58,6 +60,7 @@ class TeamServiceTest {
         teamRepository = mock(TeamRepository.class);
         compositionRepository = mock(CompositionRepository.class);
         championPoolRepository = mock(TeamChampionPoolRepository.class);
+        macroPlanRepository = mock(MacroPlanRepository.class);
         memberDirectory = mock(MemberDirectory.class);
         riotIdResolver = mock(RiotIdResolver.class);
 
@@ -82,7 +85,7 @@ class TeamServiceTest {
                 List.of(new TeamScopedAuthority(teamRepository)));
 
         teamService = new TeamService(teamRepository, compositionRepository,
-                championPoolRepository, evaluator,
+                championPoolRepository, macroPlanRepository, evaluator,
                 memberDirectory, riotIdResolver);
 
         capitaine = compte("capitaine", "role-visiteur");
@@ -227,13 +230,14 @@ class TeamServiceTest {
     }
 
     @Test
-    @DisplayName("supprimer une équipe emporte ses compositions")
+    @DisplayName("supprimer une équipe emporte ses compositions et ses plans de macro")
     void suppressionEmporteLesCompositions() {
         donneLEquipe();
 
         teamService.delete(capitaine, "equipe-1");
 
         verify(compositionRepository).deleteByTeamId("equipe-1");
+        verify(macroPlanRepository).deleteByTeamId("equipe-1");
         verify(teamRepository).delete(any(Team.class));
     }
 
