@@ -23,7 +23,10 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 // Riot chiffre le puuid pour chaque clé : après un changement de clé, les comptes liés et les places d'équipe portent un
 // puuid refusé. On résout de nouveau leur Riot ID et on relance leur collecte.
@@ -73,7 +76,35 @@ public class StalePuuidRepair {
         repare(riotConnector.stalePuuids(dernierReleve.minus(RECOUVREMENT)));
         resoutLesComptesEnAttente();
         resoutLesPlacesEnAttente();
+        relieLesPlacesLibres();
         dernierReleve = debut;
+    }
+
+    // Une place résolue après coup ne passait jamais par la liaison de l'ajout : son joueur restait libre (Schub#157).
+    void relieLesPlacesLibres() {
+        for (Team team : teams.findWithUnlinkedResolvedMembers()) {
+            Set<String> puuids = new LinkedHashSet<>();
+            team.getMembers().stream()
+                    .filter(membre -> !membre.isLinked() && present(membre.getRiotPuuid()))
+                    .forEach(membre -> puuids.add(membre.getRiotPuuid()));
+            Map<String, User> comptes = users.findByRiotPuuidIn(puuids).stream()
+                    .collect(Collectors.toMap(User::getRiotPuuid, Function.identity(), (premier, second) -> premier));
+            boolean modifiee = false;
+            for (TeamMember membre : team.getMembers()) {
+                User compte = membre.isLinked() ? null : comptes.get(membre.getRiotPuuid());
+                if (compte == null || team.hasMemberLinkedTo(compte.getId())) {
+                    continue;
+                }
+                membre.setUserId(compte.getId());
+                membre.setLinkedAt(Instant.now());
+                modifiee = true;
+                log.info("Place {} de l'équipe « {} » reliée au compte {}", membre.getMemberId(), team.getName(),
+                        compte.getId());
+            }
+            if (modifiee) {
+                enregistre(team);
+            }
+        }
     }
 
     // Sans ce relevé, un compte au puuid effacé n'était résolu qu'à la prochaine connexion du joueur (schub-core#47).
@@ -139,15 +170,20 @@ public class StalePuuidRepair {
     }
 
     private void enregistre(Team team, Set<String> aCollecter, String quoi) {
-        if (aCollecter.isEmpty()) {
+        if (aCollecter.isEmpty() || !enregistre(team)) {
             return;
         }
+        aCollecter.forEach(riotConnector::requestIngest);
+        log.info("Équipe « {} » : {} {}", team.getName(), aCollecter.size(), quoi);
+    }
+
+    private boolean enregistre(Team team) {
         try {
             teams.save(team);
-            aCollecter.forEach(riotConnector::requestIngest);
-            log.info("Équipe « {} » : {} {}", team.getName(), aCollecter.size(), quoi);
+            return true;
         } catch (OptimisticLockingFailureException concurrente) {
             log.info("Équipe « {} » modifiée pendant la réparation : reprise au prochain relevé", team.getName());
+            return false;
         }
     }
 

@@ -70,6 +70,7 @@ import schultz.thomas.schub.core.lol.team.api.mapper.TeamDtoMapperImpl;
 import schultz.thomas.schub.core.lol.team.api.mapper.TeamProjection;
 import schultz.thomas.schub.core.lol.team.business.service.ChampionPoolService;
 import schultz.thomas.schub.core.lol.team.business.service.CompositionService;
+import schultz.thomas.schub.core.lol.team.business.service.MacroPlanService;
 import schultz.thomas.schub.core.lol.team.business.service.TeamService;
 import schultz.thomas.schub.core.quiz.api.mapper.QuizDtoMapperImpl;
 import schultz.thomas.schub.core.quiz.business.service.QuizQuestionService;
@@ -132,6 +133,9 @@ class OpenApiContractTest {
 
     @MockBean
     private GameServerService gameServerService;
+
+    @MockBean
+    private MacroPlanService macroPlanService;
 
     @MockBean
     private MyGamesService myGamesService;

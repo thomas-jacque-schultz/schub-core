@@ -17,6 +17,7 @@ import schultz.thomas.schub.core.lol.team.data.model.TeamChampionPool;
 import schultz.thomas.schub.core.lol.team.data.model.TeamMember;
 import schultz.thomas.schub.core.lol.team.data.model.TrainingSlot;
 import schultz.thomas.schub.core.lol.team.data.repository.CompositionRepository;
+import schultz.thomas.schub.core.lol.team.data.repository.MacroPlanRepository;
 import schultz.thomas.schub.core.lol.team.data.repository.TeamChampionPoolRepository;
 import schultz.thomas.schub.core.lol.team.data.repository.TeamRepository;
 
@@ -43,6 +44,7 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final CompositionRepository compositionRepository;
     private final TeamChampionPoolRepository championPoolRepository;
+    private final MacroPlanRepository macroPlanRepository;
     private final PermissionEvaluator permissionEvaluator;
     private final MemberDirectory memberDirectory;
     private final RiotIdResolver riotIdResolver;
@@ -146,6 +148,7 @@ public class TeamService {
         Team team = require(teamId);
         permissionEvaluator.require(actor, Permission.TEAM_MANAGE, ref(teamId));
         compositionRepository.deleteByTeamId(teamId);
+        macroPlanRepository.deleteByTeamId(teamId);
         championPoolRepository.deleteById(teamId);
         teamRepository.delete(team);
         log.info("Équipe « {} » supprimée par {}", team.getName(), actor.getId());
@@ -164,7 +167,9 @@ public class TeamService {
 
         String puuid = trimOrNull(demande.riotPuuid());
         if (puuid == null) {
-            var resolution = riotIdResolver.resolve(gameName, tagLine);
+            // Un compte vu en partie cette semaine se lie sans appel à Riot, et Riot saturé rend le dernier connu :
+            // une place sans puuid ne se relie qu'au relevé suivant (Schub#157).
+            var resolution = riotIdResolver.resolveRecent(gameName, tagLine);
             if (resolution.isNotFound()) {
                 throw new IllegalArgumentException(
                         "Aucun compte Riot ne porte « " + gameName + "#" + tagLine + " »");
