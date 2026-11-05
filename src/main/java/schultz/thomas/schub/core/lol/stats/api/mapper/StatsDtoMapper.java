@@ -7,6 +7,7 @@ import schultz.thomas.schub.core.lol.stats.api.dto.MyGamesDto;
 import schultz.thomas.schub.core.lol.stats.api.dto.MyStatsDto;
 import schultz.thomas.schub.core.lol.stats.api.dto.StatsRefreshDto;
 import schultz.thomas.schub.core.lol.stats.api.dto.TeamGameDetailDto;
+import schultz.thomas.schub.core.lol.stats.api.dto.TeamGameDto;
 import schultz.thomas.schub.core.lol.stats.api.dto.TeamGamesStatsDto;
 import schultz.thomas.schub.core.lol.stats.api.dto.TeamOppositionDto;
 import schultz.thomas.schub.core.lol.stats.api.dto.TeamPlayersStatsDto;
@@ -15,11 +16,14 @@ import schultz.thomas.schub.core.lol.stats.business.model.Companions;
 import schultz.thomas.schub.core.lol.stats.business.model.MyGames;
 import schultz.thomas.schub.core.lol.stats.business.model.MyStats;
 import schultz.thomas.schub.core.lol.stats.business.model.StatsRefresh;
+import schultz.thomas.schub.core.lol.stats.business.model.TeamGame;
 import schultz.thomas.schub.core.lol.stats.business.model.TeamGameDetail;
 import schultz.thomas.schub.core.lol.stats.business.model.TeamGamesStats;
 import schultz.thomas.schub.core.lol.stats.business.model.TeamOpposition;
 import schultz.thomas.schub.core.lol.stats.business.model.TeamPlayersStats;
 import schultz.thomas.schub.core.lol.stats.business.model.TeamSynergy;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface StatsDtoMapper {
@@ -29,6 +33,8 @@ public interface StatsDtoMapper {
     MyGamesDto toDto(MyGames games);
 
     TeamGameDetailDto toDto(TeamGameDetail game);
+
+    List<TeamGameDto> toGameDtos(List<TeamGame> games);
 
     CompanionsDto toDto(Companions companions);
 
