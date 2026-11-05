@@ -1,6 +1,6 @@
 # schub-core
 
-Domaine Schub : identité, serveurs de jeu et politique de ports, équipes League of Legends. Orchestre les connecteurs.
+Le domaine de Schub et de PremadeLab : identité, serveurs de jeu et politique de ports (Schub) ; équipes, statistiques, draft et sessions League of Legends (PremadeLab). Orchestre les connecteurs.
 
 ## Place dans l'architecture
 
