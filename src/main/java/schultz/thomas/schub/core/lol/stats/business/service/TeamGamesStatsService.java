@@ -35,6 +35,8 @@ import java.util.function.Function;
 public class TeamGamesStatsService {
 
     public static final int MINIMUM_MEMBRES = 4;
+    // Une session commence à trois membres (réponse du 05/10) : ses parties s'ouvrent comme les autres.
+    public static final int MINIMUM_SESSION = 3;
 
     public static final int PARTIES_DEFAUT = 100;
     public static final int PARTIES_MAX = 500;
@@ -51,16 +53,20 @@ public class TeamGamesStatsService {
     }
 
     private Optional<RiotStatsGateway.SharedMatch> partieDEquipe(Team team, String matchId) {
+        return partieDEquipe(team, matchId, MINIMUM_MEMBRES);
+    }
+
+    private Optional<RiotStatsGateway.SharedMatch> partieDEquipe(Team team, String matchId, int minimum) {
         if (matchId == null || matchId.isBlank()) {
             return Optional.empty();
         }
         Map<String, TeamMember> parPuuid =
                 TeamPlayerStatsService.parPuuid(TeamPlayerStatsService.joueursDe(team));
-        if (parPuuid.size() < MINIMUM_MEMBRES) {
+        if (parPuuid.size() < minimum) {
             return Optional.empty();
         }
         return statsGateway
-                .sharedMatchesAmong(List.copyOf(parPuuid.keySet()), MINIMUM_MEMBRES, List.of(matchId))
+                .sharedMatchesAmong(List.copyOf(parPuuid.keySet()), minimum, List.of(matchId))
                 .orElseThrow(RiotConnectorUnavailableException::new)
                 .matches().stream()
                 .filter(partie -> matchId.equals(partie.matchId()))
@@ -122,14 +128,30 @@ public class TeamGamesStatsService {
                 Instant.now());
     }
 
+    // Dans l'ordre de la soirée.
+    public List<TeamGame> partiesDeSession(Team team, List<String> matchIds) {
+        List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
+        Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
+        if (parPuuid.size() < MINIMUM_SESSION || matchIds.isEmpty()) {
+            return List.of();
+        }
+        List<RiotStatsGateway.SharedMatch> parties = statsGateway
+                .sharedMatchesAmong(List.copyOf(parPuuid.keySet()), MINIMUM_SESSION, matchIds)
+                .orElseThrow(RiotConnectorUnavailableException::new)
+                .matches().stream()
+                .sorted(Comparator.comparing(RiotStatsGateway.SharedMatch::startedAt))
+                .toList();
+        return views.parties(parties, parPuuid, noms(joueurs));
+    }
+
     public TeamGameDetail detail(User actor, String teamId, String matchId, Integer days) {
         Team team = teamService.requireVisible(actor, teamId);
         List<TeamMember> joueurs = TeamPlayerStatsService.joueursDe(team);
         Map<String, TeamMember> parPuuid = TeamPlayerStatsService.parPuuid(joueurs);
-        if (parPuuid.size() < MINIMUM_MEMBRES) {
+        if (parPuuid.size() < MINIMUM_SESSION) {
             throw new NoSuchElementException("Cette équipe n'a pas assez de comptes Riot pour avoir des parties d'équipe");
         }
-        RiotStatsGateway.SharedMatch partie = partieDEquipe(team, matchId)
+        RiotStatsGateway.SharedMatch partie = partieDEquipe(team, matchId, MINIMUM_SESSION)
                 .orElseThrow(() -> new NoSuchElementException("Aucune partie d'équipe « " + matchId + " »"));
         return views.detail(team.getId(), partie, parPuuid, noms(joueurs),
                 TeamPlayerStatsService.placeDuLecteur(team, actor), days);
