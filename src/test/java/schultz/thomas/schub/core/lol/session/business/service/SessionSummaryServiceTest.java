@@ -17,17 +17,17 @@ class SessionSummaryServiceTest {
     @Test
     @DisplayName("un écart est signé, en milliers au-delà de 1 000")
     void signe() {
-        assertThat(SessionSummaryService.signe(820)).isEqualTo("+820");
-        assertThat(SessionSummaryService.signe(-14)).isEqualTo("−14");
-        assertThat(SessionSummaryService.signe(2140)).isEqualTo("+2,1 k");
-        assertThat(SessionSummaryService.signe(0)).isEqualTo("+0");
+        assertThat(SessionRecapComposer.signe(820)).isEqualTo("+820");
+        assertThat(SessionRecapComposer.signe(-14)).isEqualTo("−14");
+        assertThat(SessionRecapComposer.signe(2140)).isEqualTo("+2,1 k");
+        assertThat(SessionRecapComposer.signe(0)).isEqualTo("+0");
     }
 
     @Test
     @DisplayName("une durée se dit en minutes, puis en heures")
     void duree() {
-        assertThat(SessionSummaryService.duree(31 * 60 + 40)).isEqualTo("31 min");
-        assertThat(SessionSummaryService.duree(98 * 60)).isEqualTo("1 h 38");
+        assertThat(SessionRecapComposer.duree(31 * 60 + 40)).isEqualTo("31 min");
+        assertThat(SessionRecapComposer.duree(98 * 60)).isEqualTo("1 h 38");
     }
 
     @Test
@@ -44,9 +44,9 @@ class SessionSummaryServiceTest {
     @Test
     @DisplayName("un nom Riot perd son tag, un nom choisi reste tel quel")
     void sansTag() {
-        assertThat(SessionSummaryService.sansTag("MagicieN972#EUW")).isEqualTo("MagicieN972");
-        assertThat(SessionSummaryService.sansTag("Pikatchu ♘")).isEqualTo("Pikatchu ♘");
-        assertThat(SessionSummaryService.sansTag(null)).isNull();
+        assertThat(SessionRecapComposer.sansTag("MagicieN972#EUW")).isEqualTo("MagicieN972");
+        assertThat(SessionRecapComposer.sansTag("Pikatchu ♘")).isEqualTo("Pikatchu ♘");
+        assertThat(SessionRecapComposer.sansTag(null)).isNull();
     }
 
     @Test
@@ -80,7 +80,7 @@ class SessionSummaryServiceTest {
                 partie("OTHER", List.of(joueur("moi", 100, "UNKNOWN", 0)), List.of()),
                 partie("RANKED_SOLO", List.of(joueur("ami", 100, "BOTTOM", 0)), List.of()));
 
-        assertThat(SessionSummaryService.postes(parties, "moi"))
+        assertThat(SessionRecapComposer.postes(parties, "moi"))
                 .isEqualTo("Top ×2, Mid ×1, ARAM ×1, autre mode ×1");
     }
 
