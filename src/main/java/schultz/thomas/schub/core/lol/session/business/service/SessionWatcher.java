@@ -37,7 +37,7 @@ public class SessionWatcher {
 
     static final ZoneId PARIS = ZoneId.of("Europe/Paris");
     // Réponse du 05/10 : à deux, c'est juste normal ; à trois, c'est un début d'équipe.
-    static final int MEMBRES_MINIMUM = 3;
+    static final int MEMBRES_MINIMUM = TeamGamesStatsService.MINIMUM_SESSION;
     static final int PARTIES_MINIMUM = 2;
     static final Duration PAUSE_MAX = Duration.ofHours(1);
     static final int DEBUT_DE_JOURNEE = 6;

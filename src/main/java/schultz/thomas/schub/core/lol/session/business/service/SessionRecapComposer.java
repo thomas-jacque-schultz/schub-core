@@ -46,6 +46,13 @@ class SessionRecapComposer {
     static final double ECART_NOTABLE = 0.10;
     static final int AVANCE_A_15 = 1000;
     static final int REFERENCE_JOURS = 90;
+    // En deçà, le vis-à-vis n'a pas pris d'avance qui mérite d'en reparler.
+    static final int RETARD_A_REVOIR = 500;
+    static final int HISTORIQUE_JOURS = 366;
+    static final int HISTORIQUE_MAX = 10;
+    static final String BARRES = "▁▂▃▄▅▆▇█";
+    // Discord refuse un message de plus de 6 000 caractères : le bilan et le titre gardent le reste.
+    static final int DETAIL_MAX = 4500;
     static final int OR_PREMADELAB = 0xC9A227;
     static final int PARTIES_MAX = 24;
 
@@ -58,7 +65,7 @@ class SessionRecapComposer {
     @Value("${premadelab.url:https://premadelab.eu}")
     private String premadelabUrl;
 
-    // Une ligne par partie (poste, champions, début de partie, écart final), puis le bilan de la session.
+    // Une ligne par partie jouée (poste, champions, comparatifs, lane à revoir), puis le bilan de la session.
     Embed compose(Team team, TeamSession session, String memberId) {
         if (team == null) {
             return null;
@@ -79,10 +86,19 @@ class SessionRecapComposer {
 
         Function<RiotStatsGateway.SharedMatchPlayer, String> champion = icones(parties, monPuuid);
 
+        List<RiotStatsGateway.SharedMatch> jouees = parties.stream().filter(p -> moi(p, monPuuid) != null).toList();
         List<Embed.Field> champs = new ArrayList<>();
-        parties.stream().limit(PARTIES_MAX).forEach(partie -> champs.add(
-                partie(partie, monPuuid, insights.get(partie.matchId()), champion)));
-        champs.add(new Embed.Field("Bilan", bilan(team, session, monPuuid, parties, parPuuid, noms, insights), false));
+        int reste = DETAIL_MAX;
+        for (RiotStatsGateway.SharedMatch partie : jouees.stream().limit(PARTIES_MAX).toList()) {
+            Embed.Field champ = partie(partie, monPuuid, insights.get(partie.matchId()), champion);
+            reste -= champ.name().length() + champ.value().length();
+            if (reste < 0) {
+                break;
+            }
+            champs.add(champ);
+        }
+        champs.add(new Embed.Field("Bilan", bilan(team, session, monPuuid, parties, insights,
+                jouees.size() - champs.size()), false));
 
         List<String> avec = joueurs.stream()
                 .filter(m -> session.memberIds().contains(m.getMemberId()) && !memberId.equals(m.getMemberId()))
@@ -151,32 +167,71 @@ class SessionRecapComposer {
                                       RiotStatsGateway.Insight insight,
                                       Function<RiotStatsGateway.SharedMatchPlayer, String> champion) {
         RiotStatsGateway.SharedMatchPlayer moi = moi(partie, monPuuid);
-        String poste = moi == null ? null : poste(moi);
         RiotStatsGateway.SharedMatchPlayer adverse = adverse(partie, moi);
         String resultat = partie.win() == null ? "➖" : partie.win() ? "✅ Victoire" : "❌ Défaite";
-        String contexte = moi == null ? "sans toi"
-                : poste != null ? poste : GameModes.libelleHorsFaille(partie.queue()).orElse(null);
+        String poste = poste(moi);
+        String contexte = poste != null ? poste : GameModes.libelleHorsFaille(partie.queue()).orElse(null);
         String nom = resultat + (contexte == null ? "" : " · " + contexte) + " · "
                 + partie.durationSeconds() / 60 + " min";
 
         List<String> lignes = new ArrayList<>();
-        if (moi != null) {
-            lignes.add(champion.apply(moi) + (adverse == null ? "" : " contre " + champion.apply(adverse))
-                    + " · " + moi.kills() + "/" + moi.deaths() + "/" + moi.assists());
-        }
+        lignes.add(adverse == null ? champion.apply(moi) + " · " + score(moi.kills(), moi.deaths(), moi.assists())
+                : champion.apply(moi) + " contre " + champion.apply(adverse));
         RiotStatsGateway.InsightPlayer nous = a15(insight, moi);
         RiotStatsGateway.InsightPlayer eux = a15(insight, adverse);
         Integer or = VueDePartie.ecartA15(nous, eux, RiotStatsGateway.At15::gold);
         if (or != null) {
-            lignes.add("À 15 min : " + signe(or) + " or et "
-                    + signe(VueDePartie.ecartA15(nous, eux, RiotStatsGateway.At15::cs)) + " CS sur lui, "
-                    + nous.at15().kills() + "/" + nous.at15().deaths() + "/" + nous.at15().assists());
+            lignes.add("À 15 min : " + comparatif(or, VueDePartie.ecartA15(nous, eux, RiotStatsGateway.At15::cs),
+                    nous.at15().kills(), nous.at15().deaths(), nous.at15().assists()));
+        }
+        if (adverse != null) {
+            lignes.add("Fin de partie : " + comparatif(moi.goldEarned() - adverse.goldEarned(),
+                    moi.minionsKilled() - adverse.minionsKilled(), moi.kills(), moi.deaths(), moi.assists()));
         }
         Integer ecart = VueDePartie.de(partie).ecartDOrFinal();
         if (ecart != null) {
             lignes.add("Résultat équipe : " + signe(ecart) + " or en fin de partie");
         }
-        return new Embed.Field(nom, lignes.isEmpty() ? "—" : String.join("\n", lignes), false);
+        laneAReviser(insight, moi.side()).ifPresent(lignes::add);
+        return new Embed.Field(nom, String.join("\n", lignes), false);
+    }
+
+    private static String comparatif(int or, int cs, int kills, int deaths, int assists) {
+        return signe(or) + " or et " + signe(cs) + " CS sur lui, " + score(kills, deaths, assists);
+    }
+
+    private static String score(int kills, int deaths, int assists) {
+        return kills + "/" + deaths + "/" + assists;
+    }
+
+    // Le poste de notre camp le plus en retard à 15 min, sans le nom de celui qui l'a joué : on revoit une lane à
+    // plusieurs, on ne désigne personne.
+    static Optional<String> laneAReviser(RiotStatsGateway.Insight insight, int cote) {
+        if (insight == null || insight.participants() == null) {
+            return Optional.empty();
+        }
+        RiotStatsGateway.InsightPlayer lane = null;
+        int retard = -RETARD_A_REVOIR;
+        for (RiotStatsGateway.InsightPlayer joueur : VueDePartie.camp(insight.participants(), cote, true)) {
+            Integer ecart = VueDePartie.visAVis(joueur, insight.participants())
+                    .map(vis -> VueDePartie.ecartA15(joueur, vis, RiotStatsGateway.At15::gold))
+                    .orElse(null);
+            if (ecart != null && ecart <= retard) {
+                lane = joueur;
+                retard = ecart;
+            }
+        }
+        return lane == null ? Optional.empty()
+                : GameRole.dePosition(lane.position()).map(GameRole::libelle).map(
+                        libelle -> "Lane pour review d'équipe : " + libelle);
+    }
+
+    // Une barre par séance, de la plus ancienne à la plus récente, à la hauteur de son taux de victoires.
+    static String histogramme(List<TeamSession> anciennesDAbord) {
+        StringBuilder barres = new StringBuilder();
+        anciennesDAbord.forEach(s -> barres.append(BARRES.charAt(
+                (int) Math.round((BARRES.length() - 1.0) * s.wins() / Math.max(1, s.games())))));
+        return barres.toString();
     }
 
     static String sansTag(String riotId) {
@@ -184,22 +239,32 @@ class SessionRecapComposer {
     }
 
     private String bilan(Team team, TeamSession session, String monPuuid, List<RiotStatsGateway.SharedMatch> parties,
-                         Map<String, TeamMember> parPuuid, Map<String, String> noms,
-                         Map<String, RiotStatsGateway.Insight> insights) {
+                         Map<String, RiotStatsGateway.Insight> insights, int nonDetaillees) {
         long secondes = parties.stream().mapToLong(RiotStatsGateway.SharedMatch::durationSeconds).sum();
         List<String> lignes = new ArrayList<>();
         lignes.add("**" + session.wins() + " V – " + (session.games() - session.wins()) + " D** en "
                 + session.games() + " parties · " + duree(secondes) + " de jeu");
+        List<RiotStatsGateway.SharedMatchPlayer> miennes = parties.stream().map(p -> moi(p, monPuuid))
+                .filter(Objects::nonNull).toList();
+        int sansToi = parties.size() - miennes.size();
+        if (sansToi > 0) {
+            lignes.add(parties(sansToi) + " sans toi");
+        }
+        if (nonDetaillees > 0) {
+            lignes.add(parties(nonDetaillees) + " non détaillée" + (nonDetaillees > 1 ? "s" : "") + " ici");
+        }
         if (monPuuid != null) {
-            List<RiotStatsGateway.SharedMatchPlayer> miennes = parties.stream().map(p -> moi(p, monPuuid))
-                    .filter(Objects::nonNull).toList();
             if (!miennes.isEmpty()) {
                 lignes.add("Postes : " + postes(parties, monPuuid));
             }
             lignes.addAll(toi(monPuuid, session, miennes));
         }
-        lignes.addAll(equipe(team, session, parties, parPuuid, noms, insights));
+        lignes.addAll(equipe(team, session, parties, insights));
         return String.join("\n", lignes);
+    }
+
+    private static String parties(int nombre) {
+        return nombre + (nombre > 1 ? " parties" : " partie");
     }
 
     // « Top ×6, Mid ×1, ARAM ×1 », dans l'ordre du nombre de parties.
@@ -296,32 +361,8 @@ class SessionRecapComposer {
     }
 
     private List<String> equipe(Team team, TeamSession session, List<RiotStatsGateway.SharedMatch> parties,
-                                Map<String, TeamMember> parPuuid, Map<String, String> noms,
                                 Map<String, RiotStatsGateway.Insight> insights) {
         List<String> lignes = new ArrayList<>();
-
-        // Le duo du soir : la paire qui a gagné le plus de parties ensemble.
-        Map<String, long[]> duos = new LinkedHashMap<>();
-        for (RiotStatsGateway.SharedMatch partie : parties) {
-            List<String> presents = partie.players().stream().map(j -> parPuuid.get(j.puuid()))
-                    .filter(Objects::nonNull).map(TeamMember::getMemberId).sorted().toList();
-            for (int i = 0; i < presents.size(); i++) {
-                for (int j = i + 1; j < presents.size(); j++) {
-                    long[] c = duos.computeIfAbsent(presents.get(i) + "|" + presents.get(j), k -> new long[2]);
-                    c[0]++;
-                    c[1] += Boolean.TRUE.equals(partie.win()) ? 1 : 0;
-                }
-            }
-        }
-        duos.entrySet().stream()
-                .filter(e -> e.getValue()[1] >= 2)
-                .max(Comparator.comparingLong((Map.Entry<String, long[]> e) -> e.getValue()[1])
-                        .thenComparingLong(e -> -e.getValue()[0]))
-                .ifPresent(e -> {
-                    String[] paire = e.getKey().split("\\|");
-                    lignes.add("Duo du soir : " + sansTag(noms.get(paire[0])) + " et " + sansTag(noms.get(paire[1]))
-                            + ", " + e.getValue()[1] + " V – " + (e.getValue()[0] - e.getValue()[1]) + " D");
-                });
 
         long avancesPerdues = parties.stream()
                 .filter(p -> Boolean.FALSE.equals(p.win()))
@@ -334,14 +375,21 @@ class SessionRecapComposer {
                     + " après une avance à 15 min");
         }
 
+        List<TeamSession> dernieres = sessions.findByTeamIdAndDayGreaterThanEqualOrderByStartedAtDesc(team.getId(),
+                        session.day().minusDays(HISTORIQUE_JOURS)).stream()
+                .filter(s -> s.planned() == session.planned() && !s.missed()
+                        && !s.startedAt().isAfter(session.startedAt()))
+                .limit(HISTORIQUE_MAX)
+                .toList();
         if (session.planned()) {
-            sessions.findByTeamIdAndDayGreaterThanEqualOrderByStartedAtDesc(team.getId(),
-                            session.day().minusDays(REFERENCE_JOURS)).stream()
-                    .filter(s -> s.planned() && !s.missed() && s.startedAt().isBefore(session.startedAt()))
-                    .findFirst()
+            dernieres.stream().filter(s -> s.startedAt().isBefore(session.startedAt())).findFirst()
                     .ifPresent(avant -> lignes.add("Séance précédente : "
                             + Math.round(100.0 * avant.wins() / Math.max(1, avant.games())) + " % de victoires, "
                             + Math.round(100.0 * session.wins() / session.games()) + " % ce soir"));
+        }
+        if (dernieres.size() >= 2) {
+            lignes.add(dernieres.size() + (session.planned() ? " dernières séances" : " dernières sessions")
+                    + " : `" + histogramme(dernieres.reversed()) + "`");
         }
         return lignes;
     }

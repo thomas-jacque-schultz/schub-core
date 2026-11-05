@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import schultz.thomas.schub.core.business.service.PremadeLabGateway.Embed;
 import schultz.thomas.schub.core.lol.riot.business.service.RiotStatsGateway;
 import schultz.thomas.schub.core.lol.riot.business.service.VueDePartie;
+import schultz.thomas.schub.core.lol.session.data.model.TeamSession;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -82,6 +84,48 @@ class SessionSummaryServiceTest {
 
         assertThat(SessionRecapComposer.postes(parties, "moi"))
                 .isEqualTo("Top ×2, Mid ×1, ARAM ×1, autre mode ×1");
+    }
+
+    @Test
+    @DisplayName("la lane à revoir est le plus gros retard d'or de notre camp à 15 min, sans nom de joueur")
+    void laneAReviser() {
+        RiotStatsGateway.Insight insight = insight(
+                a15("moi", 100, "TOP", 5000), a15("e1", 200, "TOP", 5200),
+                a15("a1", 100, "MIDDLE", 4000), a15("e2", 200, "MIDDLE", 5400),
+                a15("a2", 100, "BOTTOM", 6000), a15("e3", 200, "BOTTOM", 5000));
+
+        assertThat(SessionRecapComposer.laneAReviser(insight, 100)).contains("Lane pour review d'équipe : Mid");
+        assertThat(SessionRecapComposer.laneAReviser(insight, 200)).contains("Lane pour review d'équipe : ADC");
+    }
+
+    @Test
+    @DisplayName("sans retard net à 15 min, ni timeline, aucune lane n'est citée")
+    void aucuneLaneAReviser() {
+        assertThat(SessionRecapComposer.laneAReviser(insight(
+                a15("moi", 100, "TOP", 5000), a15("e1", 200, "TOP", 5400)), 100)).isEmpty();
+        assertThat(SessionRecapComposer.laneAReviser(null, 100)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("l'histogramme donne une barre par séance, de la plus ancienne à la plus récente")
+    void histogramme() {
+        assertThat(SessionRecapComposer.histogramme(List.of(seance(0, 4), seance(2, 4), seance(4, 4))))
+                .isEqualTo("▁▅█");
+    }
+
+    private static TeamSession seance(int victoires, int parties) {
+        return new TeamSession("t|" + victoires, "t", LocalDate.EPOCH, Instant.EPOCH, Instant.EPOCH, List.of(),
+                List.of(), parties, victoires, true, null, false, Instant.EPOCH);
+    }
+
+    private static RiotStatsGateway.InsightPlayer a15(String puuid, int side, String poste, int or) {
+        return new RiotStatsGateway.InsightPlayer(puuid, side, poste, 1, null, null,
+                new RiotStatsGateway.At15(or, 0, 0, 0, 0, 0, 0), null);
+    }
+
+    private static RiotStatsGateway.Insight insight(RiotStatsGateway.InsightPlayer... joueurs) {
+        return new RiotStatsGateway.Insight("EUW1_1", true, null, null, List.of(joueurs), List.of(), List.of(),
+                List.of(), List.of());
     }
 
     private static RiotStatsGateway.SharedMatchPlayer joueur(String puuid, int side, String poste, int or) {

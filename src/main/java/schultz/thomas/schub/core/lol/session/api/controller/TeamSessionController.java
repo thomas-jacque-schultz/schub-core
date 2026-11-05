@@ -17,11 +17,17 @@ import schultz.thomas.schub.core.lol.session.api.dto.TeamSessionDto;
 import schultz.thomas.schub.core.lol.session.api.mapper.SessionSummaryDtoMapper;
 import schultz.thomas.schub.core.lol.session.business.service.SessionWatcher;
 import schultz.thomas.schub.core.lol.session.data.repository.TeamSessionRepository;
+import schultz.thomas.schub.core.lol.session.data.model.TeamSession;
+import schultz.thomas.schub.core.lol.stats.api.dto.TeamGameDto;
+import schultz.thomas.schub.core.lol.stats.api.mapper.StatsDtoMapper;
+import schultz.thomas.schub.core.lol.stats.business.service.TeamGamesStatsService;
 import schultz.thomas.schub.core.lol.team.business.service.TeamService;
+import schultz.thomas.schub.core.lol.team.data.model.Team;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/teams/{teamId}/sessions")
@@ -36,6 +42,8 @@ public class TeamSessionController {
     private final TeamSessionRepository sessions;
     private final SessionWatcher watcher;
     private final SessionSummaryDtoMapper dtos;
+    private final TeamGamesStatsService gamesStats;
+    private final StatsDtoMapper statsDtos;
 
     @GetMapping
     public List<TeamSessionDto> list(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
@@ -44,6 +52,17 @@ public class TeamSessionController {
         teamService.requireVisible(userService.requireActor(actorId), teamId);
         return dtos.toSessionDtos(sessions.findByTeamIdAndDayGreaterThanEqualOrderByStartedAtDesc(teamId,
                 LocalDate.now(PARIS).minusDays(Math.clamp(days, 1, 366))));
+    }
+
+    // L'identifiant d'une session contient « | » : il passe en paramètre, pas dans le chemin.
+    @GetMapping("/games")
+    public List<TeamGameDto> games(@RequestHeader(value = CoreHeaders.ACTOR_ID, required = false) String actorId,
+                                   @PathVariable String teamId,
+                                   @RequestParam String session) {
+        Team team = teamService.requireVisible(userService.requireActor(actorId), teamId);
+        TeamSession lue = sessions.findById(session).filter(s -> teamId.equals(s.teamId()))
+                .orElseThrow(() -> new NoSuchElementException("Aucune session « " + session + " »"));
+        return statsDtos.toGameDtos(gamesStats.partiesDeSession(team, lue.matchIds()));
     }
 
     // Relance la détection d'une journée passée : l'observateur ne repasse pas de lui-même.
